@@ -1,0 +1,430 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.2.0
+  description: Public Kiosk marketplace and business-owner API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+    description: Health operations
+  - name: marketplace
+    description: Public business discovery
+  - name: businesses
+    description: Business-owner profiles and analytics
+  - name: categories
+    description: Business category taxonomy
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      description: Returns server health status
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+  /marketplace:
+    get:
+      operationId: searchMarketplace
+      tags: [marketplace]
+      summary: Search published Kiosks
+      parameters:
+        - name: search
+          in: query
+          required: false
+          schema:
+            type: string
+        - name: location
+          in: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Published Kiosks matching the search
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+  /marketplace/{slug}:
+    get:
+      operationId: getMarketplaceBusiness
+      tags: [marketplace]
+      summary: Get a published Kiosk profile
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Published Kiosk profile
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "404":
+          description: Published Kiosk not found
+  /marketplace/{slug}/events:
+    post:
+      operationId: createMarketplaceEvent
+      tags: [marketplace]
+      summary: Record an anonymous marketplace interaction
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessEventInput"
+      responses:
+        "204":
+          description: Interaction recorded
+        "404":
+          description: Published Kiosk not found
+  /businesses:
+    get:
+      operationId: listMyBusinesses
+      tags: [businesses]
+      summary: List the signed-in owner's Kiosks
+      responses:
+        "200":
+          description: Businesses owned by the signed-in user
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Business"
+        "401":
+          description: Authentication required
+    post:
+      operationId: createBusiness
+      tags: [businesses]
+      summary: Create a draft Kiosk
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessInput"
+      responses:
+        "201":
+          description: Draft Kiosk created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "400":
+          description: Invalid business details
+        "401":
+          description: Authentication required
+  /businesses/{id}:
+    patch:
+      operationId: updateBusiness
+      tags: [businesses]
+      summary: Update an owned Kiosk
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BusinessUpdate"
+      responses:
+        "200":
+          description: Updated Kiosk
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          description: Authentication required
+        "404":
+          description: Owned Kiosk not found
+  /businesses/{id}/publish:
+    patch:
+      operationId: setBusinessPublished
+      tags: [businesses]
+      summary: Publish or unpublish an owned Kiosk
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublishBusinessInput"
+      responses:
+        "200":
+          description: Updated publication state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Business"
+        "401":
+          description: Authentication required
+        "404":
+          description: Owned Kiosk not found
+  /businesses/{id}/analytics:
+    get:
+      operationId: getBusinessAnalytics
+      tags: [businesses]
+      summary: Get 30-day activity for an owned Kiosk
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Kiosk activity summary and daily totals
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BusinessAnalytics"
+        "401":
+          description: Authentication required
+        "404":
+          description: Owned Kiosk not found
+  /categories:
+    get:
+      operationId: listCategories
+      tags: [categories]
+      summary: List all categories
+      description: Returns all business categories ordered by name
+      responses:
+        "200":
+          description: List of categories
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+components:
+  schemas:
+    Category:
+      type: object
+      required:
+        - id
+        - name
+        - slug
+        - description
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        slug:
+          type: string
+        description:
+          type: ["string", "null"]
+    HealthStatus:
+      type: object
+      properties:
+        status:
+          type: string
+      required:
+        - status
+    Business:
+      type: object
+      required:
+        - id
+        - slug
+        - businessName
+        - services
+        - audience
+        - location
+        - hours
+        - contact
+        - price
+        - booking
+        - status
+        - createdAt
+        - updatedAt
+        - publishedAt
+      properties:
+        id:
+          type: string
+          format: uuid
+        slug:
+          type: string
+        businessName:
+          type: string
+        services:
+          type: string
+        audience:
+          type: string
+        location:
+          type: string
+        hours:
+          type: string
+        contact:
+          type: string
+        price:
+          type: ["string", "null"]
+        booking:
+          type: ["string", "null"]
+          enum: ["yes", "no", null]
+        status:
+          type: string
+          enum: [draft, published]
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        publishedAt:
+          type: ["string", "null"]
+          format: date-time
+    BusinessInput:
+      type: object
+      required:
+        - businessName
+        - services
+        - audience
+        - location
+        - hours
+        - contact
+      properties:
+        businessName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        services:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        audience:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        location:
+          type: string
+          minLength: 1
+          maxLength: 500
+        hours:
+          type: string
+          minLength: 1
+          maxLength: 500
+        contact:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        price:
+          type: ["string", "null"]
+          maxLength: 250
+        booking:
+          type: ["string", "null"]
+          enum: ["yes", "no", null]
+    BusinessUpdate:
+      type: object
+      properties:
+        businessName:
+          type: string
+          minLength: 1
+          maxLength: 120
+        services:
+          type: string
+          minLength: 1
+          maxLength: 4000
+        audience:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        location:
+          type: string
+          minLength: 1
+          maxLength: 500
+        hours:
+          type: string
+          minLength: 1
+          maxLength: 500
+        contact:
+          type: string
+          minLength: 1
+          maxLength: 1000
+        price:
+          type: ["string", "null"]
+          maxLength: 250
+        booking:
+          type: ["string", "null"]
+          enum: ["yes", "no", null]
+    PublishBusinessInput:
+      type: object
+      required: [published]
+      properties:
+        published:
+          type: boolean
+    BusinessEventInput:
+      type: object
+      required: [eventType]
+      properties:
+        eventType:
+          type: string
+          enum: [profile_view, contact_click, copy_link]
+    BusinessAnalytics:
+      type: object
+      required:
+        - totalViews
+        - viewsLast30Days
+        - contactClicksLast30Days
+        - linkCopiesLast30Days
+        - daily
+      properties:
+        totalViews:
+          type: integer
+        viewsLast30Days:
+          type: integer
+        contactClicksLast30Days:
+          type: integer
+        linkCopiesLast30Days:
+          type: integer
+        daily:
+          type: array
+          items:
+            $ref: "#/components/schemas/BusinessAnalyticsDay"
+    BusinessAnalyticsDay:
+      type: object
+      required: [date, profileViews, contactClicks, linkCopies]
+      properties:
+        date:
+          type: string
+          format: date
+        profileViews:
+          type: integer
+        contactClicks:
+          type: integer
+        linkCopies:
+          type: integer
