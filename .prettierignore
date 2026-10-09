@@ -1,0 +1,8 @@
+node_modules
+dist
+out
+.next
+pnpm-lock.yaml
+artifacts/kiosk-frontend/out
+lib/api-client-react/src/generated
+lib/api-zod/src/generated
