@@ -67,6 +67,12 @@ export const ServiceInputSchema = z.object({
 
 export const CreateBusinessBodyV2 = z.object({
   businessName: z.string().min(1).max(120),
+  services: z.string().min(1).max(4000).optional(),
+  audience: z.string().min(1).max(1000).optional(),
+  hours: z.string().min(1).max(500).optional(),
+  contact: z.string().min(1).max(1000).optional(),
+  price: z.string().max(250).nullable().optional(),
+  booking: z.enum(['yes', 'no']).nullable().optional(),
   categoryId: z.string().uuid().optional(),
   description: z.string().max(2000).optional(),
   city: z.string().optional(),
@@ -85,7 +91,7 @@ export const CreateBusinessBodyV2 = z.object({
   timezone: z.string().default('Africa/Lagos'),
   capabilities: z.array(CapabilityConfigSchema).optional(),
   products: z.array(ProductInputSchema).optional(),
-  services: z.array(ServiceInputSchema).optional(),
+  services_list: z.array(ServiceInputSchema).optional(),
 });
 
 export const UpdateBusinessBodyV2 = CreateBusinessBodyV2.partial();
