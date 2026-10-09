@@ -1,0 +1,69 @@
+{
+  "description": "ECS Service Auto Scaling configuration for Kiosk. All services use CPU-based target tracking.",
+  "services": [
+    {
+      "service": "kiosk-master-mcp",
+      "cluster": "kiosk",
+      "minCapacity": 2,
+      "maxCapacity": 10,
+      "scalingPolicy": {
+        "policyName": "kiosk-master-mcp-cpu",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingConfig": {
+          "predefinedMetricType": "ECSServiceAverageCPUUtilization",
+          "targetValue": 60.0
+        },
+        "scaleInCooldown": 300,
+        "scaleOutCooldown": 60
+      }
+    },
+    {
+      "service": "kiosk-business-mcp",
+      "cluster": "kiosk",
+      "minCapacity": 2,
+      "maxCapacity": 20,
+      "scalingPolicy": {
+        "policyName": "kiosk-business-mcp-cpu",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingConfig": {
+          "predefinedMetricType": "ECSServiceAverageCPUUtilization",
+          "targetValue": 60.0
+        },
+        "scaleInCooldown": 300,
+        "scaleOutCooldown": 60
+      }
+    },
+    {
+      "service": "kiosk-api-server",
+      "cluster": "kiosk",
+      "minCapacity": 1,
+      "maxCapacity": 10,
+      "scalingPolicy": {
+        "policyName": "kiosk-api-server-cpu",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingConfig": {
+          "predefinedMetricType": "ECSServiceAverageCPUUtilization",
+          "targetValue": 60.0
+        },
+        "scaleInCooldown": 300,
+        "scaleOutCooldown": 60
+      }
+    },
+    {
+      "service": "kiosk-frontend",
+      "cluster": "kiosk",
+      "minCapacity": 1,
+      "maxCapacity": 5,
+      "scalingPolicy": {
+        "policyName": "kiosk-frontend-cpu",
+        "policyType": "TargetTrackingScaling",
+        "targetTrackingConfig": {
+          "predefinedMetricType": "ECSServiceAverageCPUUtilization",
+          "targetValue": 70.0
+        },
+        "scaleInCooldown": 300,
+        "scaleOutCooldown": 60
+      }
+    }
+  ]
+}

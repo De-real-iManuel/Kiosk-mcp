@@ -1,0 +1,43 @@
+{
+  "family": "kiosk-api-server",
+  "networkMode": "awsvpc",
+  "requiresCompatibilities": ["FARGATE"],
+  "cpu": "512",
+  "memory": "1024",
+  "executionRoleArn": "arn:aws:iam::ACCOUNT_ID:role/ecsTaskExecutionRole",
+  "taskRoleArn": "arn:aws:iam::ACCOUNT_ID:role/kioskApiServerTaskRole",
+  "containerDefinitions": [
+    {
+      "name": "kiosk-api-server",
+      "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/kiosk-api-server:latest",
+      "portMappings": [{ "containerPort": 4000, "protocol": "tcp" }],
+      "environment": [
+        { "name": "PORT", "value": "4000" },
+        { "name": "NODE_ENV", "value": "production" }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/database-url"
+        },
+        {
+          "name": "CLERK_SECRET_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-secret-key"
+        },
+        {
+          "name": "CLERK_PUBLISHABLE_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-publishable-key"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "/ecs/kiosk-api-server",
+          "awslogs-region": "us-east-1",
+          "awslogs-stream-prefix": "ecs"
+        }
+      },
+      "essential": true
+    }
+  ]
+}

@@ -1,0 +1,48 @@
+{
+  "description": "ALB HTTPS listener rules for Kiosk. Apply to the ALB HTTPS listener (port 443) after creating target groups.",
+  "listenerRules": [
+    {
+      "priority": 10,
+      "comment": "Route /mcp/business/* to Business MCP runtime (must be before master-mcp rule)",
+      "conditions": [
+        { "field": "host-header", "values": ["mcp.kiosk.example"] },
+        { "field": "path-pattern", "values": ["/mcp/business/*"] }
+      ],
+      "actions": [{ "type": "forward", "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/kiosk-business-mcp/REPLACE" }]
+    },
+    {
+      "priority": 20,
+      "comment": "Route /mcp to Master MCP discovery server",
+      "conditions": [
+        { "field": "host-header", "values": ["mcp.kiosk.example"] },
+        { "field": "path-pattern", "values": ["/mcp", "/mcp/sse"] }
+      ],
+      "actions": [{ "type": "forward", "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/kiosk-master-mcp/REPLACE" }]
+    },
+    {
+      "priority": 30,
+      "comment": "Route api.kiosk.example to Express API server",
+      "conditions": [
+        { "field": "host-header", "values": ["api.kiosk.example"] }
+      ],
+      "actions": [{ "type": "forward", "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/kiosk-api-server/REPLACE" }]
+    },
+    {
+      "priority": 40,
+      "comment": "Route kiosk.example to Next.js frontend",
+      "conditions": [
+        { "field": "host-header", "values": ["kiosk.example", "www.kiosk.example"] }
+      ],
+      "actions": [{ "type": "forward", "targetGroupArn": "arn:aws:elasticloadbalancing:us-east-1:ACCOUNT_ID:targetgroup/kiosk-frontend/REPLACE" }]
+    }
+  ],
+  "targetGroupSettings": {
+    "deregistrationDelay": 30,
+    "healthCheck": {
+      "path": "/health",
+      "interval": 30,
+      "healthyThreshold": 2,
+      "unhealthyThreshold": 3
+    }
+  }
+}
