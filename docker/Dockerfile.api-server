@@ -1,0 +1,50 @@
+# ── Stage 1: workspace base ──────────────────────────────────────────────────
+# Install all workspace dependencies including devDeps needed for building.
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+# Copy manifests first for layer caching
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json                    ./lib/db/
+COPY lib/api-zod/package.json               ./lib/api-zod/
+COPY lib/api-spec/package.json              ./lib/api-spec/
+COPY lib/api-client-react/package.json      ./lib/api-client-react/
+COPY artifacts/api-server/package.json      ./artifacts/api-server/
+
+# Install all deps (including devDeps for building)
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# ── Stage 2: build ──────────────────────────────────────────────────────────
+FROM base AS builder
+COPY lib/       ./lib/
+COPY artifacts/api-server/ ./artifacts/api-server/
+
+# Build lib declaration files first (composite project references)
+RUN pnpm run typecheck:libs
+# Build the api-server bundle via esbuild
+RUN pnpm --filter @workspace/api-server build
+
+# ── Stage 3: production image ───────────────────────────────────────────────
+FROM node:20-alpine AS runner
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json               ./lib/db/
+COPY lib/api-zod/package.json          ./lib/api-zod/
+COPY lib/api-spec/package.json         ./lib/api-spec/
+COPY lib/api-client-react/package.json ./lib/api-client-react/
+COPY artifacts/api-server/package.json ./artifacts/api-server/
+
+# Install production dependencies only
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod
+
+# Copy built bundle
+COPY --from=builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
+
+EXPOSE 4000
+ENV PORT=4000
+
+CMD ["node", "--enable-source-maps", "artifacts/api-server/dist/index.mjs"]

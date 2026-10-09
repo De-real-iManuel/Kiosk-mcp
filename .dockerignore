@@ -1,0 +1,16 @@
+.git
+.kiro
+node_modules
+**/node_modules
+**/.next
+**/dist
+**/.tsbuildinfo
+**/tsconfig.tsbuildinfo
+docs
+scripts/src
+artifacts/mockup-sandbox
+docker
+*.log
+.env
+.env.*
+!.env.example

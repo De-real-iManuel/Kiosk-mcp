@@ -1,0 +1,43 @@
+# ── Stage 1: workspace base with devDeps ────────────────────────────────────
+FROM node:20-alpine AS base
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json                ./lib/db/
+COPY lib/api-zod/package.json           ./lib/api-zod/
+COPY lib/api-spec/package.json          ./lib/api-spec/
+COPY lib/api-client-react/package.json  ./lib/api-client-react/
+COPY artifacts/business-mcp/package.json ./artifacts/business-mcp/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts
+
+# ── Stage 2: build ───────────────────────────────────────────────────────────
+FROM base AS builder
+COPY lib/               ./lib/
+COPY artifacts/business-mcp/ ./artifacts/business-mcp/
+
+RUN pnpm run typecheck:libs
+RUN pnpm --filter @workspace/business-mcp build
+
+# ── Stage 3: production ──────────────────────────────────────────────────────
+FROM node:20-alpine AS runner
+RUN corepack enable && corepack prepare pnpm@latest --activate
+WORKDIR /app
+ENV NODE_ENV=production
+
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
+COPY lib/db/package.json                ./lib/db/
+COPY lib/api-zod/package.json           ./lib/api-zod/
+COPY lib/api-spec/package.json          ./lib/api-spec/
+COPY lib/api-client-react/package.json  ./lib/api-client-react/
+COPY artifacts/business-mcp/package.json ./artifacts/business-mcp/
+
+RUN pnpm install --frozen-lockfile --ignore-scripts --prod
+
+COPY --from=builder /app/artifacts/business-mcp/dist ./artifacts/business-mcp/dist
+
+EXPOSE 5001
+ENV PORT=5001
+
+CMD ["node", "artifacts/business-mcp/dist/index.js"]

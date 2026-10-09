@@ -1,0 +1,370 @@
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "20"
+  PNPM_VERSION: "latest"
+
+jobs:
+  # ── Shared setup action (reusable steps) ────────────────────────────────────
+  # Each job re-installs from cache for simplicity; upgrade to a composite
+  # action or reusable workflow if install time becomes a bottleneck.
+
+  # ── 1. Install ───────────────────────────────────────────────────────────────
+  install:
+    name: Install Dependencies
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+  # ── 2. Typecheck ─────────────────────────────────────────────────────────────
+  typecheck:
+    name: Typecheck
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+      - name: Typecheck lib packages (composite build)
+        run: pnpm run typecheck:libs
+
+      - name: Typecheck artifacts + scripts
+        run: pnpm -r --filter "./artifacts/**" --filter "./scripts" --if-present run typecheck
+
+  # ── 3. Unit & Property-Based Tests ──────────────────────────────────────────
+  test:
+    name: Tests
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+      - name: lib/db — generateSlug + isBusinessOpen property tests
+        run: pnpm --filter @workspace/db test
+
+      - name: api-server — owner isolation property tests
+        run: pnpm --filter @workspace/api-server test
+
+      - name: master-mcp — discovery isolation property tests
+        run: pnpm --filter @workspace/master-mcp test
+
+      - name: business-mcp — capability exposure + MCP privacy property tests
+        run: pnpm --filter @workspace/business-mcp test
+
+  # ── 4. Build ─────────────────────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: [typecheck, test]
+    env:
+      NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+      - name: Build lib declaration files
+        run: pnpm run typecheck:libs
+
+      - name: Build api-server
+        run: pnpm --filter @workspace/api-server build
+
+      - name: Build master-mcp
+        run: pnpm --filter @workspace/master-mcp build
+
+      - name: Build business-mcp
+        run: pnpm --filter @workspace/business-mcp build
+
+      - name: Build kiosk-frontend (Next.js)
+        run: pnpm --filter @workspace/kiosk-frontend build
+
+      - name: Upload api-server dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-server-dist
+          path: artifacts/api-server/dist
+          retention-days: 7
+
+      - name: Upload master-mcp dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: master-mcp-dist
+          path: artifacts/master-mcp/dist
+          retention-days: 7
+
+      - name: Upload business-mcp dist
+        uses: actions/upload-artifact@v4
+        with:
+          name: business-mcp-dist
+          path: artifacts/business-mcp/dist
+          retention-days: 7
+
+  # ── 5. MCP Server Health Check ───────────────────────────────────────────────
+  mcp-health:
+    name: MCP Server Health
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+      - name: Download master-mcp dist
+        uses: actions/download-artifact@v4
+        with:
+          name: master-mcp-dist
+          path: artifacts/master-mcp/dist
+
+      - name: Download business-mcp dist
+        uses: actions/download-artifact@v4
+        with:
+          name: business-mcp-dist
+          path: artifacts/business-mcp/dist
+
+      - name: Start master-mcp and verify /health
+        run: |
+          # /health does not query the DB; we pass a dummy URL so the module
+          # loads without throwing at import time.
+          DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" PORT=5000 \
+            node artifacts/master-mcp/dist/index.js &
+          MASTER_PID=$!
+          # Poll up to 15 s for the server to become ready
+          for i in $(seq 1 15); do
+            sleep 1
+            curl -sf http://localhost:5000/health && break
+            if [ $i -eq 15 ]; then
+              echo "master-mcp did not start in time"
+              kill $MASTER_PID 2>/dev/null
+              exit 1
+            fi
+          done
+          echo "master-mcp /health OK"
+          kill $MASTER_PID 2>/dev/null
+
+      - name: Start business-mcp and verify /health
+        run: |
+          DATABASE_URL="postgresql://ci:ci@localhost:5432/ci" PORT=5001 \
+            node artifacts/business-mcp/dist/index.js &
+          BIZ_PID=$!
+          for i in $(seq 1 15); do
+            sleep 1
+            curl -sf http://localhost:5001/health && break
+            if [ $i -eq 15 ]; then
+              echo "business-mcp did not start in time"
+              kill $BIZ_PID 2>/dev/null
+              exit 1
+            fi
+          done
+          echo "business-mcp /health OK"
+          kill $BIZ_PID 2>/dev/null
+
+  # ── 6. Format Check ──────────────────────────────────────────────────────────
+  format:
+    name: Format Check
+    runs-on: ubuntu-latest
+    needs: install
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: ${{ env.PNPM_VERSION }}
+      - name: Get pnpm store path
+        id: pnpm-cache
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+      - uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: ${{ runner.os }}-pnpm-
+      - run: pnpm install --frozen-lockfile
+
+      - name: Check formatting (Prettier)
+        run: |
+          pnpm prettier --check \
+            "lib/**/*.ts" \
+            "artifacts/api-server/src/**/*.ts" \
+            "artifacts/master-mcp/src/**/*.ts" \
+            "artifacts/business-mcp/src/**/*.ts" \
+            "artifacts/kiosk-frontend/src/**/*.{ts,tsx}" \
+            --ignore-path .prettierignore
+
+  # ── 7. Build & Push Docker Images (main branch only) ─────────────────────
+  docker:
+    name: Docker Build & Push
+    runs-on: ubuntu-latest
+    needs: build
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      AWS_REGION: us-east-1
+      ECR_REGISTRY: ${{ secrets.AWS_ACCOUNT_ID }}.dkr.ecr.us-east-1.amazonaws.com
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure AWS credentials (OIDC)
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set image tag
+        id: tag
+        run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build and push api-server
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api-server
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kiosk-api-server:latest
+            ${{ env.ECR_REGISTRY }}/kiosk-api-server:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push master-mcp
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.master-mcp
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kiosk-master-mcp:latest
+            ${{ env.ECR_REGISTRY }}/kiosk-master-mcp:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push business-mcp
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.business-mcp
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kiosk-business-mcp:latest
+            ${{ env.ECR_REGISTRY }}/kiosk-business-mcp:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push kiosk-frontend
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.kiosk-frontend
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+          push: true
+          tags: |
+            ${{ env.ECR_REGISTRY }}/kiosk-frontend:latest
+            ${{ env.ECR_REGISTRY }}/kiosk-frontend:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Trigger ECS rolling deploy
+        run: |
+          for SERVICE in kiosk-api-server kiosk-master-mcp kiosk-business-mcp kiosk-frontend; do
+            aws ecs update-service \
+              --cluster kiosk \
+              --service $SERVICE \
+              --force-new-deployment \
+              --region ${{ env.AWS_REGION }} > /dev/null
+            echo "$SERVICE deploy triggered"
+          done
