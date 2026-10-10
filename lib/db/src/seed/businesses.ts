@@ -31,6 +31,10 @@ async function getCategoryId(slug: string): Promise<string> {
 // ─── Seed ────────────────────────────────────────────────────────────────────
 
 export async function seedBusinesses(): Promise<void> {
+  if (process.env.NODE_ENV === 'production') {
+    console.warn('⚠  seedBusinesses: skipped in production (NODE_ENV=production)');
+    return;
+  }
   console.log("Seeding demo businesses...");
 
   // ── 1. Mama's Kitchen ──────────────────────────────────────────────────────
