@@ -25,6 +25,7 @@ import {
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/require-auth";
 import { assertOwnership } from "../lib/ownership";
+import { getMcpEndpoint } from "../lib/mcp-url.js";
 
 const router: IRouter = Router();
 router.use(requireAuth);
@@ -70,7 +71,7 @@ router.get("/businesses", async (_req, res): Promise<void> => {
   const results = businesses.map((b) => ({
     ...b,
     capabilities: capsByBusiness.get(b.id) ?? [],
-    mcpEndpoint: `https://mcp.kiosk.example/business/${b.slug}`,
+    mcpEndpoint: getMcpEndpoint(b.slug),
   }));
 
   res.json(ListMyBusinessesResponseV2.parse(results));
@@ -80,6 +81,28 @@ router.post("/businesses", async (req, res): Promise<void> => {
   const parsed = CreateBusinessBodyV2.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
+    return;
+  }
+
+  // Idempotency: if a draft with the same owner + name already exists, return it
+  const [existingDraft] = await db
+    .select({ id: businessesTable.id, slug: businessesTable.slug })
+    .from(businessesTable)
+    .where(
+      and(
+        eq(businessesTable.ownerClerkId, getOwnerId(res)),
+        sql`lower(${businessesTable.businessName}) = lower(${parsed.data.businessName})`,
+        eq(businessesTable.status, 'draft'),
+      ),
+    )
+    .limit(1);
+
+  if (existingDraft) {
+    res.status(409).json({
+      id: existingDraft.id,
+      slug: existingDraft.slug,
+      mcpEndpoint: getMcpEndpoint(existingDraft.slug),
+    });
     return;
   }
 
@@ -96,17 +119,18 @@ router.post("/businesses", async (req, res): Promise<void> => {
     location: parsed.data.location ?? '',
     city: parsed.data.city ?? null,
     country: parsed.data.country ?? null,
-    phone: parsed.data.phone ?? parsed.data.contact ?? null,
+    phone: parsed.data.phone ?? null,
     whatsapp: parsed.data.whatsapp ?? null,
     website: parsed.data.website ?? null,
     openingHours: parsed.data.openingHours ?? null,
     timezone: parsed.data.timezone ?? 'Africa/Lagos',
     isActive: true,
     status: 'draft',
-    services: parsed.data.services ?? '',
-    audience: parsed.data.audience ?? '',
-    hours: parsed.data.hours ?? '',
-    contact: parsed.data.contact ?? '',
+    // Legacy NOT NULL text columns — use empty strings until schema migration removes them
+    services: '',
+    audience: '',
+    hours: '',
+    contact: '',
   });
 
   const capabilities = parsed.data.capabilities ?? [];
@@ -136,7 +160,7 @@ router.post("/businesses", async (req, res): Promise<void> => {
     );
   }
 
-  const servicesList = parsed.data.services_list ?? [];
+  const servicesList = parsed.data.services ?? [];
   if (servicesList.length > 0) {
     await db.insert(businessServicesTable).values(
       servicesList.map((s) => ({
@@ -149,7 +173,7 @@ router.post("/businesses", async (req, res): Promise<void> => {
     );
   }
 
-  const mcpEndpoint = `https://mcp.kiosk.example/business/${slug}`;
+  const mcpEndpoint = getMcpEndpoint(slug);
   res.status(201).json({ id, slug, mcpEndpoint });
 });
 
@@ -181,7 +205,7 @@ router.get("/businesses/:id", async (req, res): Promise<void> => {
       .orderBy(asc(businessServicesTable.createdAt)),
   ]);
 
-  const mcpEndpoint = `https://mcp.kiosk.example/business/${business.slug}`;
+  const mcpEndpoint = getMcpEndpoint(business.slug);
 
   res.json({
     ...business,
@@ -223,7 +247,7 @@ router.patch("/businesses/:id", async (req, res): Promise<void> => {
     .where(eq(businessesTable.id, params.id))
     .returning();
 
-  const mcpEndpoint = `https://mcp.kiosk.example/business/${business.slug}`;
+  const mcpEndpoint = getMcpEndpoint(business.slug);
 
   res.json({ ...business, mcpEndpoint });
 });
@@ -276,8 +300,7 @@ router.patch("/businesses/:id/publish", async (req, res): Promise<void> => {
       .where(eq(businessesTable.id, params.data.id))
       .returning();
 
-    const endpointUrl =
-      externalMcpUrl ?? `https://mcp.kiosk.example/business/${current.slug}`;
+    const endpointUrl = externalMcpUrl ?? getMcpEndpoint(current.slug);
 
     await db
       .insert(businessEndpointsTable)
@@ -298,7 +321,7 @@ router.patch("/businesses/:id/publish", async (req, res): Promise<void> => {
       .update(businessesTable)
       .set({
         status: "draft",
-        publishedAt: null,
+        // publishedAt intentionally preserved â€” records original first-publish timestamp
         updatedAt: new Date(),
       })
       .where(eq(businessesTable.id, params.data.id))

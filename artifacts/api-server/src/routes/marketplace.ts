@@ -1,5 +1,6 @@
 import { Router, type IRouter } from "express";
-import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
+import { and, asc, eq, ilike, inArray, ne, or } from "drizzle-orm";
+import { getMcpEndpoint } from '../lib/mcp-url.js';
 import {
   CreateMarketplaceEventBody,
   CreateMarketplaceEventParams,
@@ -19,8 +20,6 @@ import {
   marketplaceEventsTable,
 } from "@workspace/db";
 
-const MCP_BASE = "https://mcp.kiosk.example/business/";
-
 const router: IRouter = Router();
 
 router.get("/marketplace", async (req, res): Promise<void> => {
@@ -35,10 +34,11 @@ router.get("/marketplace", async (req, res): Promise<void> => {
   const city = parsed.data.city?.trim().slice(0, 120);
   const category = parsed.data.category?.trim();
 
-  // Base filters: published AND active
+  // Base filters: published AND active AND not seed_demo
   const filters = [
     eq(businessesTable.status, "published"),
     eq(businessesTable.isActive, true),
+    ne(businessesTable.ownerClerkId, "seed_demo"),
   ];
 
   // Full-text search: businessName + description + legacy services/audience columns
@@ -130,7 +130,7 @@ router.get("/marketplace", async (req, res): Promise<void> => {
     categoryId: b.categoryId ?? null,
     isActive: b.isActive,
     status: b.status as "draft" | "published",
-    mcpEndpoint: MCP_BASE + b.slug,
+    mcpEndpoint: getMcpEndpoint(b.slug),
     capabilities: (capsByBusiness.get(b.id) ?? []) as Array<
       "menu" | "ordering" | "delivery" | "booking" | "contact" | "products" | "services" | "information"
     >,
@@ -182,7 +182,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
       .where(eq(businessServicesTable.businessId, business.id)),
   ]);
 
-  const mcpEndpoint = `https://mcp.kiosk.example/business/${business.slug}`;
+  const mcpEndpoint = getMcpEndpoint(business.slug);
 
   const profile = {
     id: business.id,
