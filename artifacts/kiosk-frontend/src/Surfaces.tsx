@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import Link from 'next/link';
-import { useAuth, SignIn, SignUp } from '@clerk/react';
+import { useAuth, useClerk, SignIn, SignUp } from '@clerk/react';
 import { useQueryClient } from '@tanstack/react-query';
 import { ArrowLeft, ArrowRight, ArrowUpRight, Check, Copy, MapPin, Search, Store } from 'lucide-react';
 import {
@@ -17,6 +17,11 @@ import {
 } from '@workspace/api-client-react';
 import { useCategories } from '@workspace/api-client-react';
 import type { Business, BusinessInput } from '@workspace/api-client-react';
+
+function getMcpUrl(slug: string): string {
+  const base = (process.env.NEXT_PUBLIC_MCP_BASE_URL ?? 'http://localhost:5001').replace(/\/$/, '');
+  return `${base}/mcp/business/${slug}`;
+}
 
 function Wordmark({ dark = false }: { dark?: boolean }) {
   return <Link href="/" aria-label="Kiosk home" className={`inline-flex items-center gap-3 ${dark ? 'text-[#12110F]' : 'text-[#EDE7DC]'}`}><WindowMark className="w-[15px]" /><span className="kiosk-wordmark text-[23px] leading-none">Kiosk</span></Link>;
@@ -34,13 +39,17 @@ export function WindowMark({ className = '', seed = 'kiosk' }: { className?: str
 
 function PublicHeader() {
   const { isLoaded, isSignedIn } = useAuth();
+  const { signOut } = useClerk();
   return <header className="border-b border-black/10 bg-[#EDE7DC] text-[#12110F]">
     <div className="mx-auto flex min-h-[70px] max-w-[1280px] items-center justify-between gap-4 px-5 md:px-10">
       <Wordmark dark />
       <nav className="flex items-center gap-3 sm:gap-7" aria-label="Main navigation">
         <Link href="/marketplace" className="eyebrow text-[#625D53] hover:text-[#12110F]" data-testid="nav-marketplace">Marketplace</Link>
         {isLoaded && (isSignedIn
-          ? <Link href="/dashboard" className="eyebrow text-[#625D53] hover:text-[#12110F]" data-testid="nav-dashboard">Your Kiosks</Link>
+          ? <>
+              <Link href="/dashboard" className="eyebrow text-[#625D53] hover:text-[#12110F]" data-testid="nav-dashboard">Your Kiosks</Link>
+              <button onClick={() => signOut({ redirectUrl: '/' })} className="eyebrow text-[#777064] hover:text-[#12110F]" data-testid="nav-sign-out">Sign out</button>
+            </>
           : <Link href="/sign-in" className="eyebrow text-[#625D53] hover:text-[#12110F]" data-testid="nav-sign-in">Sign in</Link>)}
         <Link href="/create" className="surface-button !min-h-[40px] !px-3 !text-[11px] sm:!px-4" data-testid="nav-create">Create a Kiosk <ArrowUpRight size={14} /></Link>
       </nav>
@@ -96,7 +105,7 @@ function CopyMcpButton({ slug }: { slug: string }) {
   const [copied, setCopied] = useState(false);
   async function copy() {
     try {
-      await navigator.clipboard.writeText(`https://mcp.kiosk.example/business/${slug}`);
+      await navigator.clipboard.writeText(getMcpUrl(slug));
       setCopied(true);
       window.setTimeout(() => setCopied(false), 2000);
     } catch { /* ignore */ }
@@ -138,7 +147,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
     } catch { setCopied(false); }
   }
   if (query.isLoading) return <SiteFrame><div className="mx-auto max-w-[1000px] animate-pulse px-5 py-20" data-testid="business-detail-loading"><div className="h-8 w-32 bg-black/10" /><div className="mt-12 h-20 w-2/3 bg-black/10" /><div className="mt-6 h-40 bg-black/5" /></div></SiteFrame>;
-  if (query.isError || !query.data) return <SiteFrame><div className="mx-auto max-w-[900px] px-5 py-20" data-testid="business-detail-error"><Link href="/marketplace" className="eyebrow text-[#777064]"><ArrowLeft className="mr-2 inline" size={13} /> Marketplace</Link><h1 className="mt-10 text-4xl font-semibold tracking-[-.07em]">This window isn’t open.</h1><p className="mt-3 text-[#625D53]">The listing may have moved or is no longer published.</p></div></SiteFrame>;
+  if (query.isError || !query.data) return <SiteFrame><div className="mx-auto max-w-[900px] px-5 py-20" data-testid="business-detail-error"><Link href="/marketplace" className="eyebrow text-[#777064]"><ArrowLeft className="mr-2 inline" size={13} /> Marketplace</Link><h1 className="mt-10 text-4xl font-semibold tracking-[-.07em]">This window isnâ€™t open.</h1><p className="mt-3 text-[#625D53]">The listing may have moved or is no longer published.</p></div></SiteFrame>;
   const business = query.data;
   return <SiteFrame><article className="mx-auto max-w-[1120px] px-5 py-9 md:px-10 md:py-14" data-testid="business-detail">
     <Link href="/marketplace" className="inline-flex items-center gap-2 text-xs text-[#625D53] hover:text-[#12110F]"><ArrowLeft size={14} /> Marketplace</Link>
@@ -161,19 +170,31 @@ export function CreateBusinessSurface() {
   const [createdName, setCreatedName] = useState('');
   function submit(event: FormEvent) {
     event.preventDefault();
-    create.mutate({ data: form }, { onSuccess: result => {
-      setCreatedName(result.businessName);
-      client.invalidateQueries({ queryKey: ['/api/businesses'] });
-    }});
+    if (create.isPending) return;
+    create.mutate({ data: form }, {
+      onSuccess: result => {
+        setCreatedName(result.businessName ?? form.businessName);
+        client.invalidateQueries({ queryKey: ['/api/businesses'] });
+      },
+      onError: (err: unknown) => {
+        const apiErr = err as { status?: number };
+        if (apiErr?.status === 409) {
+          // Draft already exists with this name â€” treat as success
+          setCreatedName(form.businessName);
+          client.invalidateQueries({ queryKey: ['/api/businesses'] });
+        }
+        // Other errors fall through to create.isError rendering
+      },
+    });
   }
   if (!isLoaded) return <SiteFrame><div className="mx-auto max-w-4xl animate-pulse px-5 py-24"><div className="h-12 w-1/2 bg-black/10" /></div></SiteFrame>;
   if (!isSignedIn) return <SiteFrame><div className="mx-auto max-w-[760px] px-5 py-20"><p className="eyebrow text-[#777064]">Owner access</p><h1 className="mt-5 text-5xl font-semibold tracking-[-.08em]">Sign in to open<br />your window.</h1><p className="serif mt-5 text-xl text-[#625D53]">Your Kiosk belongs to you. Sign in or create an account to save it.</p><div className="mt-8 flex gap-3"><Link href="/sign-in?redirect_url=%2Fcreate" className="surface-button">Sign in <ArrowRight size={15} /></Link><Link href="/sign-up?redirect_url=%2Fcreate" className="surface-button surface-button-light">Create account</Link></div></div></SiteFrame>;
   return <SiteFrame><div className="mx-auto max-w-[1200px] px-5 pb-20 pt-9 md:px-10 md:pt-12"><Link href="/" className="inline-flex items-center gap-2 text-xs text-[#625D53]"><ArrowLeft size={14} /> Back to Kiosk</Link>
-    {createdName ? <section className="mx-auto mt-16 max-w-[760px] border border-black/10 bg-[#F2EDE4] p-7 md:p-12" data-testid="create-success" role="status"><span className="grid h-12 w-12 place-items-center border border-black/20"><Check size={21} /></span><p className="eyebrow mt-7 text-[#777064]">Draft saved / Not published</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.07em]">{createdName} is in your Kiosks.</h1><p className="serif mt-4 text-xl leading-7 text-[#625D53]">Your profile is saved as a draft. Review it and publish when you’re ready.</p><Link href="/dashboard" className="surface-button mt-8">Go to dashboard <ArrowRight size={15} /></Link></section>
+    {createdName ? <section className="mx-auto mt-16 max-w-[760px] border border-black/10 bg-[#F2EDE4] p-7 md:p-12" data-testid="create-success" role="status"><span className="grid h-12 w-12 place-items-center border border-black/20"><Check size={21} /></span><p className="eyebrow mt-7 text-[#777064]">Draft saved / Not published</p><h1 className="mt-4 text-4xl font-semibold tracking-[-.07em]">{createdName} is in your Kiosks.</h1><p className="serif mt-4 text-xl leading-7 text-[#625D53]">Your profile is saved as a draft. Review it and publish when youâ€™re ready.</p><Link href="/dashboard" className="surface-button mt-8">Go to dashboard <ArrowRight size={15} /></Link></section>
     : <div className="mt-10 grid gap-12 md:grid-cols-[.7fr_1.3fr]"><aside className="md:sticky md:top-8 md:self-start"><p className="eyebrow text-[#777064]">Your business / 01</p><h1 className="mt-5 text-[clamp(2.8rem,6vw,5rem)] font-semibold leading-[.9] tracking-[-.08em]">Open your<br />window.</h1><p className="serif mt-6 max-w-[340px] text-[22px] leading-[1.28] text-[#625D53]">A few clear details help customers and agents understand what you offer.</p><p className="eyebrow mt-8 border-t border-black/15 pt-5 text-[#777064]">Your Kiosk starts as a draft</p></aside>
       <section className="border border-white/10 bg-[#1C1A16] p-5 text-[#EDE7DC] shadow-[0_18px_70px_rgba(0,0,0,.16)] sm:p-8 md:p-10" data-testid="create-business-form">
         <p className="eyebrow border-b border-white/15 pb-6 text-[#A49D90]">Tell us about your business</p>
-        {create.isError && <p className="mt-5 border-l-2 border-[#D1786B] bg-[#D1786B]/10 p-3 text-sm text-[#E8B2A8]" role="alert" data-testid="create-error">We couldn’t save this Kiosk. Your details are still here; please try again.</p>}
+        {create.isError && <p className="mt-5 border-l-2 border-[#D1786B] bg-[#D1786B]/10 p-3 text-sm text-[#E8B2A8]" role="alert" data-testid="create-error">We couldnâ€™t save this Kiosk. Your details are still here; please try again.</p>}
         <form className="mt-7 space-y-6" onSubmit={submit}>
           {([
             ['businessName','Business name','e.g. Northline Bike Repair',true],
@@ -183,8 +204,8 @@ export function CreateBusinessSurface() {
             ['hours','Opening hours','Include days and times, or say if hours vary.',true],
             ['contact','How can people contact or book you?','Phone, email, WhatsApp, link, etc.',true],
           ] as const).map(([key,label,hint,required]) => <label className="block" key={key}><span className="form-label">{label}{required && <span className="ml-1 text-[#8A8478]">*</span>}</span><span className="form-hint block mb-2">{hint}</span>{key === 'services' || key === 'hours' ? <textarea required rows={key === 'services' ? 4 : 2} className="field-control resize-y" value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} data-testid={`create-${key}`} /> : <input required className="field-control" value={form[key]} onChange={e => setForm({...form,[key]:e.target.value})} data-testid={`create-${key}`} />}</label>)}
-          <div className="grid gap-6 border-t border-white/15 pt-6 sm:grid-cols-2"><label><span className="form-label">Starting price or range</span><span className="form-hint block mb-2">Optional</span><input className="field-control" placeholder="e.g. From £25" value={form.price ?? ''} onChange={e => setForm({...form,price:e.target.value || null})} data-testid="create-price" /></label><fieldset><legend className="form-label">Booking requests</legend><span className="form-hint block mb-2">Optional</span><div className="flex gap-2">{(['yes','no'] as const).map(value => <label key={value} className="option-card flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 text-sm"><input type="radio" name="booking" checked={form.booking === value} onChange={() => setForm({...form,booking:value})} />{value === 'yes' ? 'Yes' : 'No'}</label>)}</div></fieldset></div>
-          <div className="border-t border-white/15 pt-6"><button className="surface-button surface-button-light min-w-[250px] justify-between" disabled={create.isPending} type="submit" data-testid="create-submit">{create.isPending ? 'Saving your Kiosk…' : 'Save draft Kiosk'} <ArrowRight size={16} /></button><p className="mt-4 text-[11px] leading-5 text-[#A49D90]">Your Kiosk is not public until you explicitly publish it from the dashboard.</p></div>
+          <div className="grid gap-6 border-t border-white/15 pt-6 sm:grid-cols-2"><label><span className="form-label">Starting price or range</span><span className="form-hint block mb-2">Optional</span><input className="field-control" placeholder="e.g. From Â£25" value={form.price ?? ''} onChange={e => setForm({...form,price:e.target.value || null})} data-testid="create-price" /></label><fieldset><legend className="form-label">Booking requests</legend><span className="form-hint block mb-2">Optional</span><div className="flex gap-2">{(['yes','no'] as const).map(value => <label key={value} className="option-card flex min-h-12 flex-1 cursor-pointer items-center justify-center gap-2 text-sm"><input type="radio" name="booking" checked={form.booking === value} onChange={() => setForm({...form,booking:value})} />{value === 'yes' ? 'Yes' : 'No'}</label>)}</div></fieldset></div>
+          <div className="border-t border-white/15 pt-6"><button className="surface-button surface-button-light min-w-[250px] justify-between" disabled={create.isPending} type="submit" data-testid="create-submit">{create.isPending ? 'Saving your Kioskâ€¦' : 'Save draft Kiosk'} <ArrowRight size={16} /></button><p className="mt-4 text-[11px] leading-5 text-[#A49D90]">Your Kiosk is not public until you explicitly publish it from the dashboard.</p></div>
         </form>
       </section></div>}
   </div></SiteFrame>;
@@ -212,19 +233,19 @@ function OwnerCard({ business }: { business: Business }) {
   const [form, setForm] = useState<BusinessInput>({businessName:business.businessName,services:business.services,audience:business.audience,location:business.location,hours:business.hours,contact:business.contact,price:business.price,booking:business.booking});
   function refresh() { client.invalidateQueries({queryKey:['/api/businesses']}); client.invalidateQueries({queryKey:['/api/marketplace']}); }
   return <article className="border-t border-black/15 py-7" data-testid={`owner-business-${business.id}`}>
-    <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="flex items-start gap-4"><BusinessGlyph business={business} /><div><p className="eyebrow text-[#777064]">{business.location}</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.06em]">{business.businessName}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[#625D53]">{business.description ?? business.services ?? ''}</p><span className={`eyebrow mt-3 inline-block ${business.status === 'published' ? 'text-[#47745F]' : 'text-[#777064]'}`} data-testid={`business-status-${business.id}`}>{business.status === 'published' ? 'Published' : 'Draft'}</span></div></div>
+    <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start"><div className="flex items-start gap-4"><BusinessGlyph business={business} /><div><p className="eyebrow text-[#777064]">{business.location}</p><h2 className="mt-2 text-2xl font-semibold tracking-[-.06em]">{business.businessName}</h2><p className="mt-2 max-w-xl text-sm leading-6 text-[#625D53]">{business.services ?? ""}</p><span className={`eyebrow mt-3 inline-block ${business.status === 'published' ? 'text-[#47745F]' : 'text-[#777064]'}`} data-testid={`business-status-${business.id}`}>{business.status === 'published' ? 'Published' : 'Draft'}</span></div></div>
       <div className="flex flex-wrap gap-2"><button className="surface-button surface-button-light !min-h-10 !px-3" onClick={() => setEditing(!editing)} data-testid={`edit-business-${business.id}`}>{editing ? 'Close editor' : 'Edit details'}</button><button className="surface-button !min-h-10 !px-3" disabled={publish.isPending} onClick={() => publish.mutate({id:business.id,data:{published:business.status !== 'published'}},{onSuccess:refresh})} data-testid={`publish-business-${business.id}`}>{business.status === 'published' ? 'Unpublish' : 'Publish Kiosk'}</button></div>
     </div>
     {editing && <form className="mt-6 grid gap-4 border border-black/10 bg-[#F2EDE4] p-4 sm:grid-cols-2" onSubmit={e=>{e.preventDefault();update.mutate({id:business.id,data:form},{onSuccess:()=>{setEditing(false);refresh();}});}} data-testid={`edit-form-${business.id}`}>
       {(['businessName','services','audience','location','hours','contact','price'] as const).map(key => <label key={key} className={key==='services'?'sm:col-span-2':''}><span className="surface-label">{key === 'businessName' ? 'Business name' : key.charAt(0).toUpperCase()+key.slice(1)}</span>{key==='services'||key==='hours'?<textarea rows={key==='services'?3:2} className="surface-input" value={form[key] ?? ''} onChange={e=>setForm({...form,[key]:e.target.value})} />:<input className="surface-input" value={form[key] ?? ''} onChange={e=>setForm({...form,[key]:e.target.value || (key==='price'?null:'')})} />}</label>)}
-      <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><button className="surface-button" type="submit" disabled={update.isPending} data-testid={`save-business-${business.id}`}>{update.isPending?'Saving…':'Save changes'}</button>{update.isError&&<span role="alert" className="text-sm text-[#9C493F]">Could not save changes. Try again.</span>}</div>
+      <div className="flex flex-wrap items-center gap-3 sm:col-span-2"><button className="surface-button" type="submit" disabled={update.isPending} data-testid={`save-business-${business.id}`}>{update.isPending?'Savingâ€¦':'Save changes'}</button>{update.isError&&<span role="alert" className="text-sm text-[#9C493F]">Could not save changes. Try again.</span>}</div>
     </form>}
     {business.status === 'published' && (
   <div className="mt-5 border border-black/10 bg-[#F2EDE4] p-4" data-testid={`mcp-panel-${business.id}`}>
     <p className="eyebrow text-[10px] text-[#777064]">AI-readable business presence - ACTIVE</p>
     <div className="mt-2 flex items-center justify-between gap-2 overflow-hidden border border-black/10 bg-white px-3 py-2">
       <span className="mono truncate text-[11px] text-[#625D53]" data-testid={`mcp-url-${business.id}`}>
-        {`https://mcp.kiosk.example/business/${business.slug}`}
+        {getMcpUrl(business.slug)}
       </span>
       <CopyMcpButton slug={business.slug} />
     </div>
@@ -245,7 +266,7 @@ export function DashboardPage() {
   const businesses=businessesQuery.data;
   if(!isLoaded) return <SiteFrame><div className="mx-auto max-w-5xl animate-pulse px-5 py-24"><div className="h-12 w-1/2 bg-black/10" /></div></SiteFrame>;
   if(!isSignedIn) return <SiteFrame><div className="mx-auto max-w-[760px] px-5 py-20"><p className="eyebrow text-[#777064]">Owner access</p><h1 className="mt-5 text-5xl font-semibold tracking-[-.08em]">Your Kiosks,<br />in one place.</h1><p className="serif mt-5 text-xl text-[#625D53]">Sign in to manage your business windows and activity.</p><Link href="/sign-in?redirect_url=%2Fdashboard" className="surface-button mt-8">Sign in <ArrowRight size={15}/></Link></div></SiteFrame>;
-  return <SiteFrame><div className="mx-auto max-w-[1200px] px-5 py-12 md:px-10 md:py-16"><div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="eyebrow text-[#777064]">Owner dashboard</p><h1 className="mt-4 text-[clamp(3rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]">Your Kiosks.</h1><p className="serif mt-5 text-xl text-[#625D53]">Keep your details current. Publish only when you’re ready.</p></div><Link href="/create" className="surface-button self-start sm:self-end">Create a Kiosk <ArrowRight size={15}/></Link></div>
+  return <SiteFrame><div className="mx-auto max-w-[1200px] px-5 py-12 md:px-10 md:py-16"><div className="flex flex-col justify-between gap-6 sm:flex-row sm:items-end"><div><p className="eyebrow text-[#777064]">Owner dashboard</p><h1 className="mt-4 text-[clamp(3rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]">Your Kiosks.</h1><p className="serif mt-5 text-xl text-[#625D53]">Keep your details current. Publish only when youâ€™re ready.</p></div><Link href="/create" className="surface-button self-start sm:self-end">Create a Kiosk <ArrowRight size={15}/></Link></div>
     <section className="mt-12" data-testid="dashboard-businesses"><div className="mb-4 flex justify-between border-b border-black/15 pb-4"><h2 className="eyebrow text-[#777064]">Your business windows</h2>{!businessesQuery.isLoading&&!businessesQuery.isError&&<span className="mono text-[10px] text-[#777064]">{businesses?.length ?? 0} TOTAL</span>}</div>
       {businessesQuery.isLoading?<div className="space-y-5" data-testid="dashboard-loading">{[1,2].map(i=><div key={i} className="h-36 animate-pulse border-t border-black/10 bg-black/[.025]"/>)}</div>
       :businessesQuery.isError?<div className="surface-status" role="alert" data-testid="dashboard-error">Your Kiosks could not load. <button className="surface-link" onClick={()=>businessesQuery.refetch()}>Retry</button></div>
@@ -257,7 +278,7 @@ export function DashboardPage() {
 export function AuthSurface({ mode }: { mode: 'sign-in' | 'sign-up' }) {
   const {isLoaded,isSignedIn}=useAuth();
   const isSignIn=mode==='sign-in';
-  if(isLoaded&&isSignedIn) return <SiteFrame><section className="mx-auto max-w-[760px] px-5 py-20" data-testid="auth-already-signed-in"><p className="eyebrow text-[#777064]">You’re signed in</p><h1 className="mt-5 text-5xl font-semibold tracking-[-.08em]">Back to your<br />window.</h1><Link href="/dashboard" className="surface-button mt-8">Open dashboard <ArrowRight size={15}/></Link></section></SiteFrame>;
+  if(isLoaded&&isSignedIn) return <SiteFrame><section className="mx-auto max-w-[760px] px-5 py-20" data-testid="auth-already-signed-in"><p className="eyebrow text-[#777064]">Youâ€™re signed in</p><h1 className="mt-5 text-5xl font-semibold tracking-[-.08em]">Back to your<br />window.</h1><Link href="/dashboard" className="surface-button mt-8">Open dashboard <ArrowRight size={15}/></Link></section></SiteFrame>;
   return <SiteFrame><section className="mx-auto grid min-h-[calc(100dvh-145px)] max-w-[1120px] items-center gap-10 px-5 py-12 md:grid-cols-[.8fr_1.2fr] md:px-10">
     <div><p className="eyebrow text-[#777064]">Kiosk / Owner access</p><h1 className="mt-5 text-[clamp(3rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]">{isSignIn?'Good to have you':'Make room for'}<br/><span className="serif font-normal italic tracking-[-.06em]">{isSignIn?'back.':'your business.'}</span></h1><p className="serif mt-6 max-w-md text-xl leading-7 text-[#625D53]">Your business, clearly in view. Sign in to manage your details and publishing.</p><div className="mt-8 flex items-center gap-4 text-xs text-[#777064]">{isSignIn?<><span>New to Kiosk?</span><Link className="surface-link font-semibold text-[#12110F]" href="/sign-up">Create an account</Link></>:<><span>Already have an account?</span><Link className="surface-link font-semibold text-[#12110F]" href="/sign-in">Sign in</Link></>}</div></div>
     <div className="flex justify-center border border-black/10 bg-[#F2EDE4] p-5 sm:p-9" data-testid={isSignIn?'sign-in-panel':'sign-up-panel'}>
