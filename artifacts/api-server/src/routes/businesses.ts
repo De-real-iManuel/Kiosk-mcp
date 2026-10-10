@@ -136,10 +136,10 @@ router.post("/businesses", async (req, res): Promise<void> => {
     );
   }
 
-  const services = parsed.data.services ?? [];
-  if (services.length > 0) {
+  const servicesList = parsed.data.services_list ?? [];
+  if (servicesList.length > 0) {
     await db.insert(businessServicesTable).values(
-      services.map((s) => ({
+      servicesList.map((s) => ({
         businessId: id,
         name: s.name,
         description: s.description ?? null,
