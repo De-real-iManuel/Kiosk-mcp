@@ -1,5 +1,13 @@
 import { createInsertSchema } from "drizzle-zod";
-import { index, jsonb, pgTable, text, timestamp, uniqueIndex, uuid } from "drizzle-orm/pg-core";
+import {
+  index,
+  jsonb,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+} from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 import { businessesTable } from "./businesses";
 
@@ -14,7 +22,9 @@ export const businessEndpointsTable = pgTable(
     transport: text("transport").notNull().default("streamable-http"),
     status: text("status").notNull().default("active"),
     capabilities: jsonb("capabilities").$type<string[]>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()
@@ -26,7 +36,9 @@ export const businessEndpointsTable = pgTable(
   ],
 );
 
-export const insertEndpointSchema = createInsertSchema(businessEndpointsTable).omit({
+export const insertEndpointSchema = createInsertSchema(
+  businessEndpointsTable,
+).omit({
   id: true,
   createdAt: true,
   updatedAt: true,

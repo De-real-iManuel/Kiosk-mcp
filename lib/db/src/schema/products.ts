@@ -24,14 +24,16 @@ export const businessProductsTable = pgTable(
     price: text("price"),
     available: boolean("available").notNull().default(true),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("business_products_business_idx").on(table.businessId),
-  ],
+  (table) => [index("business_products_business_idx").on(table.businessId)],
 );
 
-export const insertProductSchema = createInsertSchema(businessProductsTable).omit({
+export const insertProductSchema = createInsertSchema(
+  businessProductsTable,
+).omit({
   id: true,
   createdAt: true,
 });

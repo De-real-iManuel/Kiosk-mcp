@@ -12,6 +12,7 @@ out-tsc
 node_modules
 
 # IDEs and editors
+.agent*
 /.idea
 .project
 .classpath

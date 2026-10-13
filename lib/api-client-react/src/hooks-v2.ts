@@ -35,7 +35,11 @@ export function useBusinessV2(id: string): UseQueryResult<unknown> {
 
 // --- Create / Update ---------------------------------------------------------
 
-export function useCreateBusinessV2(): UseMutationResult<unknown, Error, Record<string, unknown>> {
+export function useCreateBusinessV2(): UseMutationResult<
+  unknown,
+  Error,
+  Record<string, unknown>
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -47,7 +51,9 @@ export function useCreateBusinessV2(): UseMutationResult<unknown, Error, Record<
   });
 }
 
-export function useUpdateBusinessV2(id: string): UseMutationResult<unknown, Error, Record<string, unknown>> {
+export function useUpdateBusinessV2(
+  id: string,
+): UseMutationResult<unknown, Error, Record<string, unknown>> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -66,7 +72,11 @@ export function useUpdateBusinessV2(id: string): UseMutationResult<unknown, Erro
 
 export function usePublishBusinessV2(
   id: string,
-): UseMutationResult<unknown, Error, { published: boolean; externalMcpUrl?: string }> {
+): UseMutationResult<
+  unknown,
+  Error,
+  { published: boolean; externalMcpUrl?: string }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: { published: boolean; externalMcpUrl?: string }) =>
@@ -86,14 +96,21 @@ export function usePublishBusinessV2(
 export function useCapabilities(businessId: string): UseQueryResult<unknown[]> {
   return useQuery({
     queryKey: ["capabilities", businessId],
-    queryFn: () => customFetch<unknown[]>(`/api/businesses/${businessId}/capabilities`),
+    queryFn: () =>
+      customFetch<unknown[]>(`/api/businesses/${businessId}/capabilities`),
     enabled: !!businessId,
   });
 }
 
-export function useUpsertCapability(
-  businessId: string,
-): UseMutationResult<unknown, Error, { capability: string; enabled: boolean; configuration?: Record<string, unknown> }> {
+export function useUpsertCapability(businessId: string): UseMutationResult<
+  unknown,
+  Error,
+  {
+    capability: string;
+    enabled: boolean;
+    configuration?: Record<string, unknown>;
+  }
+> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({
@@ -105,22 +122,32 @@ export function useUpsertCapability(
       enabled: boolean;
       configuration?: Record<string, unknown>;
     }) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/capabilities/${capability}`, {
-        method: "PUT",
-        body: JSON.stringify({ enabled, configuration }),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["capabilities", businessId] }),
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/capabilities/${capability}`,
+        {
+          method: "PUT",
+          body: JSON.stringify({ enabled, configuration }),
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["capabilities", businessId] }),
   });
 }
 
-export function useDeleteCapability(businessId: string): UseMutationResult<unknown, Error, string> {
+export function useDeleteCapability(
+  businessId: string,
+): UseMutationResult<unknown, Error, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (capability: string) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/capabilities/${capability}`, {
-        method: "DELETE",
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["capabilities", businessId] }),
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/capabilities/${capability}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["capabilities", businessId] }),
   });
 }
 
@@ -129,12 +156,15 @@ export function useDeleteCapability(businessId: string): UseMutationResult<unkno
 export function useProducts(businessId: string): UseQueryResult<unknown[]> {
   return useQuery({
     queryKey: ["products", businessId],
-    queryFn: () => customFetch<unknown[]>(`/api/businesses/${businessId}/products`),
+    queryFn: () =>
+      customFetch<unknown[]>(`/api/businesses/${businessId}/products`),
     enabled: !!businessId,
   });
 }
 
-export function useCreateProduct(businessId: string): UseMutationResult<unknown, Error, Record<string, unknown>> {
+export function useCreateProduct(
+  businessId: string,
+): UseMutationResult<unknown, Error, Record<string, unknown>> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -142,32 +172,50 @@ export function useCreateProduct(businessId: string): UseMutationResult<unknown,
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products", businessId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["products", businessId] }),
   });
 }
 
 export function usePatchProduct(
   businessId: string,
-): UseMutationResult<unknown, Error, { productId: string } & Record<string, unknown>> {
+): UseMutationResult<
+  unknown,
+  Error,
+  { productId: string } & Record<string, unknown>
+> {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ productId, ...body }: { productId: string } & Record<string, unknown>) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/products/${productId}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products", businessId] }),
+    mutationFn: ({
+      productId,
+      ...body
+    }: { productId: string } & Record<string, unknown>) =>
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/products/${productId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["products", businessId] }),
   });
 }
 
-export function useDeleteProduct(businessId: string): UseMutationResult<unknown, Error, string> {
+export function useDeleteProduct(
+  businessId: string,
+): UseMutationResult<unknown, Error, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (productId: string) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/products/${productId}`, {
-        method: "DELETE",
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["products", businessId] }),
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/products/${productId}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["products", businessId] }),
   });
 }
 
@@ -176,12 +224,15 @@ export function useDeleteProduct(businessId: string): UseMutationResult<unknown,
 export function useServices(businessId: string): UseQueryResult<unknown[]> {
   return useQuery({
     queryKey: ["services", businessId],
-    queryFn: () => customFetch<unknown[]>(`/api/businesses/${businessId}/services`),
+    queryFn: () =>
+      customFetch<unknown[]>(`/api/businesses/${businessId}/services`),
     enabled: !!businessId,
   });
 }
 
-export function useCreateService(businessId: string): UseMutationResult<unknown, Error, Record<string, unknown>> {
+export function useCreateService(
+  businessId: string,
+): UseMutationResult<unknown, Error, Record<string, unknown>> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (body: Record<string, unknown>) =>
@@ -189,32 +240,50 @@ export function useCreateService(businessId: string): UseMutationResult<unknown,
         method: "POST",
         body: JSON.stringify(body),
       }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["services", businessId] }),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["services", businessId] }),
   });
 }
 
 export function usePatchService(
   businessId: string,
-): UseMutationResult<unknown, Error, { serviceId: string } & Record<string, unknown>> {
+): UseMutationResult<
+  unknown,
+  Error,
+  { serviceId: string } & Record<string, unknown>
+> {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: ({ serviceId, ...body }: { serviceId: string } & Record<string, unknown>) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/services/${serviceId}`, {
-        method: "PATCH",
-        body: JSON.stringify(body),
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["services", businessId] }),
+    mutationFn: ({
+      serviceId,
+      ...body
+    }: { serviceId: string } & Record<string, unknown>) =>
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/services/${serviceId}`,
+        {
+          method: "PATCH",
+          body: JSON.stringify(body),
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["services", businessId] }),
   });
 }
 
-export function useDeleteService(businessId: string): UseMutationResult<unknown, Error, string> {
+export function useDeleteService(
+  businessId: string,
+): UseMutationResult<unknown, Error, string> {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (serviceId: string) =>
-      customFetch<unknown>(`/api/businesses/${businessId}/services/${serviceId}`, {
-        method: "DELETE",
-      }),
-    onSuccess: () => qc.invalidateQueries({ queryKey: ["services", businessId] }),
+      customFetch<unknown>(
+        `/api/businesses/${businessId}/services/${serviceId}`,
+        {
+          method: "DELETE",
+        },
+      ),
+    onSuccess: () =>
+      qc.invalidateQueries({ queryKey: ["services", businessId] }),
   });
 }
 
@@ -230,7 +299,8 @@ export function useMarketplaceSearch(params: {
   ).toString();
   return useQuery({
     queryKey: ["marketplace", params],
-    queryFn: () => customFetch<unknown[]>(`/api/marketplace${query ? `?${query}` : ""}`),
+    queryFn: () =>
+      customFetch<unknown[]>(`/api/marketplace${query ? `?${query}` : ""}`),
   });
 }
 

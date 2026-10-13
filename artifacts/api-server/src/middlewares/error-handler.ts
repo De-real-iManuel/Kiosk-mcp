@@ -67,5 +67,7 @@ function isDatabaseError(err: unknown): boolean {
   if (!(err instanceof Error)) return false;
   const e = err as unknown as Record<string, unknown>;
   // node-postgres DatabaseError always has a string `code`
-  return typeof e["code"] === "string" && /^[0-9A-Z]{5}$/.test(e["code"] as string);
+  return (
+    typeof e["code"] === "string" && /^[0-9A-Z]{5}$/.test(e["code"] as string)
+  );
 }

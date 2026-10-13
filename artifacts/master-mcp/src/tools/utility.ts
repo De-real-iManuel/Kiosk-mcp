@@ -1,4 +1,4 @@
-import { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import {
   db,
   businessesTable,
@@ -6,9 +6,9 @@ import {
   businessProductsTable,
   businessCapabilitiesTable,
   isBusinessOpen,
-} from '@workspace/db'
-import { and, eq } from 'drizzle-orm'
-import { z } from 'zod'
+} from "@workspace/db";
+import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 
 // ── Shared helper: find a published, active business by slug ─────────────────
 
@@ -28,13 +28,13 @@ async function findPublishedBusiness(slug: string) {
     .where(
       and(
         eq(businessesTable.slug, slug),
-        eq(businessesTable.status, 'published'),
+        eq(businessesTable.status, "published"),
         eq(businessesTable.isActive, true),
       ),
     )
-    .limit(1)
+    .limit(1);
 
-  return business ?? null
+  return business ?? null;
 }
 
 // ── Tool registration ─────────────────────────────────────────────────────────
@@ -43,21 +43,26 @@ export function registerUtilityTools(server: McpServer): void {
   // ── Tool 1: get_business_services ────────────────────────────────────────────
 
   server.tool(
-    'get_business_services',
+    "get_business_services",
     `Lists services offered by a specific business. Only returns services marked as available.
 Use for service-based businesses before suggesting a booking or inquiry.
 Returns an empty array if the business has no available services.
 Returns null if the business is not found or is not published.`,
     {
-      slug: z.string().describe('The unique slug of the business'),
+      slug: z.string().describe("The unique slug of the business"),
     },
     async ({ slug }) => {
-      const business = await findPublishedBusiness(slug)
+      const business = await findPublishedBusiness(slug);
 
       if (!business) {
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Business not found' }) }],
-        }
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Business not found" }),
+            },
+          ],
+        };
       }
 
       const services = await db
@@ -74,41 +79,46 @@ Returns null if the business is not found or is not published.`,
             eq(businessServicesTable.businessId, business.id),
             eq(businessServicesTable.available, true),
           ),
-        )
+        );
 
-      return { content: [{ type: 'text', text: JSON.stringify(services) }] }
+      return { content: [{ type: "text", text: JSON.stringify(services) }] };
     },
-  )
+  );
 
   // ── Tool 2: get_business_products ────────────────────────────────────────────
 
   server.tool(
-    'get_business_products',
+    "get_business_products",
     `Lists products offered by a specific business. Only returns products marked as available.
 Use for product-based businesses to show what is on offer.
 Supports optional filtering by product sub-category.
 Returns an empty array if the business has no available products.
 Returns null if the business is not found or is not published.`,
     {
-      slug: z.string().describe('The unique slug of the business'),
+      slug: z.string().describe("The unique slug of the business"),
       category: z
         .string()
         .optional()
-        .describe('Filter by product sub-category'),
+        .describe("Filter by product sub-category"),
     },
     async ({ slug, category }) => {
-      const business = await findPublishedBusiness(slug)
+      const business = await findPublishedBusiness(slug);
 
       if (!business) {
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Business not found' }) }],
-        }
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Business not found" }),
+            },
+          ],
+        };
       }
 
       const baseConditions = [
         eq(businessProductsTable.businessId, business.id),
         eq(businessProductsTable.available, true),
-      ]
+      ];
 
       let rows = await db
         .select({
@@ -121,69 +131,81 @@ Returns null if the business is not found or is not published.`,
           metadata: businessProductsTable.metadata,
         })
         .from(businessProductsTable)
-        .where(and(...baseConditions))
+        .where(and(...baseConditions));
 
       if (category) {
         rows = rows.filter(
           (p) => p.category?.toLowerCase() === category.toLowerCase(),
-        )
+        );
       }
 
-      return { content: [{ type: 'text', text: JSON.stringify(rows) }] }
+      return { content: [{ type: "text", text: JSON.stringify(rows) }] };
     },
-  )
+  );
 
   // ── Tool 3: check_business_status ────────────────────────────────────────────
 
   server.tool(
-    'check_business_status',
+    "check_business_status",
     `Checks whether a business is currently open based on configured hours and timezone.
 Note: reflects stated hours only — does not account for unexpected closures, holidays, or
 special events. Always inform the user if you are relying on stated hours.
 Returns is_open, current_day_hours, and next_open_at (ISO-8601) when closed.`,
     {
-      slug: z.string().describe('The unique slug of the business'),
+      slug: z.string().describe("The unique slug of the business"),
       iso_time: z
         .string()
-        .describe('Current UTC time in ISO-8601 format (e.g. "2024-06-01T14:30:00Z")'),
+        .describe(
+          'Current UTC time in ISO-8601 format (e.g. "2024-06-01T14:30:00Z")',
+        ),
     },
     async ({ slug, iso_time }) => {
-      const business = await findPublishedBusiness(slug)
+      const business = await findPublishedBusiness(slug);
 
       if (!business) {
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Business not found' }) }],
-        }
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Business not found" }),
+            },
+          ],
+        };
       }
 
       const result = isBusinessOpen(
         business.openingHours,
         business.timezone,
         new Date(iso_time),
-      )
+      );
 
-      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
-  )
+  );
 
   // ── Tool 4: get_business_contact ─────────────────────────────────────────────
 
   server.tool(
-    'get_business_contact',
+    "get_business_contact",
     `Returns safe public contact information for a business: phone, WhatsApp, and website.
 Does NOT expose owner email or Clerk user ID.
 Use when fallback to human contact is needed (e.g. complex enquiry, complaint, booking via phone).
 Returns null values for fields that have not been configured by the business.`,
     {
-      slug: z.string().describe('The unique slug of the business'),
+      slug: z.string().describe("The unique slug of the business"),
     },
     async ({ slug }) => {
-      const business = await findPublishedBusiness(slug)
+      const business = await findPublishedBusiness(slug);
 
       if (!business) {
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Business not found' }) }],
-        }
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Business not found" }),
+            },
+          ],
+        };
       }
 
       const contact = {
@@ -193,29 +215,34 @@ Returns null values for fields that have not been configured by the business.`,
           ? `https://wa.me/${business.whatsapp}`
           : null,
         website: business.website ?? null,
-      }
+      };
 
-      return { content: [{ type: 'text', text: JSON.stringify(contact) }] }
+      return { content: [{ type: "text", text: JSON.stringify(contact) }] };
     },
-  )
+  );
 
   // ── Tool 5: get_business_delivery ────────────────────────────────────────────
 
   server.tool(
-    'get_business_delivery',
+    "get_business_delivery",
     `Returns delivery configuration if delivery capability is enabled for a business.
 Returns { enabled: false, configuration: null } if delivery is not configured.
 Use before directing a user to checkout to confirm whether delivery is actually available.`,
     {
-      slug: z.string().describe('The unique slug of the business'),
+      slug: z.string().describe("The unique slug of the business"),
     },
     async ({ slug }) => {
-      const business = await findPublishedBusiness(slug)
+      const business = await findPublishedBusiness(slug);
 
       if (!business) {
         return {
-          content: [{ type: 'text', text: JSON.stringify({ error: 'Business not found' }) }],
-        }
+          content: [
+            {
+              type: "text",
+              text: JSON.stringify({ error: "Business not found" }),
+            },
+          ],
+        };
       }
 
       const [deliveryRow] = await db
@@ -227,17 +254,17 @@ Use before directing a user to checkout to confirm whether delivery is actually 
         .where(
           and(
             eq(businessCapabilitiesTable.businessId, business.id),
-            eq(businessCapabilitiesTable.capability, 'delivery'),
+            eq(businessCapabilitiesTable.capability, "delivery"),
             eq(businessCapabilitiesTable.enabled, true),
           ),
         )
-        .limit(1)
+        .limit(1);
 
       const result = deliveryRow
         ? { enabled: true, configuration: deliveryRow.configuration ?? null }
-        : { enabled: false, configuration: null }
+        : { enabled: false, configuration: null };
 
-      return { content: [{ type: 'text', text: JSON.stringify(result) }] }
+      return { content: [{ type: "text", text: JSON.stringify(result) }] };
     },
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { cn } from '@/lib/utils';
+import { cn } from "@/lib/utils";
 
 interface SpinnerProps {
   className?: string;
@@ -6,12 +6,16 @@ interface SpinnerProps {
   reduceMotion?: boolean;
 }
 
-function LoadingSpinner({ className, size = 24, reduceMotion = false }: SpinnerProps) {
+function LoadingSpinner({
+  className,
+  size = 24,
+  reduceMotion = false,
+}: SpinnerProps) {
   return (
     <span
       role="status"
       aria-label="Loading"
-      className={cn('inline-flex items-center justify-center', className)}
+      className={cn("inline-flex items-center justify-center", className)}
     >
       <svg
         width={size}
@@ -20,8 +24,8 @@ function LoadingSpinner({ className, size = 24, reduceMotion = false }: SpinnerP
         fill="currentColor"
         aria-hidden="true"
         focusable="false"
-        className={cn(!reduceMotion && 'animate-spin')}
-        style={!reduceMotion ? { animationDuration: '8s' } : undefined}
+        className={cn(!reduceMotion && "animate-spin")}
+        style={!reduceMotion ? { animationDuration: "8s" } : undefined}
       >
         <path
           fillRule="evenodd"

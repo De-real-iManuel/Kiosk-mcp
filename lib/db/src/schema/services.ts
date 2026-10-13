@@ -21,14 +21,16 @@ export const businessServicesTable = pgTable(
     description: text("description"),
     price: text("price"),
     available: boolean("available").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("business_services_business_idx").on(table.businessId),
-  ],
+  (table) => [index("business_services_business_idx").on(table.businessId)],
 );
 
-export const insertServiceSchema = createInsertSchema(businessServicesTable).omit({
+export const insertServiceSchema = createInsertSchema(
+  businessServicesTable,
+).omit({
   id: true,
   createdAt: true,
 });

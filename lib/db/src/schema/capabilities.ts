@@ -32,14 +32,21 @@ export const businessCapabilitiesTable = pgTable(
     capability: capabilityEnum("capability").notNull(),
     enabled: boolean("enabled").notNull().default(true),
     configuration: jsonb("configuration").$type<Record<string, unknown>>(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    uniqueIndex("business_capabilities_unique").on(table.businessId, table.capability),
+    uniqueIndex("business_capabilities_unique").on(
+      table.businessId,
+      table.capability,
+    ),
   ],
 );
 
-export const insertCapabilitySchema = createInsertSchema(businessCapabilitiesTable).omit({
+export const insertCapabilitySchema = createInsertSchema(
+  businessCapabilitiesTable,
+).omit({
   id: true,
   createdAt: true,
 });

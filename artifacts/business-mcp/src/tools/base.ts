@@ -1,81 +1,128 @@
-import type { McpServer } from '@modelcontextprotocol/sdk/server/mcp.js'
-import { eq, and } from 'drizzle-orm'
-import { db, businessServicesTable } from '@workspace/db'
-import type { BusinessSession } from '../businessSession.js'
-import { recordToolEvent } from '../lib/recordEvent.js'
+import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
+import { eq, and } from "drizzle-orm";
+import { db, businessServicesTable } from "@workspace/db";
+import type { BusinessSession } from "../businessSession.js";
+import { recordToolEvent } from "../lib/recordEvent.js";
 
-export function registerBaseTools(server: McpServer, session: BusinessSession): void {
-  const { business, enabledCapabilityKeys } = session
-  const bid = business.id
+export function registerBaseTools(
+  server: McpServer,
+  session: BusinessSession,
+): void {
+  const { business, enabledCapabilityKeys } = session;
+  const bid = business.id;
 
-  server.tool('get_business_info',
-    'Returns the complete public profile of this business: name, description, category, location, hours, and timezone. Call this first when connecting to a business MCP endpoint.',
+  server.tool(
+    "get_business_info",
+    "Returns the complete public profile of this business: name, description, category, location, hours, and timezone. Call this first when connecting to a business MCP endpoint.",
     {},
     async () => {
-      recordToolEvent(bid, 'get_business_info')
-      return { content: [{ type: 'text' as const, text: JSON.stringify({
-        name: business.businessName,
-        description: business.description,
-        city: business.city,
-        country: business.country,
-        location: business.location,
-        timezone: business.timezone,
-        openingHours: business.openingHours,
-        status: business.status,
-      }) }] }
-    }
-  )
+      recordToolEvent(bid, "get_business_info");
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              name: business.businessName,
+              description: business.description,
+              city: business.city,
+              country: business.country,
+              location: business.location,
+              timezone: business.timezone,
+              openingHours: business.openingHours,
+              status: business.status,
+            }),
+          },
+        ],
+      };
+    },
+  );
 
-  server.tool('get_services',
-    'Lists all available services with name, description, and pricing. Returns empty array if no services configured.',
+  server.tool(
+    "get_services",
+    "Lists all available services with name, description, and pricing. Returns empty array if no services configured.",
     {},
     async () => {
-      recordToolEvent(bid, 'get_services')
-      const rows = await db.select({
-        id: businessServicesTable.id,
-        name: businessServicesTable.name,
-        description: businessServicesTable.description,
-        price: businessServicesTable.price,
-        available: businessServicesTable.available,
-      }).from(businessServicesTable)
-        .where(and(eq(businessServicesTable.businessId, bid), eq(businessServicesTable.available, true)))
-      return { content: [{ type: 'text' as const, text: JSON.stringify(rows) }] }
-    }
-  )
+      recordToolEvent(bid, "get_services");
+      const rows = await db
+        .select({
+          id: businessServicesTable.id,
+          name: businessServicesTable.name,
+          description: businessServicesTable.description,
+          price: businessServicesTable.price,
+          available: businessServicesTable.available,
+        })
+        .from(businessServicesTable)
+        .where(
+          and(
+            eq(businessServicesTable.businessId, bid),
+            eq(businessServicesTable.available, true),
+          ),
+        );
+      return {
+        content: [{ type: "text" as const, text: JSON.stringify(rows) }],
+      };
+    },
+  );
 
-  server.tool('get_hours',
-    'Returns the opening hours for each day of the week and the business timezone. Hours are in 24-hour HH:MM format.',
+  server.tool(
+    "get_hours",
+    "Returns the opening hours for each day of the week and the business timezone. Hours are in 24-hour HH:MM format.",
     {},
     async () => {
-      recordToolEvent(bid, 'get_hours')
-      return { content: [{ type: 'text' as const, text: JSON.stringify({
-        openingHours: business.openingHours,
-        timezone: business.timezone,
-      }) }] }
-    }
-  )
+      recordToolEvent(bid, "get_hours");
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              openingHours: business.openingHours,
+              timezone: business.timezone,
+            }),
+          },
+        ],
+      };
+    },
+  );
 
-  server.tool('get_contact',
-    'Returns safe public contact information: phone, WhatsApp link, and website. Does NOT expose the business owner email or any private data.',
+  server.tool(
+    "get_contact",
+    "Returns safe public contact information: phone, WhatsApp link, and website. Does NOT expose the business owner email or any private data.",
     {},
     async () => {
-      recordToolEvent(bid, 'get_contact')
-      const whatsapp = business.whatsapp
-      return { content: [{ type: 'text' as const, text: JSON.stringify({
-        phone: business.phone,
-        whatsapp,
-        whatsapp_url: whatsapp ? 'https://wa.me/' + whatsapp.replace(/\D/g, '') : null,
-        website: business.website,
-      }) }] }
-    }
-  )
+      recordToolEvent(bid, "get_contact");
+      const whatsapp = business.whatsapp;
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({
+              phone: business.phone,
+              whatsapp,
+              whatsapp_url: whatsapp
+                ? "https://wa.me/" + whatsapp.replace(/\D/g, "")
+                : null,
+              website: business.website,
+            }),
+          },
+        ],
+      };
+    },
+  );
 
-  server.tool('get_capabilities',
-    'Lists the MCP capabilities enabled for this business. Each capability maps to additional available tools.',
+  server.tool(
+    "get_capabilities",
+    "Lists the MCP capabilities enabled for this business. Each capability maps to additional available tools.",
     {},
     async () => {
-      recordToolEvent(bid, 'get_capabilities')
-      return { content: [{ type: 'text' as const, text: JSON.stringify({ capabilities: enabledCapabilityKeys }) }] }
-    }
-  )
+      recordToolEvent(bid, "get_capabilities");
+      return {
+        content: [
+          {
+            type: "text" as const,
+            text: JSON.stringify({ capabilities: enabledCapabilityKeys }),
+          },
+        ],
+      };
+    },
+  );
 }

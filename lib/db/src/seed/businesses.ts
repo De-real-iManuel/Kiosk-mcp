@@ -22,7 +22,9 @@ async function getCategoryId(slug: string): Promise<string> {
     .limit(1);
 
   if (!row) {
-    throw new Error(`Category with slug "${slug}" not found. Run seedCategories() first.`);
+    throw new Error(
+      `Category with slug "${slug}" not found. Run seedCategories() first.`,
+    );
   }
 
   return row.id;
@@ -31,8 +33,10 @@ async function getCategoryId(slug: string): Promise<string> {
 // ─── Seed ────────────────────────────────────────────────────────────────────
 
 export async function seedBusinesses(): Promise<void> {
-  if (process.env.NODE_ENV === 'production') {
-    console.warn('⚠  seedBusinesses: skipped in production (NODE_ENV=production)');
+  if (process.env.NODE_ENV === "production") {
+    console.warn(
+      "⚠  seedBusinesses: skipped in production (NODE_ENV=production)",
+    );
     return;
   }
   console.log("Seeding demo businesses...");
@@ -44,13 +48,13 @@ export async function seedBusinesses(): Promise<void> {
   const mamasSlug = generateSlug("Mama's Kitchen", mamasId);
 
   const mamasHours: OpeningHours = {
-    monday:    { open: "08:00", close: "22:00", closed: false },
-    tuesday:   { open: "08:00", close: "22:00", closed: false },
+    monday: { open: "08:00", close: "22:00", closed: false },
+    tuesday: { open: "08:00", close: "22:00", closed: false },
     wednesday: { open: "08:00", close: "22:00", closed: false },
-    thursday:  { open: "08:00", close: "22:00", closed: false },
-    friday:    { open: "08:00", close: "22:00", closed: false },
-    saturday:  { open: "08:00", close: "22:00", closed: false },
-    sunday:    { open: "12:00", close: "20:00", closed: false },
+    thursday: { open: "08:00", close: "22:00", closed: false },
+    friday: { open: "08:00", close: "22:00", closed: false },
+    saturday: { open: "08:00", close: "22:00", closed: false },
+    sunday: { open: "12:00", close: "20:00", closed: false },
   };
 
   await db
@@ -94,7 +98,7 @@ export async function seedBusinesses(): Promise<void> {
     await db
       .insert(businessCapabilitiesTable)
       .values([
-        { businessId: bid, capability: "menu",     enabled: true },
+        { businessId: bid, capability: "menu", enabled: true },
         { businessId: bid, capability: "ordering", enabled: true },
         {
           businessId: bid,
@@ -106,20 +110,18 @@ export async function seedBusinesses(): Promise<void> {
             minimum_order: "₦1500",
           },
         },
-        { businessId: bid, capability: "contact",  enabled: true },
+        { businessId: bid, capability: "contact", enabled: true },
       ])
       .onConflictDoNothing();
 
-    await db
-      .insert(businessProductsTable)
-      .values([
-        { businessId: bid, name: "Jollof Rice",   price: "₦2500", available: true },
-        { businessId: bid, name: "Fried Rice",     price: "₦2500", available: true },
-        { businessId: bid, name: "Chicken",         price: "₦1500", available: true },
-        { businessId: bid, name: "Pounded Yam",    price: "₦3000", available: true },
-        { businessId: bid, name: "Egusi Soup",      price: "₦2000", available: true },
-        { businessId: bid, name: "Banga Soup",      price: "₦2500", available: true },
-      ]);
+    await db.insert(businessProductsTable).values([
+      { businessId: bid, name: "Jollof Rice", price: "₦2500", available: true },
+      { businessId: bid, name: "Fried Rice", price: "₦2500", available: true },
+      { businessId: bid, name: "Chicken", price: "₦1500", available: true },
+      { businessId: bid, name: "Pounded Yam", price: "₦3000", available: true },
+      { businessId: bid, name: "Egusi Soup", price: "₦2000", available: true },
+      { businessId: bid, name: "Banga Soup", price: "₦2500", available: true },
+    ]);
 
     await db
       .insert(businessEndpointsTable)
@@ -142,13 +144,13 @@ export async function seedBusinesses(): Promise<void> {
   const styleSlug = generateSlug("StyleHouse Salon", styleId);
 
   const styleHours: OpeningHours = {
-    monday:    { open: "09:00", close: "19:00", closed: true },
-    tuesday:   { open: "09:00", close: "19:00", closed: false },
+    monday: { open: "09:00", close: "19:00", closed: true },
+    tuesday: { open: "09:00", close: "19:00", closed: false },
     wednesday: { open: "09:00", close: "19:00", closed: false },
-    thursday:  { open: "09:00", close: "19:00", closed: false },
-    friday:    { open: "09:00", close: "19:00", closed: false },
-    saturday:  { open: "09:00", close: "19:00", closed: false },
-    sunday:    { open: "09:00", close: "19:00", closed: false },
+    thursday: { open: "09:00", close: "19:00", closed: false },
+    friday: { open: "09:00", close: "19:00", closed: false },
+    saturday: { open: "09:00", close: "19:00", closed: false },
+    sunday: { open: "09:00", close: "19:00", closed: false },
   };
 
   await db
@@ -191,20 +193,38 @@ export async function seedBusinesses(): Promise<void> {
       .insert(businessCapabilitiesTable)
       .values([
         { businessId: bid, capability: "services", enabled: true },
-        { businessId: bid, capability: "booking",  enabled: true },
-        { businessId: bid, capability: "contact",  enabled: true },
+        { businessId: bid, capability: "booking", enabled: true },
+        { businessId: bid, capability: "contact", enabled: true },
       ])
       .onConflictDoNothing();
 
-    await db
-      .insert(businessServicesTable)
-      .values([
-        { businessId: bid, name: "Ladies Haircut",    price: "₦3000",       available: true },
-        { businessId: bid, name: "Men's Haircut",      price: "₦1500",       available: true },
-        { businessId: bid, name: "Hair Treatment",     price: "₦5000",       available: true },
-        { businessId: bid, name: "Braiding",           price: "From ₦4000",  available: true },
-        { businessId: bid, name: "Nail Care",          price: "₦2500",       available: true },
-      ]);
+    await db.insert(businessServicesTable).values([
+      {
+        businessId: bid,
+        name: "Ladies Haircut",
+        price: "₦3000",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Men's Haircut",
+        price: "₦1500",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Hair Treatment",
+        price: "₦5000",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Braiding",
+        price: "From ₦4000",
+        available: true,
+      },
+      { businessId: bid, name: "Nail Care", price: "₦2500", available: true },
+    ]);
 
     await db
       .insert(businessEndpointsTable)
@@ -227,13 +247,13 @@ export async function seedBusinesses(): Promise<void> {
   const techSlug = generateSlug("TechFix Solutions", techId);
 
   const techHours: OpeningHours = {
-    monday:    { open: "09:00", close: "18:00", closed: false },
-    tuesday:   { open: "09:00", close: "18:00", closed: false },
+    monday: { open: "09:00", close: "18:00", closed: false },
+    tuesday: { open: "09:00", close: "18:00", closed: false },
     wednesday: { open: "09:00", close: "18:00", closed: false },
-    thursday:  { open: "09:00", close: "18:00", closed: false },
-    friday:    { open: "09:00", close: "18:00", closed: false },
-    saturday:  { open: "10:00", close: "16:00", closed: false },
-    sunday:    { open: "09:00", close: "18:00", closed: true },
+    thursday: { open: "09:00", close: "18:00", closed: false },
+    friday: { open: "09:00", close: "18:00", closed: false },
+    saturday: { open: "10:00", close: "16:00", closed: false },
+    sunday: { open: "09:00", close: "18:00", closed: true },
   };
 
   await db
@@ -275,20 +295,38 @@ export async function seedBusinesses(): Promise<void> {
     await db
       .insert(businessCapabilitiesTable)
       .values([
-        { businessId: bid, capability: "services",    enabled: true },
-        { businessId: bid, capability: "contact",     enabled: true },
+        { businessId: bid, capability: "services", enabled: true },
+        { businessId: bid, capability: "contact", enabled: true },
         { businessId: bid, capability: "information", enabled: true },
       ])
       .onConflictDoNothing();
 
-    await db
-      .insert(businessServicesTable)
-      .values([
-        { businessId: bid, name: "Phone Screen Repair",  price: "₦8000",        available: true },
-        { businessId: bid, name: "Battery Replacement",  price: "₦3500",        available: true },
-        { businessId: bid, name: "Laptop Repair",        price: "From ₦15000",  available: true },
-        { businessId: bid, name: "Data Recovery",        price: "₦10000",       available: true },
-      ]);
+    await db.insert(businessServicesTable).values([
+      {
+        businessId: bid,
+        name: "Phone Screen Repair",
+        price: "₦8000",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Battery Replacement",
+        price: "₦3500",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Laptop Repair",
+        price: "From ₦15000",
+        available: true,
+      },
+      {
+        businessId: bid,
+        name: "Data Recovery",
+        price: "₦10000",
+        available: true,
+      },
+    ]);
 
     await db
       .insert(businessEndpointsTable)

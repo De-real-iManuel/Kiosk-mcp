@@ -59,7 +59,9 @@ export const businessesTable = pgTable(
     price: text("price"),
     booking: text("booking"),
     status: text("status").notNull().default("draft"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow()

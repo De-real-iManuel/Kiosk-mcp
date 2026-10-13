@@ -26,13 +26,23 @@ export async function cleanupDemoBusinesses(): Promise<void> {
   const ids = rows.map((r) => r.id);
 
   // Delete child records first (FK constraints), then parent
-  await db.delete(businessCapabilitiesTable).where(inArray(businessCapabilitiesTable.businessId, ids));
-  await db.delete(businessProductsTable).where(inArray(businessProductsTable.businessId, ids));
-  await db.delete(businessServicesTable).where(inArray(businessServicesTable.businessId, ids));
-  await db.delete(businessEndpointsTable).where(inArray(businessEndpointsTable.businessId, ids));
+  await db
+    .delete(businessCapabilitiesTable)
+    .where(inArray(businessCapabilitiesTable.businessId, ids));
+  await db
+    .delete(businessProductsTable)
+    .where(inArray(businessProductsTable.businessId, ids));
+  await db
+    .delete(businessServicesTable)
+    .where(inArray(businessServicesTable.businessId, ids));
+  await db
+    .delete(businessEndpointsTable)
+    .where(inArray(businessEndpointsTable.businessId, ids));
   await db.delete(businessesTable).where(inArray(businessesTable.id, ids));
 
-  console.log(`✓ Removed ${ids.length} seed_demo business${ids.length === 1 ? "" : "es"}.`);
+  console.log(
+    `✓ Removed ${ids.length} seed_demo business${ids.length === 1 ? "" : "es"}.`,
+  );
 }
 
 // Allow running directly: pnpm --filter @workspace/db cleanup-demo

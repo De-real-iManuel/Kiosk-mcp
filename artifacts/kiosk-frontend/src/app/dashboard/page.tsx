@@ -1,4 +1,4 @@
-import { DashboardPage } from '@/Surfaces';
+import { DashboardPage } from "@/Surfaces";
 
 export default function DashboardRoute() {
   return <DashboardPage />;
