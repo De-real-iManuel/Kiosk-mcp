@@ -287,6 +287,22 @@ export function useDeleteService(
   });
 }
 
+// --- Delete business ---------------------------------------------------------
+
+export function useDeleteBusiness(): UseMutationResult<unknown, Error, string> {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (businessId: string) =>
+      customFetch<unknown>(`/api/businesses/${businessId}`, {
+        method: "DELETE",
+      }),
+    onSuccess: () => {
+      qc.invalidateQueries({ queryKey: ["businesses-v2"] });
+      qc.invalidateQueries({ queryKey: ["/api/businesses"] });
+    },
+  });
+}
+
 // --- Marketplace (V2) ---------------------------------------------------------
 
 export function useMarketplaceSearch(params: {

@@ -1,16 +1,14 @@
 <div align="center">
 
-# Kiosk — Agent Commerce Infrastructure
+# Kiosk — AI-Facing Discovery and Interaction Infrastructure for Businesses
 
-**Turn any local business into an AI-agent-readable storefront in under two minutes.**
-
-Kiosk provisions a live [Model Context Protocol](https://modelcontextprotocol.io) endpoint for every business that signs up. AI agents — Amazon Alexa+, Claude, GPT, or any MCP-compatible client — can discover, query, and transact with real local businesses without a custom integration per business.
+**Every business should be discoverable and accessible to AI agents — not just the ones with websites, APIs, and technical teams.**
 
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)](https://nextjs.org/)
 [![MCP Protocol](https://img.shields.io/badge/MCP-2025--11--25-orange)](https://modelcontextprotocol.io)
 [![AWS ECS Fargate](https://img.shields.io/badge/AWS-ECS_Fargate-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/ecs/)
-[![Tests](https://img.shields.io/badge/Tests-52_passing-brightgreen)](#running-tests)
+[![Tests](https://img.shields.io/badge/Tests-49_passing-brightgreen)](#running-tests)
 
 </div>
 
@@ -18,8 +16,10 @@ Kiosk provisions a live [Model Context Protocol](https://modelcontextprotocol.io
 
 ## Table of Contents
 
-- [What Kiosk Does](#what-kiosk-does)
+- [The Problem](#the-problem)
+- [How Kiosk Works](#how-kiosk-works)
 - [System Architecture](#system-architecture)
+- [AWS Integrations](#aws-integrations)
 - [AWS Infrastructure](#aws-infrastructure)
 - [Monorepo Structure](#monorepo-structure)
 - [Quick Start for Judges](#quick-start-for-judges)
@@ -34,15 +34,53 @@ Kiosk provisions a live [Model Context Protocol](https://modelcontextprotocol.io
 
 ---
 
-## What Kiosk Does
+## The Problem
 
-Local businesses are invisible to AI agents today. There is no standard way for an agent to ask "what hair salons are open near me right now and can I book one?" and get a structured, actionable answer.
+Imagine asking an AI assistant to find a nearby clothing shop, check what it sells, see the prices, and help you place an order.
 
-Kiosk solves this at the infrastructure layer:
+The assistant needs more than a business name or a social media page. It needs reliable, structured information about what that business offers right now, whether a service or product is available, and how it can actually interact with the business on your behalf.
 
-1. **A business owner fills in a two-minute form** — name, description, category, hours, contact. No code required.
-2. **Kiosk provisions a live MCP endpoint** at `POST /mcp/business/:slug`. The endpoint exposes structured, read-only tools: `get_business_info`, `get_services`, `get_hours`, `get_contact`, `get_capabilities`, and optionally `request_booking`, `create_order_request`, `get_products`, and more.
-3. **AI agents discover businesses** through the Master MCP at `/mcp` using `search_businesses` and `discover_categories`, then connect directly to each business's own endpoint to transact.
+But most local businesses — the clothing seller, the hair salon, the food vendor, the repair shop — operate through physical locations, phone calls, WhatsApp, and social media. Their information is scattered. Their offerings aren't structured in a way that software can reliably read. And they don't have the resources or the technical background to build custom AI integrations.
+
+This isn't a gap you can close by searching Google or scraping a website. Discovering that a business exists is different from having a reliable, structured way to understand its current offerings, check its hours, and initiate an interaction. That second part — the interaction layer — is what's missing.
+
+**The businesses exist. The customers exist. The AI agents are being deployed at scale. But there isn't a reliable, structured way for AI agents to discover those businesses and interact with them.**
+
+And there's a second part to the problem: even if a business owner wants to participate in this new AI-driven economy, she shouldn't have to hire a developer, build an API, or learn what MCP stands for just to make her business accessible to an AI assistant.
+
+---
+
+## How Kiosk Works
+
+Kiosk is AI-facing discovery and interaction infrastructure. It gives AI agents a structured way to find businesses and understand what those businesses can offer — and it gives business owners a way to participate without becoming technology companies.
+
+### For business owners — a two-minute setup
+
+A business owner fills in a form: name, description, category, hours, contact, and which capabilities she wants to offer. She chooses whether customers can place order requests, make bookings, or simply contact her. No code. No API keys. No technical knowledge required.
+
+When she publishes, Kiosk provisions a live MCP endpoint for her business automatically.
+
+### For AI agents — a standard interface for every business
+
+Every published business gets its own endpoint at `POST /mcp/business/:slug`. An AI agent can call it using the Model Context Protocol — the same standard that Amazon Alexa+, Claude, and any MCP-compatible client already speaks.
+
+The agent can retrieve the business profile, check services and products, confirm opening hours, get contact information, and — where the business has enabled it — submit an order request or booking.
+
+### The two-part architecture
+
+**Master MCP** (`/mcp`) — a structured directory for AI agents. Search businesses by name, category, city, or whether they're open right now. Retrieve endpoint URLs. The entry point for discovery.
+
+**Business MCP** (`/mcp/business/:slug`) — a business-specific interface. Each business gets its own set of tools based on what it has enabled. An agent connects here after finding the right business through the Master MCP.
+
+### What this means in practice
+
+An AI assistant helping someone find jollof rice in Port Harcourt can call `search_businesses`, find Mama's Kitchen, connect to her endpoint, check the menu, and — if she has ordering enabled — record an order request that gets confirmed over WhatsApp. The customer doesn't need to know how any of this works. Mama's Kitchen doesn't need a developer.
+
+### What we're building toward
+
+Kiosk today covers discovery, information retrieval, and intent capture (order requests, bookings). The longer-term direction is letting AI agents help people move through the full journey — from finding a business to completing a transaction — with appropriate customer authorisation and business confirmation at each step. That future is built on the same infrastructure that works today.
+
+> **The idea in one sentence:** Kiosk helps AI agents discover the right businesses and interact with them through structured, business-specific capabilities — without requiring each business to build its own AI infrastructure.
 
 ---
 
@@ -52,10 +90,15 @@ Kiosk solves this at the infrastructure layer:
 
 ```mermaid
 flowchart TB
-    subgraph Clients
+    subgraph Clients["Clients"]
         BO(["🏪 Business Owner\nbrowser"])
-        AI(["🤖 AI Agent\nAlexa+ · Claude · Any MCP client"])
         HU(["👤 Public User\nbrowser"])
+        AI(["🔗 Any MCP Client\nAlexa+ · Claude · GPT"])
+    end
+
+    subgraph AWS_AI["AWS AI Layer"]
+        AC["🤖 AWS AgentCore\nManaged agent runtime\norchestrates MCP tool calls"]
+        BR["🧠 Amazon Bedrock\nTitan Embeddings v2\nsemantic search scoring"]
     end
 
     subgraph AWS_ALB["AWS Application Load Balancer"]
@@ -73,9 +116,10 @@ flowchart TB
         BMCP["business-mcp\nPer-tenant  •  :5001"]
     end
 
-    subgraph Data
+    subgraph Data["Data & Secrets"]
         DB[("PostgreSQL\nSupabase")]
         SM["AWS Secrets Manager"]
+        CW["CloudWatch Logs"]
     end
 
     CLERK["Clerk Auth"]
@@ -85,39 +129,49 @@ flowchart TB
     BO --> R2 --> API
     AI --> R3 --> MMCP
     AI --> R4 --> BMCP
+    AC -->|"MCP tool calls"| R3
+    AC -->|"MCP tool calls"| R4
 
     FE <--> CLERK
     API <--> CLERK
     API --> DB
     MMCP --> DB
+    MMCP -.->|"embed query + profiles"| BR
     BMCP --> DB
-    ECS -.->|"injects secrets"| SM
+    ECS -.->|"injects secrets at launch"| SM
+    ECS -.->|"structured JSON logs"| CW
 ```
 
 ### Agent Discovery Sequence
 
 ```mermaid
 sequenceDiagram
-    participant A as AI Agent
+    participant U as User / App
+    participant AC as AWS AgentCore
     participant M as Master MCP :5000
+    participant BR as Amazon Bedrock
     participant B as Business MCP :5001
     participant DB as PostgreSQL
 
-    A->>M: tools/call → search_businesses {query: "jollof rice", city: "Port Harcourt"}
+    U->>AC: "Find jollof rice in Port Harcourt, open now"
+    AC->>M: tools/call → search_businesses {query, city, open_now}
+    M->>BR: embed query → semantic similarity scoring
+    BR-->>M: scored results
     M->>DB: SELECT WHERE status=published AND is_active=true
     DB-->>M: [Mama's Kitchen, ...]
-    M-->>A: [{slug, name, mcp_endpoint, capabilities}]
+    M-->>AC: [{slug, name, mcp_endpoint, capabilities}]
 
-    A->>B: POST /mcp/business/mamas-kitchen
+    AC->>B: POST /mcp/business/mamas-kitchen
     Note over B: resolveBusinessSession(slug)<br/>registerBusinessTools(server, session)
-    A->>B: tools/call → get_services {}
+    AC->>B: tools/call → get_services {}
     B->>DB: SELECT FROM business_services WHERE business_id=? AND available=true
     DB-->>B: [{name:"Jollof Rice", price:"₦2500"}, ...]
-    B-->>A: [{name, description, price}]
+    B-->>AC: [{name, description, price}]
 
-    A->>B: tools/call → create_order_request {items:[...], contact_name, contact_phone}
+    AC->>B: tools/call → create_order_request {items, contact_name, contact_phone}
     B->>DB: INSERT INTO agent_events
-    B-->>A: {order_ref:"ORD-1749...", whatsapp_url:"https://wa.me/234..."}
+    B-->>AC: {order_ref:"ORD-1749...", whatsapp_url:"https://wa.me/234..."}
+    AC-->>U: "Order placed at Mama's Kitchen — ref ORD-1749. They will confirm on WhatsApp."
 ```
 
 ### Business Onboarding Flow
@@ -721,6 +775,6 @@ erDiagram
 
 <div align="center">
 
-Built for the AWS Hackathon · Kiosk Technologies Ltd · 2025
+Built for the AWS Hackathon · Kiosk Technologies Ltd · 2026
 
 </div>
