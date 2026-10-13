@@ -26,14 +26,20 @@ import {
 import { requireAuth } from "../middlewares/require-auth";
 import { assertOwnership } from "../lib/ownership";
 import { getMcpEndpoint } from "../lib/mcp-url.js";
+import { checkPublishReadiness } from "../lib/publishReadiness.js";
+import { writeLimiter } from "../middlewares/rateLimiter.js";
 
 const router: IRouter = Router();
 router.use(requireAuth);
 
+// Apply write limiter to mutating routes only
+router.post("/businesses", writeLimiter);
+router.patch("/businesses/:id", writeLimiter);
+router.patch("/businesses/:id/publish", writeLimiter);
+
 function getOwnerId(res: Response): string {
   return res.locals.clerkUserId as string;
 }
-
 
 router.get("/businesses", async (_req, res): Promise<void> => {
   const businesses = await db
@@ -92,7 +98,7 @@ router.post("/businesses", async (req, res): Promise<void> => {
       and(
         eq(businessesTable.ownerClerkId, getOwnerId(res)),
         sql`lower(${businessesTable.businessName}) = lower(${parsed.data.businessName})`,
-        eq(businessesTable.status, 'draft'),
+        eq(businessesTable.status, "draft"),
       ),
     )
     .limit(1);
@@ -116,21 +122,21 @@ router.post("/businesses", async (req, res): Promise<void> => {
     businessName: parsed.data.businessName,
     description: parsed.data.description ?? null,
     categoryId: parsed.data.categoryId ?? null,
-    location: parsed.data.location ?? '',
+    location: parsed.data.location ?? "",
     city: parsed.data.city ?? null,
     country: parsed.data.country ?? null,
     phone: parsed.data.phone ?? null,
     whatsapp: parsed.data.whatsapp ?? null,
     website: parsed.data.website ?? null,
     openingHours: parsed.data.openingHours ?? null,
-    timezone: parsed.data.timezone ?? 'Africa/Lagos',
+    timezone: parsed.data.timezone ?? "Africa/Lagos",
     isActive: true,
-    status: 'draft',
+    status: "draft",
     // Legacy NOT NULL text columns — use empty strings until schema migration removes them
-    services: '',
-    audience: '',
-    hours: '',
-    contact: '',
+    services: "",
+    audience: "",
+    hours: "",
+    contact: "",
   });
 
   const capabilities = parsed.data.capabilities ?? [];
@@ -160,7 +166,7 @@ router.post("/businesses", async (req, res): Promise<void> => {
     );
   }
 
-  const servicesList = parsed.data.services ?? [];
+  const servicesList = parsed.data.services_list ?? [];
   if (servicesList.length > 0) {
     await db.insert(businessServicesTable).values(
       servicesList.map((s) => ({
@@ -216,6 +222,19 @@ router.get("/businesses/:id", async (req, res): Promise<void> => {
   });
 });
 
+router.get("/businesses/:id/readiness", async (req, res): Promise<void> => {
+  let params: { id: string };
+  try {
+    params = BusinessIdParams.parse(req.params);
+  } catch {
+    res.status(400).json({ error: "Invalid business ID" });
+    return;
+  }
+  const business = await assertOwnership(params.id, getOwnerId(res));
+  const readiness = checkPublishReadiness(business);
+  res.json(readiness);
+});
+
 router.patch("/businesses/:id", async (req, res): Promise<void> => {
   let params: { id: string };
   try {
@@ -231,7 +250,9 @@ router.patch("/businesses/:id", async (req, res): Promise<void> => {
     return;
   }
   if (Object.keys(parsed.data).length === 0) {
-    res.status(400).json({ error: "Provide at least one valid business detail." });
+    res
+      .status(400)
+      .json({ error: "Provide at least one valid business detail." });
     return;
   }
 
@@ -239,7 +260,12 @@ router.patch("/businesses/:id", async (req, res): Promise<void> => {
   await assertOwnership(params.id, getOwnerId(res));
 
   // Strip nested array fields that are not columns in businessesTable
-  const { capabilities: _caps, products: _prods, services: _svcs, ...scalarFields } = parsed.data;
+  const {
+    capabilities: _caps,
+    products: _prods,
+    services: _svcs,
+    ...scalarFields
+  } = parsed.data;
 
   const [business] = await db
     .update(businessesTable)
@@ -290,6 +316,16 @@ router.patch("/businesses/:id/publish", async (req, res): Promise<void> => {
   const current = await assertOwnership(params.data.id, getOwnerId(res));
 
   if (body.data.published) {
+    // Gate: require minimum fields before allowing publish
+    const readiness = checkPublishReadiness(current);
+    if (!readiness.ready) {
+      res.status(422).json({
+        error: "Profile is not ready to publish",
+        blocking: readiness.blocking,
+        recommended: readiness.recommended,
+      });
+      return;
+    }
     const [business] = await db
       .update(businessesTable)
       .set({
@@ -415,13 +451,21 @@ router.get("/businesses/:id/analytics", async (req, res): Promise<void> => {
       toolCalls: sql<number>`count(*) filter (where ${agentEventsTable.eventType} = 'tool_call')::int`,
     })
     .from(agentEventsTable)
-    .where(and(eq(agentEventsTable.businessId, business.id), gte(agentEventsTable.createdAt, since)));
+    .where(
+      and(
+        eq(agentEventsTable.businessId, business.id),
+        gte(agentEventsTable.createdAt, since),
+      ),
+    );
 
   const daily = [...dailyByDate].map(([date, values]) => ({ date, ...values }));
   const analytics = {
     totalViews: totalViewsResult?.count ?? 0,
     viewsLast30Days: daily.reduce((sum, day) => sum + day.profileViews, 0),
-    contactClicksLast30Days: daily.reduce((sum, day) => sum + day.contactClicks, 0),
+    contactClicksLast30Days: daily.reduce(
+      (sum, day) => sum + day.contactClicks,
+      0,
+    ),
     linkCopiesLast30Days: daily.reduce((sum, day) => sum + day.linkCopies, 0),
     mcpSessionsLast30Days: mcpStats?.sessions ?? 0,
     mcpToolCallsLast30Days: mcpStats?.toolCalls ?? 0,

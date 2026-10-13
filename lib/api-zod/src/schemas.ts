@@ -2,15 +2,15 @@
  * Handwritten Zod schemas for the structured business shape (V2).
  * Do NOT edit the generated/api.ts file — put new schemas here instead.
  */
-import * as z from 'zod';
+import * as z from "zod";
 
 // ─── Opening Hours ─────────────────────────────────────────────────────────────
 
 const hhmmRegex = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
 export const DayHoursSchema = z.object({
-  open: z.string().regex(hhmmRegex, 'Must be HH:MM (24-hour)'),
-  close: z.string().regex(hhmmRegex, 'Must be HH:MM (24-hour)'),
+  open: z.string().regex(hhmmRegex, "Must be HH:MM (24-hour)"),
+  close: z.string().regex(hhmmRegex, "Must be HH:MM (24-hour)"),
   closed: z.boolean(),
 });
 
@@ -27,14 +27,14 @@ export const OpeningHoursSchema = z.object({
 // ─── Capability ────────────────────────────────────────────────────────────────
 
 export const CapabilityKeySchema = z.enum([
-  'menu',
-  'ordering',
-  'delivery',
-  'booking',
-  'contact',
-  'products',
-  'services',
-  'information',
+  "menu",
+  "ordering",
+  "delivery",
+  "booking",
+  "contact",
+  "products",
+  "services",
+  "information",
 ]);
 
 export type CapabilityKey = z.infer<typeof CapabilityKeySchema>;
@@ -72,23 +72,43 @@ export const CreateBusinessBodyV2 = z.object({
   hours: z.string().min(1).max(500).optional(),
   contact: z.string().min(1).max(1000).optional(),
   price: z.string().max(250).nullable().optional(),
-  booking: z.enum(['yes', 'no']).nullable().optional(),
+  booking: z.enum(["yes", "no"]).nullable().optional(),
   categoryId: z.string().uuid().optional(),
   description: z.string().max(2000).optional(),
   city: z.string().optional(),
   country: z.string().optional(),
   location: z.string().optional(),
-  phone: z.string().optional(),
-  whatsapp: z.string().optional(),
+  phone: z
+    .string()
+    .max(30)
+    .refine(
+      (v) =>
+        !v ||
+        (!/https?:\/\//i.test(v) && /^[+\d][\d\s().\-]{5,}$/.test(v.trim())),
+      { message: "Phone must be a valid phone number, not a URL" },
+    )
+    .optional()
+    .nullable(),
+  whatsapp: z
+    .string()
+    .max(20)
+    .refine((v) => !v || /^\d{7,15}$/.test(v.replace(/\s/g, "")), {
+      message:
+        "WhatsApp must be digits only in international format, e.g. 2348012345678",
+    })
+    .transform((v) => (v ? v.replace(/\D/g, "") : v))
+    .optional()
+    .nullable(),
   website: z
     .string()
-    .url()
-    .refine((url: string) => url.startsWith('https://'), {
-      message: 'Website must use HTTPS',
+    .max(500)
+    .refine((v) => !v || /^https?:\/\/.+\..+/i.test(v), {
+      message: "Website must be a valid http:// or https:// URL",
     })
-    .optional(),
+    .optional()
+    .nullable(),
   openingHours: OpeningHoursSchema.optional(),
-  timezone: z.string().default('Africa/Lagos'),
+  timezone: z.string().default("Africa/Lagos"),
   capabilities: z.array(CapabilityConfigSchema).optional(),
   products: z.array(ProductInputSchema).optional(),
   services_list: z.array(ServiceInputSchema).optional(),
@@ -119,7 +139,7 @@ export const DashboardBusinessSchema = z.object({
   openingHours: OpeningHoursSchema.nullable(),
   timezone: z.string().nullable(),
   isActive: z.boolean(),
-  status: z.enum(['draft', 'published']),
+  status: z.enum(["draft", "published"]),
   mcpEndpoint: z.string(),
   capabilities: z.array(CapabilityKeySchema),
   publishedAt: z.coerce.date().nullable(),
@@ -172,7 +192,9 @@ export const SearchMarketplaceQueryParamsV2 = z.object({
   category: z.string().optional(),
 });
 
-export type SearchMarketplaceQueryParamsV2 = z.infer<typeof SearchMarketplaceQueryParamsV2>;
+export type SearchMarketplaceQueryParamsV2 = z.infer<
+  typeof SearchMarketplaceQueryParamsV2
+>;
 
 /** A single item returned by GET /marketplace (structured V2 shape). */
 export const MarketplaceBusinessItemSchema = z.object({
@@ -190,7 +212,7 @@ export const MarketplaceBusinessItemSchema = z.object({
   timezone: z.string().nullable(),
   categoryId: z.string().uuid().nullable(),
   isActive: z.boolean(),
-  status: z.enum(['draft', 'published']),
+  status: z.enum(["draft", "published"]),
   mcpEndpoint: z.string(),
   capabilities: z.array(CapabilityKeySchema),
   publishedAt: z.coerce.date().nullable(),
@@ -198,9 +220,13 @@ export const MarketplaceBusinessItemSchema = z.object({
   updatedAt: z.coerce.date(),
 });
 
-export const SearchMarketplaceResponseV2 = z.array(MarketplaceBusinessItemSchema);
+export const SearchMarketplaceResponseV2 = z.array(
+  MarketplaceBusinessItemSchema,
+);
 
-export type MarketplaceBusinessItem = z.infer<typeof MarketplaceBusinessItemSchema>;
+export type MarketplaceBusinessItem = z.infer<
+  typeof MarketplaceBusinessItemSchema
+>;
 
 // ─── Marketplace Public Profile ───────────────────────────────────────────────
 
@@ -239,7 +265,7 @@ export const MarketplaceBusinessProfileResponse = z.object({
   website: z.string().nullable(),
   openingHours: OpeningHoursSchema.nullable(),
   timezone: z.string().nullable(),
-  status: z.enum(['draft', 'published']),
+  status: z.enum(["draft", "published"]),
   publishedAt: z.coerce.date().nullable(),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
@@ -249,7 +275,9 @@ export const MarketplaceBusinessProfileResponse = z.object({
   services: z.array(MarketplaceServiceSchema),
 });
 
-export type MarketplaceBusinessProfile = z.infer<typeof MarketplaceBusinessProfileResponse>;
+export type MarketplaceBusinessProfile = z.infer<
+  typeof MarketplaceBusinessProfileResponse
+>;
 
 // ─── Shared Params ─────────────────────────────────────────────────────────────
 
@@ -269,15 +297,18 @@ export const ServiceParams = z.object({
 
 // ─── Analytics (extended with MCP stats) ──────────────────────────────────────
 
-import { GetBusinessAnalyticsResponse } from './generated/api.js';
+import { GetBusinessAnalyticsResponse } from "./generated/api.js";
 
 /**
  * Extended analytics response that includes MCP agent event counts.
  * Use this instead of the generated GetBusinessAnalyticsResponse in routes.
  */
-export const GetBusinessAnalyticsResponseV2 = GetBusinessAnalyticsResponse.extend({
-  mcpSessionsLast30Days: z.number().int(),
-  mcpToolCallsLast30Days: z.number().int(),
-});
+export const GetBusinessAnalyticsResponseV2 =
+  GetBusinessAnalyticsResponse.extend({
+    mcpSessionsLast30Days: z.number().int(),
+    mcpToolCallsLast30Days: z.number().int(),
+  });
 
-export type GetBusinessAnalyticsResponseV2 = z.infer<typeof GetBusinessAnalyticsResponseV2>;
+export type GetBusinessAnalyticsResponseV2 = z.infer<
+  typeof GetBusinessAnalyticsResponseV2
+>;
