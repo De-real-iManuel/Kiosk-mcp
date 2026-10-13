@@ -12,8 +12,9 @@
       "image": "ACCOUNT_ID.dkr.ecr.us-east-1.amazonaws.com/kiosk-api-server:latest",
       "portMappings": [{ "containerPort": 4000, "protocol": "tcp" }],
       "environment": [
-        { "name": "PORT", "value": "4000" },
-        { "name": "NODE_ENV", "value": "production" }
+        { "name": "PORT",     "value": "4000" },
+        { "name": "NODE_ENV", "value": "production" },
+        { "name": "LOG_LEVEL","value": "info" }
       ],
       "secrets": [
         {
@@ -27,6 +28,10 @@
         {
           "name": "CLERK_PUBLISHABLE_KEY",
           "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-publishable-key"
+        },
+        {
+          "name": "MCP_BASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/mcp-base-url"
         }
       ],
       "logConfiguration": {
@@ -36,6 +41,13 @@
           "awslogs-region": "us-east-1",
           "awslogs-stream-prefix": "ecs"
         }
+      },
+      "healthCheck": {
+        "command": ["CMD-SHELL", "curl -f http://localhost:4000/api/health || exit 1"],
+        "interval": 30,
+        "timeout": 5,
+        "retries": 3,
+        "startPeriod": 15
       },
       "essential": true
     }

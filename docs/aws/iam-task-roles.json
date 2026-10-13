@@ -1,0 +1,92 @@
+{
+  "_comment": "IAM policies for ECS task roles. Attach these policies to the task role ARNs referenced in each task definition. The execution role (ecsTaskExecutionRole) is the standard AWS-managed AmazonECSTaskExecutionRolePolicy.",
+
+  "kioskApiServerTaskRole": {
+    "description": "Allows api-server to read its secrets and write CloudWatch logs",
+    "policies": [
+      {
+        "policyName": "kiosk-api-server-secrets",
+        "statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["secretsmanager:GetSecretValue"],
+            "Resource": [
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/database-url*",
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-secret-key*",
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-publishable-key*",
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/mcp-base-url*"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  "kioskMasterMcpTaskRole": {
+    "description": "Allows master-mcp to call Bedrock Titan Embeddings and read its secrets",
+    "policies": [
+      {
+        "policyName": "kiosk-master-mcp-bedrock",
+        "statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["bedrock:InvokeModel"],
+            "Resource": [
+              "arn:aws:bedrock:us-east-1::foundation-model/amazon.titan-embed-text-v2:0"
+            ]
+          }
+        ]
+      },
+      {
+        "policyName": "kiosk-master-mcp-secrets",
+        "statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["secretsmanager:GetSecretValue"],
+            "Resource": [
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/database-url*"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  "kioskBusinessMcpTaskRole": {
+    "description": "Allows business-mcp to read its secrets. No Bedrock needed — tools are pure DB reads.",
+    "policies": [
+      {
+        "policyName": "kiosk-business-mcp-secrets",
+        "statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["secretsmanager:GetSecretValue"],
+            "Resource": [
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/database-url*"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+
+  "kioskFrontendTaskRole": {
+    "description": "Allows frontend to read its public config secrets",
+    "policies": [
+      {
+        "policyName": "kiosk-frontend-secrets",
+        "statement": [
+          {
+            "Effect": "Allow",
+            "Action": ["secretsmanager:GetSecretValue"],
+            "Resource": [
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/clerk-publishable-key*",
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/api-url*",
+              "arn:aws:secretsmanager:us-east-1:ACCOUNT_ID:secret:kiosk/mcp-base-url*"
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}
