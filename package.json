@@ -14,9 +14,7 @@
         "prettier": "^3.9.6",
         "typescript": "~5.9.3"
     },
-    "dependencies": {
-        "@esbuild/win32-x64": "^0.28.2",
-        "cross-env": "^10.1.0",
+    "optionalDependencies": {
         "lightningcss-win32-x64-msvc": "^1.33.0"
     }
 }

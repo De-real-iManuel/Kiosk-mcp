@@ -475,4 +475,52 @@ router.get("/businesses/:id/analytics", async (req, res): Promise<void> => {
   res.json(GetBusinessAnalyticsResponse.parse(analytics));
 });
 
+/**
+ * DELETE /businesses/:id
+ *
+ * Permanently deletes a business and all related data (capabilities, services,
+ * products, endpoints, events). This is irreversible — the business, its MCP
+ * endpoint, and all analytics are gone.
+ *
+ * Guards:
+ *  1. Must be authenticated (requireAuth middleware).
+ *  2. Must own the business (assertOwnership — returns 404 if not found or not owned).
+ *  3. Business must be in 'draft' status. Published businesses must be unpublished
+ *     first. This prevents accidental live-endpoint deletion and gives a moment to
+ *     reconsider before permanent removal.
+ */
+router.delete("/businesses/:id", async (req, res): Promise<void> => {
+  let params: { id: string };
+  try {
+    params = BusinessIdParams.parse(req.params);
+  } catch {
+    res.status(400).json({ error: "Invalid business ID" });
+    return;
+  }
+
+  // Verify ownership — 404 if not found or not owned by this user
+  const business = await assertOwnership(params.id, getOwnerId(res));
+
+  // Safety gate: require the business to be a draft before permanent deletion.
+  // Published businesses must be unpublished first so the owner explicitly
+  // acknowledges the MCP endpoint will go offline.
+  if (business.status === "published") {
+    res.status(422).json({
+      error: "Cannot delete a published Kiosk. Unpublish it first, then delete.",
+      code: "MUST_UNPUBLISH_FIRST",
+    });
+    return;
+  }
+
+  // Cascade delete: related tables have ON DELETE CASCADE FK constraints, so
+  // deleting the business row removes capabilities, products, services, and
+  // endpoints automatically. Agent events use ON DELETE SET NULL so they're
+  // preserved for analytics history.
+  await db
+    .delete(businessesTable)
+    .where(eq(businessesTable.id, params.id));
+
+  res.status(204).send();
+});
+
 export default router;
