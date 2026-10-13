@@ -8,6 +8,9 @@
  * In local dev, leave unset or set: MCP_BASE_URL=http://localhost:5001
  */
 export function getMcpEndpoint(slug: string): string {
-  const base = (process.env.MCP_BASE_URL ?? 'http://localhost:5001').replace(/\/$/, '');
+  const base = (process.env.MCP_BASE_URL ?? "http://localhost:5001").replace(
+    /\/$/,
+    "",
+  );
   return `${base}/mcp/business/${slug}`;
 }

@@ -1,6 +1,7 @@
 import { Router, type IRouter } from "express";
 import { and, asc, eq, ilike, inArray, ne, or } from "drizzle-orm";
-import { getMcpEndpoint } from '../lib/mcp-url.js';
+import { getMcpEndpoint } from "../lib/mcp-url.js";
+import { marketplaceLimiter } from "../middlewares/rateLimiter.js";
 import {
   CreateMarketplaceEventBody,
   CreateMarketplaceEventParams,
@@ -21,6 +22,7 @@ import {
 } from "@workspace/db";
 
 const router: IRouter = Router();
+router.use(marketplaceLimiter);
 
 router.get("/marketplace", async (req, res): Promise<void> => {
   const parsed = SearchMarketplaceQueryParamsV2.safeParse(req.query);
@@ -132,7 +134,14 @@ router.get("/marketplace", async (req, res): Promise<void> => {
     status: b.status as "draft" | "published",
     mcpEndpoint: getMcpEndpoint(b.slug),
     capabilities: (capsByBusiness.get(b.id) ?? []) as Array<
-      "menu" | "ordering" | "delivery" | "booking" | "contact" | "products" | "services" | "information"
+      | "menu"
+      | "ordering"
+      | "delivery"
+      | "booking"
+      | "contact"
+      | "products"
+      | "services"
+      | "information"
     >,
     publishedAt: b.publishedAt ?? null,
     createdAt: b.createdAt,
