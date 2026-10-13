@@ -1,93 +1,203 @@
-# Kiosk Demo Guide
+# Kiosk — Hackathon Demo Guide
 
-## Demo Scenario: "Find me jollof rice near me, open now, able to deliver"
+## The Story
 
-This is the core Kiosk demo. It shows a complete AI agent journey from discovery to order placement.
+Local businesses in emerging markets — a jollof rice restaurant in Port Harcourt, a hair salon in Lagos, a phone repair shop in Abuja — are completely invisible to AI agents today. There is no standard way for an Amazon Alexa+ assistant or a Claude agent to ask "what's open near me that delivers food?" and get a structured, actionable answer.
+
+Kiosk fixes this at the infrastructure layer. Every business that signs up gets a live MCP endpoint — automatically, immediately, with no code.
+
+---
+
+## Demo Scenario
+
+**"Find me jollof rice near me, open now, and place an order."**
+
+This single user request exercises the entire Kiosk stack:
+
+1. Master MCP discovery (search across all published businesses)
+2. Open-status check (timezone-aware hours algorithm)
+3. Business MCP connection (tenant-routed per-slug)
+4. Order intent capture (with WhatsApp confirmation URL)
+
+---
 
 ## Prerequisites
 
 ```bash
-# Install dependencies
+# Clone and install
+git clone <repo-url> && cd kiosk-agent-commerce
 pnpm install
 
-# Set up .env with DATABASE_URL and Clerk keys
-# Run migration and seed
-pnpm --filter @workspace/db push
-pnpm --filter @workspace/db seed
+# Configure env (fill in DATABASE_URL + Clerk keys)
+cp .env.example .env
+
+# Database setup
+cd lib/db && npx drizzle-kit push && npx tsx src/seed/index.ts
 
 # Start all services (4 terminals)
-pnpm --filter @workspace/api-server dev        # port 4000
-pnpm --filter @workspace/master-mcp start      # port 5000
-pnpm --filter @workspace/business-mcp start    # port 5001
-pnpm --filter @workspace/kiosk-frontend dev    # port 3000
+cd artifacts/api-server     && pnpm build && pnpm start   # :4000
+cd artifacts/business-mcp   && pnpm build && pnpm start   # :5001
+cd artifacts/master-mcp     && pnpm build && pnpm start   # :5000
+cd artifacts/kiosk-frontend && pnpm dev                   # :3000
 ```
 
-## Part 1 Business Owner Onboarding
+---
 
-1. Open http://localhost:3000
-2. Sign up as a business owner
-3. Click "Add Business"
-4. Fill in: Name="Mama's Kitchen", Category=Restaurant, City=Port Harcourt
-5. Add products: Jollof Rice ?2500, Fried Rice ?2500, Chicken ?1500
-6. Enable capabilities: Menu, Ordering, Delivery, Contact
-7. Click Publish
-8. Dashboard shows:
-   ```
-   Your business is now AI-discoverable.
-   MCP URL: https://mcp.kiosk.example/business/mamas-kitchen-XXXXXXXX
-   [Copy]
-   ```
+## Part 1 — Business Owner Onboarding (2 minutes)
 
-## Part 2 AI Agent Discovery (curl)
+1. Open [http://localhost:3000](http://localhost:3000)
+2. Sign up with any email via Clerk
+3. Click **Create your Kiosk**
+4. Fill in the form:
+   - Business name: `Mama's Kitchen`
+   - Category: `Restaurant`
+   - Description: `Home-style Nigerian food. Jollof rice, soups, and grills.`
+   - City: `Port Harcourt`
+   - Phone: `+2348012345678`
+   - WhatsApp: `2348012345678`
+   - Opening hours: Mon–Sat 08:00–22:00
+5. Click **Save draft**
+6. Click **Publish Kiosk**
+
+The dashboard shows:
+
+```
+AI-readable business presence — ACTIVE
+http://localhost:5001/mcp/business/mamas-kitchen-XXXXXXXX
+```
+
+That's it. The business is now AI-discoverable.
+
+---
+
+## Part 2 — AI Agent Discovery (curl demo)
+
+Run these commands in order to simulate exactly what AWS AgentCore does:
 
 ```bash
+# Get the slug from your dashboard, then set it:
+SLUG="mamas-kitchen-XXXXXXXX"
+
 # Step 1: Discover categories
-curl -X POST http://localhost:5000/mcp \
+curl -s -X POST http://localhost:5000/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"discover_categories","arguments":{}}}'
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"discover_categories","arguments":{}}}' \
+  | jq '.result.content[0].text | fromjson | .[].name'
+# → "Restaurant", "Salon & Beauty", "Electronics & Repairs", ...
 
 # Step 2: Search for jollof rice
-curl -X POST http://localhost:5000/mcp \
+curl -s -X POST http://localhost:5000/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"search_businesses","arguments":{"query":"jollof rice","city":"Port Harcourt","open_now":true,"local_time":"2024-01-15T13:00:00Z"}}}'
+  -d "{\"jsonrpc\":\"2.0\",\"id\":2,\"method\":\"tools/call\",\"params\":{\"name\":\"search_businesses\",\"arguments\":{\"query\":\"jollof rice\",\"city\":\"Port Harcourt\"}}}" \
+  | jq '.result.content[0].text | fromjson | .[0] | {name, slug, mcp_endpoint}'
+# → { "name": "Mama's Kitchen", "slug": "mamas-kitchen-...", "mcp_endpoint": "http://localhost:5001/mcp/business/..." }
 
-# Step 3: Get MCP endpoint
-curl -X POST http://localhost:5000/mcp \
+# Step 3: Check if it's open right now
+curl -s -X POST http://localhost:5000/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":3,"method":"tools/call","params":{"name":"get_business_endpoint","arguments":{"slug":"mamas-kitchen-XXXXXXXX"}}}'
+  -d "{\"jsonrpc\":\"2.0\",\"id\":3,\"method\":\"tools/call\",\"params\":{\"name\":\"check_business_status\",\"arguments\":{\"slug\":\"$SLUG\",\"iso_time\":\"$(date -u +%Y-%m-%dT%H:%M:%SZ)\"}}}" \
+  | jq '.result.content[0].text | fromjson'
+# → { "is_open": true, "current_day_hours": { "open": "08:00", "close": "22:00" } }
 
-# Step 4: Connect to Business MCP and place order
-curl -X POST http://localhost:5001/mcp/business/mamas-kitchen-XXXXXXXX \
+# Step 4: Get the Business MCP endpoint
+curl -s -X POST http://localhost:5000/mcp \
   -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":4,"method":"tools/call","params":{"name":"create_order_request","arguments":{"items":[{"product_name":"Jollof Rice","quantity":2}],"contact_name":"Demo User","contact_phone":"+2348000000000"}}}'
+  -d "{\"jsonrpc\":\"2.0\",\"id\":4,\"method\":\"tools/call\",\"params\":{\"name\":\"get_business_endpoint\",\"arguments\":{\"slug\":\"$SLUG\"}}}" \
+  | jq '.result.content[0].text | fromjson'
+# → { "endpoint_url": "http://localhost:5001/mcp/business/mamas-kitchen-...", "transport": "streamable-http" }
+
+# Step 5: Connect to Business MCP — list tools
+curl -s -X POST http://localhost:5001/mcp/business/$SLUG \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":5,"method":"tools/list","params":{}}' \
+  | jq '[.result.tools[].name]'
+# → ["get_business_info","get_services","get_hours","get_contact","get_capabilities"]
+
+# Step 6: Get the menu
+curl -s -X POST http://localhost:5001/mcp/business/$SLUG \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":6,"method":"tools/call","params":{"name":"get_services","arguments":{}}}' \
+  | jq '.result.content[0].text | fromjson'
+
+# Step 7: Get contact info
+curl -s -X POST http://localhost:5001/mcp/business/$SLUG \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":7,"method":"tools/call","params":{"name":"get_contact","arguments":{}}}' \
+  | jq '.result.content[0].text | fromjson'
+# → { "phone": "+2348012345678", "whatsapp_url": "https://wa.me/2348012345678", "website": null }
 ```
 
-## Part 3 Automated E2E Test
+---
 
-```bash
-pnpm e2e
+## Part 3 — AWS AgentCore Integration
+
+With an AgentCore agent configured against Kiosk's Master MCP, the entire flow above happens automatically from a single user message.
+
+**Create the agent in AWS Console:**
+
+```json
+{
+  "agentName": "KioskCommerceAgent",
+  "foundationModel": "anthropic.claude-3-5-sonnet-20241022-v2:0",
+  "mcpServers": [{
+    "name": "kiosk",
+    "endpoint": "https://mcp.kiosk.example/mcp",
+    "transport": "streamable-http"
+  }],
+  "agentInstructions": "Help users find and order from local businesses. Use search_businesses first, check is_open status, then connect to the business MCP endpoint for transactions."
+}
 ```
 
-Expected output:
-```
-[1] Connecting to Master MCP...
-[2] discover_categories: 10 categories found
-[3] search_businesses: Mama's Kitchen found (slug: mamas-kitchen-...)
-[4] get_business_endpoint: https://mcp.kiosk.example/business/mamas-kitchen-...
-[5] Connecting to Business MCP...
-[6] get_capabilities: ["menu","ordering","delivery","contact"]
-[7] get_products: 6 products available
-[8] create_order_request: order_ref=ORD-... whatsapp_url=https://wa.me/...
-? Full E2E agent flow passed
+**Test the agent:**
+
+> "Find me an open restaurant in Port Harcourt that delivers jollof rice and place an order for 2 portions."
+
+AgentCore will automatically call `search_businesses`, `check_business_status`, connect to the Business MCP, call `get_services`, then `create_order_request` — returning the order reference and WhatsApp confirmation link.
+
+---
+
+## Part 4 — Strands SDK Integration
+
+For developers building their own agents on top of Kiosk:
+
+```python
+from strands import Agent
+from strands.tools.mcp import MCPClient
+
+kiosk = MCPClient("https://mcp.kiosk.example/mcp")
+agent = Agent(
+    model="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
+    tools=[kiosk],
+    system_prompt="You help users find and order from local businesses."
+)
+
+result = agent("Find me jollof rice near Port Harcourt, open now")
+print(result)
 ```
 
-## Demo Video Outline (< 3 minutes)
+---
 
-1. (0:00) Show the problem: "How does an AI agent find Mama's Kitchen?"
-2. (0:20) Business owner fills onboarding form � plain language, no technical knowledge
-3. (0:45) Click Publish MCP URL appears on dashboard
-4. (1:00) Switch to terminal show Master MCP discovery in real time
-5. (1:30) Agent finds Mama's Kitchen, gets endpoint, connects Business MCP
-6. (1:50) Agent places order returns WhatsApp URL for out-of-band confirmation
-7. (2:10) Show the architecture diagram briefly
-8. (2:30) "Any business. Any AI agent. No infrastructure expertise required."
+## What the Demo Proves
+
+| Claim | How demonstrated |
+|---|---|
+| Any business can join in 2 minutes | Live onboarding walkthrough |
+| MCP endpoint is live immediately after publish | Dashboard shows URL; curl verifies it returns tools |
+| AI agents can discover and transact without custom integrations | Full curl discovery flow from categories to order |
+| AWS AgentCore works natively with Kiosk | AgentCore config + live agent test |
+| Multi-tenant isolation | Two businesses, two slugs, two different tool responses |
+| Timezone-aware open/closed status | `check_business_status` with current UTC time |
+
+---
+
+## Demo Video Outline (under 3 minutes)
+
+| Time | Action |
+|---|---|
+| 0:00–0:15 | The problem: AI agents can't find local businesses |
+| 0:15–0:50 | Business owner fills form and clicks Publish — MCP URL appears |
+| 0:50–1:30 | Terminal: curl through the full discovery flow, step by step |
+| 1:30–1:50 | AgentCore: single user message → full order placed |
+| 1:50–2:10 | Architecture diagram — ECS, Bedrock, AgentCore, Secrets Manager |
+| 2:10–2:30 | Dashboard analytics: views, contacts, MCP tool calls charted |
+| 2:30–2:50 | "Any business. Any AI agent. No infrastructure expertise needed." |
