@@ -21,7 +21,11 @@ Everything needed to deploy Kiosk to AWS from scratch.
 
 ## Why ECS Fargate, not Lambda
 
-Kiosk's MCP servers use **Streamable HTTP with Server-Sent Events**. Lambda has a 15-minute execution limit and cold-start latency that breaks persistent SSE connections. Fargate containers are always warm with no execution time ceiling — exactly what a live MCP endpoint needs.
+Lambda can technically serve MCP as of 2026 — response streaming (SSE, Streamable HTTP) is available across all AWS regions since April 2026, and Lambda Managed Instances now support 90-minute timeouts since September 2026. The Fargate choice is about three concrete things Lambda cannot match for Kiosk's workload:
+
+1. **In-memory session cache** — `business-mcp` caches resolved business sessions for 30 seconds per slug. Lambda invocations are isolated; each one starts cold and loses the cache, forcing a full DB round-trip on every tool call. Fargate containers are long-lived and share the cache across all concurrent requests.
+2. **Multi-tenant shared runtime** — one Fargate container handles every business slug concurrently without per-tenant infrastructure. Replicating this on Lambda requires a distributed cache (Redis), adding operational cost and complexity.
+3. **Zero cold-start guarantee** — `minCapacity: 2` on both MCP services means they are always warm. Lambda provisioned concurrency helps but does not eliminate cold-start latency spikes under traffic bursts.
 
 ---
 
