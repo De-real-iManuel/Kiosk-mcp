@@ -85,17 +85,31 @@ ChatGPT will verify the endpoint and list the available tools. You will see a co
 
 ### Testing locally with ngrok
 
-ChatGPT requires HTTPS. For local testing, expose your local server:
+ChatGPT requires HTTPS. For local testing, expose your local server.
+
+> **Important:** Rebuild master-mcp first after this fix — the server now handles `GET /mcp` correctly which is what ChatGPT checks before accepting the URL.
 
 ```bash
-# Start your local master-mcp
+# 1. Rebuild with the GET /mcp fix
 cd artifacts/master-mcp && pnpm build && pnpm start
 
-# Expose it via ngrok
+# 2. In a separate terminal, expose it
 npx ngrok http 5000
 ```
 
-Use the `https://xxxx.ngrok-free.app/mcp` URL in ChatGPT settings.
+You will get a URL like:
+```
+https://parochial-nonemulative-wynona.ngrok-free.dev
+```
+
+**The URL to paste into ChatGPT is:**
+```
+https://parochial-nonemulative-wynona.ngrok-free.dev/mcp
+```
+
+The `/mcp` path at the end is required. Do not paste the bare domain — ChatGPT will reject it.
+
+**Why it failed before:** ChatGPT sends a `GET /mcp` request first to probe the server. The old code only had `POST /mcp` registered, so `GET /mcp` returned 404 and ChatGPT rejected the URL as invalid. The fix registers `GET`, `POST`, and `DELETE` on `/mcp`.
 
 ---
 
