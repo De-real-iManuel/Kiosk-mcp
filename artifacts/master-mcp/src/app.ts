@@ -46,7 +46,8 @@ export function createApp(): express.Express {
         await transport.handleRequest(req, res, req.body);
       } catch (err) {
         logger.error({ err }, "Error handling GET /mcp");
-        if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+        if (!res.headersSent)
+          res.status(500).json({ error: "Internal server error" });
       }
     } else {
       // Client is probing to check the URL is valid (e.g. ChatGPT connector verifier).
@@ -71,7 +72,8 @@ export function createApp(): express.Express {
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
       logger.error({ err }, "Error handling POST /mcp");
-      if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+      if (!res.headersSent)
+        res.status(500).json({ error: "Internal server error" });
     }
   });
 
