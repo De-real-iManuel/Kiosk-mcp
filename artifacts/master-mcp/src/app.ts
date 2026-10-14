@@ -20,9 +20,17 @@ export function createApp(): express.Express {
     res.json({ status: "ok", service: "kiosk-master-mcp" });
   });
 
-  // MCP endpoint — stateless mode (sessionIdGenerator: undefined)
-  // Each POST /mcp request is handled as an independent session.
-  app.post("/mcp", async (req: Request, res: Response) => {
+  // MCP endpoint — Streamable HTTP transport handles GET, POST, and DELETE.
+  //
+  // GET  /mcp  — ChatGPT, Claude Desktop, and other clients probe this first
+  //              to check for SSE support. The SDK handles it correctly.
+  //              Without this route, clients get 404 and reject the URL.
+  //
+  // POST /mcp  — actual JSON-RPC tool calls (tools/list, tools/call, etc.)
+  //
+  // DELETE /mcp — session termination (some clients send this on disconnect)
+
+  const mcpHandler = async (req: Request, res: Response): Promise<void> => {
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
@@ -37,7 +45,11 @@ export function createApp(): express.Express {
         res.status(500).json({ error: "Internal server error" });
       }
     }
-  });
+  };
+
+  app.get("/mcp", mcpHandler);
+  app.post("/mcp", mcpHandler);
+  app.delete("/mcp", mcpHandler);
 
   return app;
 }

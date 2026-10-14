@@ -49,32 +49,33 @@ export function createApp(): express.Express {
   });
 
   // MCP endpoint — per-tenant stateless mode (sessionIdGenerator: undefined)
-  // Each POST /mcp/business/:slug request is handled as an independent session
-  // for the business identified by the slug.
-  app.post(
-    "/mcp/business/:slug",
-    mcpRateLimiter,
-    async (req: Request, res: Response) => {
-      const slug = req.params["slug"] as string;
-      const reqId = (req as Request & { id?: string }).id ?? "unknown";
+  // Handles GET, POST, and DELETE — all required by Streamable HTTP clients.
+  // GET  /mcp/business/:slug  — clients probe this first; without it they get 404 and reject the URL
+  // POST /mcp/business/:slug  — actual JSON-RPC tool calls
+  // DELETE /mcp/business/:slug — session termination
 
-      // Resolve the business session first — bail out if the slug is unknown
-      // or the business is not published/active.
-      let session: Awaited<ReturnType<typeof resolveBusinessSession>>;
-      try {
-        session = await resolveBusinessSession(slug);
-      } catch (err) {
-        logger.error(
-          { err, slug, reqId },
-          "Failed to resolve business session",
-        );
-        if (!res.headersSent) {
-          res.status(404).json({ error: "Business not found" });
-        }
-        return;
+  const businessMcpHandler = async (
+    req: Request,
+    res: Response,
+  ): Promise<void> => {
+    const slug = req.params["slug"] as string;
+    const reqId = (req as Request & { id?: string }).id ?? "unknown";
+
+    // For GET requests (client capability probe), resolve session to verify
+    // the slug is valid before handing off to the transport.
+    let session: Awaited<ReturnType<typeof resolveBusinessSession>>;
+    try {
+      session = await resolveBusinessSession(slug);
+    } catch (err) {
+      logger.error({ err, slug, reqId }, "Failed to resolve business session");
+      if (!res.headersSent) {
+        res.status(404).json({ error: "Business not found" });
       }
+      return;
+    }
 
-      // Fire-and-forget session_start event (non-critical)
+    // Fire-and-forget session_start event on POST only (not on GET probe)
+    if (req.method === "POST") {
       db.insert(agentEventsTable)
         .values({
           businessId: session.business.id,
@@ -83,25 +84,29 @@ export function createApp(): express.Express {
           metadata: { slug, reqId },
         })
         .catch(() => {});
+    }
 
-      const server = createBusinessMcpServer(slug);
-      registerBusinessTools(server, session);
+    const server = createBusinessMcpServer(slug);
+    registerBusinessTools(server, session);
 
-      const transport = new StreamableHTTPServerTransport({
-        sessionIdGenerator: undefined,
-      });
+    const transport = new StreamableHTTPServerTransport({
+      sessionIdGenerator: undefined,
+    });
 
-      try {
-        await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
-      } catch (err) {
-        logger.error({ err, slug, reqId }, "Error handling MCP request");
-        if (!res.headersSent) {
-          res.status(500).json({ error: "Internal server error" });
-        }
+    try {
+      await server.connect(transport);
+      await transport.handleRequest(req, res, req.body);
+    } catch (err) {
+      logger.error({ err, slug, reqId }, "Error handling MCP request");
+      if (!res.headersSent) {
+        res.status(500).json({ error: "Internal server error" });
       }
-    },
-  );
+    }
+  };
+
+  app.get("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
+  app.post("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
+  app.delete("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
 
   return app;
 }
