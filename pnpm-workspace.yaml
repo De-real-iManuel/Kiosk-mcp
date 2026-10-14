@@ -67,6 +67,17 @@ onlyBuiltDependencies:
   - msw
   - unrs-resolver
 
+# pnpm v11+ renamed onlyBuiltDependencies → allowBuilds (map syntax).
+# Keep both so the workspace works with any pnpm version CI may use.
+allowBuilds:
+  '@swc/core': true
+  '@clerk/shared': true
+  '@tailwindcss/oxide': true
+  esbuild: true
+  lightningcss: true
+  msw: true
+  unrs-resolver: true
+
 overrides:
   "esbuild>@esbuild/darwin-arm64": "-"
   "esbuild>@esbuild/darwin-x64": "-"
