@@ -22,34 +22,62 @@ export function createApp(): express.Express {
 
   // MCP endpoint — Streamable HTTP transport handles GET, POST, and DELETE.
   //
-  // GET  /mcp  — ChatGPT, Claude Desktop, and other clients probe this first
-  //              to check for SSE support. The SDK handles it correctly.
-  //              Without this route, clients get 404 and reject the URL.
+  // GET  /mcp  — ChatGPT and other clients probe this first to verify the server.
+  //              The MCP spec requires Accept: text/event-stream on GET requests.
+  //              Some clients (including ChatGPT's connector verifier) send a bare
+  //              GET without the correct Accept header and expect a 200, not 406.
+  //              We handle this ourselves: if the client wants SSE, open the stream;
+  //              otherwise return 200 so the URL validation passes.
   //
   // POST /mcp  — actual JSON-RPC tool calls (tools/list, tools/call, etc.)
   //
-  // DELETE /mcp — session termination (some clients send this on disconnect)
+  // DELETE /mcp — session termination
 
-  const mcpHandler = async (req: Request, res: Response): Promise<void> => {
+  app.get("/mcp", async (req: Request, res: Response): Promise<void> => {
+    const accept = req.headers["accept"] ?? "";
+    if (accept.includes("text/event-stream")) {
+      // Proper SSE probe — let the transport handle it
+      const server = createMcpServer();
+      const transport = new StreamableHTTPServerTransport({
+        sessionIdGenerator: undefined,
+      });
+      try {
+        await server.connect(transport);
+        await transport.handleRequest(req, res, req.body);
+      } catch (err) {
+        logger.error({ err }, "Error handling GET /mcp");
+        if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
+      }
+    } else {
+      // Client is probing to check the URL is valid (e.g. ChatGPT connector verifier).
+      // Return 200 with a minimal SSE-compatible response so validation passes.
+      res.setHeader("Content-Type", "text/event-stream");
+      res.setHeader("Cache-Control", "no-cache");
+      res.setHeader("Connection", "keep-alive");
+      res.setHeader("Access-Control-Allow-Origin", "*");
+      res.status(200);
+      res.write(": kiosk-master-mcp ready\n\n");
+      res.end();
+    }
+  });
+
+  app.post("/mcp", async (req: Request, res: Response): Promise<void> => {
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
-
     try {
       await server.connect(transport);
       await transport.handleRequest(req, res, req.body);
     } catch (err) {
-      logger.error({ err }, "Error handling MCP request");
-      if (!res.headersSent) {
-        res.status(500).json({ error: "Internal server error" });
-      }
+      logger.error({ err }, "Error handling POST /mcp");
+      if (!res.headersSent) res.status(500).json({ error: "Internal server error" });
     }
-  };
+  });
 
-  app.get("/mcp", mcpHandler);
-  app.post("/mcp", mcpHandler);
-  app.delete("/mcp", mcpHandler);
+  app.delete("/mcp", async (_req: Request, res: Response): Promise<void> => {
+    res.status(200).json({ ok: true });
+  });
 
   return app;
 }
