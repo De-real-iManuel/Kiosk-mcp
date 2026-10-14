@@ -352,6 +352,7 @@ kiosk-agent-commerce/
 │   └── api-client-react/      React Query hooks (orval-generated + custom)
 ├── docs/
 │   ├── architecture.md        Full architecture reference
+│   ├── connect-ai-assistants.md  How to connect Claude, ChatGPT, Cursor, AgentCore
 │   ├── mcp.md                 All MCP tool schemas with input/output examples
 │   ├── business-runtime.md    Business MCP runtime design
 │   ├── security.md            Auth, ownership, private-data policy, rate limiting
