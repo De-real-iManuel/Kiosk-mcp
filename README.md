@@ -1,4 +1,4 @@
-<div align="center">
+﻿<div align="center">
 
 # Kiosk — AI-Facing Discovery and Interaction Infrastructure for Businesses
 
@@ -97,7 +97,7 @@ flowchart TB
     end
 
     subgraph AWS_AI["AWS AI Layer"]
-        AC["🤖 AWS AgentCore\nManaged agent runtime\norchestrates MCP tool calls"]
+        AC["🤖 Amazon Bedrock AgentCore\nManaged agent runtime\norchestrates MCP tool calls"]
         BR["🧠 Amazon Bedrock\nTitan Embeddings v2\nsemantic search scoring"]
     end
 
@@ -147,7 +147,7 @@ flowchart TB
 ```mermaid
 sequenceDiagram
     participant U as User / App
-    participant AC as AWS AgentCore
+    participant AC as Amazon Bedrock AgentCore
     participant M as Master MCP :5000
     participant BR as Amazon Bedrock
     participant B as Business MCP :5001
@@ -216,10 +216,10 @@ Kiosk uses six AWS services. The full integration guide is at [`docs/aws-integra
 
 | AWS Service | How Kiosk uses it |
 |---|---|
-| **ECS Fargate** | Runs all 4 services — chosen over Lambda because MCP uses Server-Sent Events which need persistent connections |
-| **AgentCore** | Kiosk is an MCP tool provider for AgentCore — agents configured with Kiosk's Master MCP can discover and transact with businesses automatically |
+| **ECS Fargate** | Runs all 4 services — chosen over Lambda because Kiosk's in-memory session cache, multi-tenant shared runtime, and zero cold-start requirement are a better fit for Fargate's long-lived container model |
+| **Amazon Bedrock AgentCore** | Kiosk is an MCP tool provider for AgentCore — agents configured with Kiosk's Master MCP can discover and transact with businesses automatically |
 | **Bedrock (Titan Embeddings v2)** | Semantic vector scoring in `search_businesses` — "something for my hair" finds hair salons without keyword matching |
-| **Strands SDK** | Documented as the recommended Python agent client for developers building on top of Kiosk |
+| **Strands SDK (`@strands-agents/sdk`)** | TypeScript 1.0 (Apr 2026) — documented as the recommended Node.js agent client. Uses the same Zod schemas already in this project. Agents built with Strands connect to Kiosk's MCP endpoints natively with no adapter code. |
 | **Secrets Manager** | All credentials injected into ECS tasks by ARN — no plaintext secrets in task definitions or logs |
 | **CloudWatch Logs** | Structured pino JSON logs from all services, with request ID correlation across log lines |
 
@@ -229,7 +229,11 @@ Kiosk uses six AWS services. The full integration guide is at [`docs/aws-integra
 
 ### Why ECS Fargate, not Lambda
 
-MCP uses **Streamable HTTP with Server-Sent Events**. Lambda's 15-minute maximum execution time and cold-start behaviour conflict with persistent SSE connections. ECS Fargate gives always-warm containers with no execution time limit.
+Lambda can serve MCP as of 2026 — response streaming (SSE, Streamable HTTP) is available across all AWS regions, and Lambda Managed Instances now support up to 90-minute timeouts. The Fargate choice is about three things Lambda cannot match for Kiosk's specific workload:
+
+1. **In-memory session cache** — the Business MCP runtime caches resolved business sessions for 30 seconds per slug. Lambda invocations are isolated; each one starts cold and loses the cache, forcing a DB round-trip on every tool call. Fargate containers are long-lived and share the cache across all concurrent requests.
+2. **Multi-tenant shared runtime** — one Fargate container handles every business slug concurrently. Replicating this on Lambda requires a distributed cache (Redis), adding cost and operational complexity.
+3. **Zero cold-start guarantee** — `minCapacity: 2` on both MCP services means they are always warm. Lambda provisioned concurrency helps but does not eliminate cold-start spikes under traffic bursts.
 
 ### Infrastructure Topology
 
@@ -745,7 +749,7 @@ erDiagram
 
 ## Key Engineering Decisions
 
-**MCP Streamable HTTP over Lambda** — MCP's Server-Sent Events transport requires persistent connections. ECS Fargate containers are always warm; Lambda's 15-minute limit and cold starts would break SSE.
+**ECS Fargate over Lambda** — Lambda can serve MCP endpoints as of 2026 (response streaming landed across all regions in April 2026; Lambda Managed Instances now support 90-minute timeouts). Fargate is the right choice for Kiosk for three concrete reasons: the Business MCP runtime uses an in-memory 30-second session cache that Lambda's isolated-invocation model would destroy on every call; the multi-tenant shared runtime handles all business slugs in one process without a distributed cache; and `minCapacity: 2` guarantees zero cold starts. These are operational reasons, not protocol limitations.
 
 **Shared Business MCP runtime** — One `business-mcp` process handles all tenants via slug routing. Each request resolves the session, registers tools that close over `session.business.id`, and discards the server after the response. No per-tenant processes. A 30-second in-memory TTL cache reduces DB round-trips.
 
@@ -769,7 +773,7 @@ erDiagram
 | HTTPS enforcement | TLS at load balancer only | Add HSTS headers at app layer |
 | Master MCP auth | Unauthenticated discovery | API key or Clerk JWT for private catalogues |
 | Catalogue (products/images) | Data model ready, UI not exposed | Phase 2 feature |
-| Dark mode | Removed — surfaces use hardcoded colour tokens | Refactor surfaces to CSS variable tokens |
+| Strands SDK language | TypeScript SDK (`@strands-agents/sdk`) reached 1.0 Apr 2026 — full stack is now TypeScript | No gap remaining — use `@strands-agents/sdk` |
 
 ---
 

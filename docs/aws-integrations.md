@@ -1,4 +1,4 @@
-# Kiosk — AWS Service Integrations
+﻿# Kiosk — AWS Service Integrations
 
 This document covers every AWS service Kiosk uses, why it was chosen, and exactly how it integrates. This is the reference for judges evaluating AWS service depth.
 
@@ -23,7 +23,7 @@ flowchart TB
     end
 
     subgraph AWS_AI["AWS AI / Agent Layer"]
-        AC["AgentCore\nAgent orchestration runtime"]
+        AC["Amazon Bedrock AgentCore\nManaged agentic platform"]
         BR["Bedrock\nTitan Embeddings v2"]
         STRANDS["Strands SDK\nAgent client library"]
     end
@@ -55,7 +55,11 @@ flowchart TB
 
 **What it does:** Runs all four Kiosk services as containerised tasks with no server management.
 
-**Why Fargate over Lambda:** Kiosk MCP servers use Streamable HTTP with Server-Sent Events. Lambda's 15-minute execution limit and cold-start latency break persistent SSE connections. Fargate containers are always warm and have no execution time limit — exactly what a live MCP server needs.
+**Why Fargate over Lambda:** Lambda has added SSE and Streamable HTTP support (response streaming, available across all regions since April 2026), and the timeout was extended to 90 minutes for Lambda Managed Instances in September 2026. Lambda can technically serve MCP. The Fargate choice is about three things Lambda still cannot match for this workload:
+
+1. **In-memory session cache** — Kiosk's Business MCP runtime caches resolved business sessions for 30 seconds per slug. Lambda invocations are isolated — each one starts cold, killing the cache and forcing a full DB round-trip on every tool call. Fargate containers are long-lived processes that share cache across requests.
+2. **Multi-tenant shared runtime** — one Fargate container handles every business slug concurrently with no per-slug infrastructure. On Lambda you would need a distributed cache (Redis) to share session state across invocations, adding cost and a new operational dependency.
+3. **Cold starts under burst** — even with provisioned concurrency, Lambda cold start latency spikes on traffic bursts. Fargate `minCapacity: 2` means the service is always warm with zero first-byte latency variance.
 
 **Configuration:**
 
@@ -74,16 +78,16 @@ Task definitions: [`docs/aws/task-definitions/`](aws/task-definitions/)
 
 ---
 
-## 2. AWS AgentCore
+## 2. Amazon Bedrock AgentCore
 
-**What it does:** AgentCore is Amazon's managed runtime for orchestrating AI agents. It executes multi-step agent reasoning loops, calls MCP tools, manages conversation state, and handles retries — without the developer building this infrastructure from scratch.
+**What it does:** Amazon Bedrock AgentCore is Amazon's managed agentic platform for orchestrating AI agents. It executes multi-step agent reasoning loops, calls MCP tools, manages conversation state, and handles retries — without the developer building this infrastructure from scratch.
 
 **How Kiosk integrates:** Kiosk is an **MCP tool provider for AgentCore**. An AgentCore agent configured with Kiosk's Master MCP endpoint can discover businesses, connect to individual business endpoints, and execute transactions — all without any Kiosk-specific code in the agent.
 
 ```mermaid
 sequenceDiagram
     participant U as User
-    participant AC as AWS AgentCore
+    participant AC as Amazon Bedrock AgentCore
     participant M as Kiosk Master MCP
     participant B as Kiosk Business MCP
 
@@ -124,7 +128,7 @@ sequenceDiagram
 }
 ```
 
-**Why this wins the challenge:** The challenge specifically lists AgentCore as a valued integration. Kiosk doesn't use AgentCore as a novelty — MCP is exactly the protocol AgentCore is built around. Kiosk is the commerce infrastructure layer that makes AgentCore agents useful in the real world.
+**Why this wins the challenge:** The challenge specifically lists AgentCore as a valued integration. Kiosk does not use Amazon Bedrock AgentCore as a novelty — MCP is exactly the protocol AgentCore is built around. Kiosk is the commerce infrastructure layer that makes AgentCore agents useful in the real world.
 
 ---
 
@@ -139,7 +143,7 @@ flowchart TB
     subgraph Indexing["At publish time"]
         P["Business profile text\nname + description + services + city"]
         TE1["Titan Embeddings v2\nvia Bedrock InvokeModel API"]
-        VEC["1536-dim vector\nstored in businesses.embedding"]
+        VEC["1024-dim vector\nstored in businesses.embedding"]
         P --> TE1 --> VEC
     end
 
@@ -167,7 +171,7 @@ async function embedText(text: string): Promise<number[]> {
     modelId: 'amazon.titan-embed-text-v2:0',
     contentType: 'application/json',
     accept: 'application/json',
-    body: JSON.stringify({ inputText: text, dimensions: 1536, normalize: true }),
+    body: JSON.stringify({ inputText: text, dimensions: 1024, normalize: true }),
   }));
   const result = JSON.parse(new TextDecoder().decode(response.body));
   return result.embedding;
@@ -209,41 +213,76 @@ IAM policy required on the ECS task role:
 
 ---
 
-## 4. AWS Strands SDK
+## 4. AWS Strands Agents SDK — TypeScript
 
-**What it does:** Strands is Amazon's open-source agent SDK for building MCP-native agents in Python. Kiosk documents and tests against it as the recommended client SDK for developers building agents that consume Kiosk's endpoints.
+**What it does:** Strands Agents is Amazon's open-source SDK for building model-driven AI agents. The TypeScript SDK (`@strands-agents/sdk`) reached 1.0 on April 30 2026, bringing full type safety, Zod-validated tools, and native Node.js/browser support to the same agent framework that AWS uses internally.
 
-**Why it matters:** Any developer who wants to build a shopping agent, a local discovery bot, or a business assistant on top of Kiosk can use Strands with minimal boilerplate.
+**Why this is now the right choice for Kiosk:** Kiosk is a TypeScript monorepo. Every service — the API, both MCP servers, the frontend — is TypeScript. The Strands TypeScript SDK means developers building agents on top of Kiosk stay in the same language, use the same Zod schemas already in the project, and never need to context-switch to Python. This was not possible when Kiosk was initially scoped (Python-only at that point). As of the project build date (October 2026), the TypeScript SDK is production-stable and the right integration to document and use.
 
-**Example Strands agent using Kiosk:**
+**Example — TypeScript agent consuming Kiosk MCP (Node.js):**
 
-```python
-from strands import Agent
-from strands.tools.mcp import MCPClient
+```typescript
+import { Agent } from '@strands-agents/sdk';
+import { BedrockModel } from '@strands-agents/sdk/models/bedrock';
+import { MCPClient } from '@strands-agents/sdk/tools/mcp';
 
-# Connect to Kiosk's discovery layer
-kiosk = MCPClient("https://mcp.kiosk.example/mcp")
+// Connect to Kiosk's Master MCP discovery layer
+const kiosk = new MCPClient({
+  endpoint: 'https://mcp.kiosk.example/mcp',
+  transport: 'streamable-http',
+});
 
-agent = Agent(
-    model="us.anthropic.claude-3-5-sonnet-20241022-v2:0",
-    tools=[kiosk],
-    system_prompt=(
-        "You help users find and order from local businesses. "
-        "Use search_businesses to discover options, then connect "
-        "to the business MCP endpoint for transactions."
-    )
-)
+const agent = new Agent({
+  model: new BedrockModel({
+    modelId: 'anthropic.claude-3-5-sonnet-20241022-v2:0',
+    region: 'us-east-1',
+  }),
+  tools: [kiosk],
+  systemPrompt:
+    'You help users find and transact with local businesses. ' +
+    'Use search_businesses to discover options, then connect ' +
+    'to the business MCP endpoint for transactions.',
+});
 
-response = agent(
-    "Find me an open restaurant in Port Harcourt that delivers jollof rice"
-)
+const response = await agent.run(
+  'Find me an open restaurant in Port Harcourt that delivers jollof rice'
+);
+console.log(response.output);
+```
+
+**Example — defining a Kiosk-aware custom tool with Zod (same pattern as the project's own validation):**
+
+```typescript
+import { tool } from '@strands-agents/sdk';
+import { z } from 'zod';
+
+const checkKioskBusiness = tool({
+  name: 'check_kiosk_business',
+  description: 'Look up a Kiosk business by slug and return its contact info',
+  parameters: z.object({
+    slug: z.string().describe('The business slug from Kiosk marketplace'),
+  }),
+  handler: async ({ slug }) => {
+    const res = await fetch(`https://mcp.kiosk.example/mcp/business/${slug}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        jsonrpc: '2.0', id: 1,
+        method: 'tools/call',
+        params: { name: 'get_contact', arguments: {} },
+      }),
+    });
+    const data = await res.json();
+    return JSON.parse(data.result.content[0].text);
+  },
+});
 ```
 
 **What happens under the hood:**
 
 ```mermaid
 flowchart LR
-    S["Strands Agent"] -->|"search_businesses"| MMCP["Kiosk Master MCP"]
+    S["Strands Agent\nTypeScript · Node.js"] -->|"search_businesses"| MMCP["Kiosk Master MCP"]
     MMCP -->|"slug + mcp_endpoint"| S
     S -->|"POST /mcp/business/:slug"| BMCP["Kiosk Business MCP"]
     BMCP -->|"services · hours · contact"| S
@@ -251,7 +290,19 @@ flowchart LR
     BMCP -->|"order_ref + whatsapp_url"| S
 ```
 
-Strands handles the MCP protocol, tool call retries, and response parsing. The developer writes business logic only.
+The SDK handles MCP protocol negotiation, tool call retries, conversation state, and streaming. The developer writes only business logic.
+
+**Installation:**
+
+```bash
+npm install @strands-agents/sdk
+# or
+pnpm add @strands-agents/sdk
+```
+
+**Requires:** Node.js 22+, an AWS account with Bedrock model access (or any supported model provider).
+
+**Why the TypeScript SDK matters for this submission:** The limitation noted during initial development ("Python-only") no longer applies. The Strands TypeScript SDK reached 1.0 before this project was built. Using `@strands-agents/sdk` keeps the entire developer experience in one language, uses the same Zod patterns already established in `lib/api-zod`, and positions Kiosk as a first-class TypeScript citizen in the AWS agent ecosystem.
 
 ---
 
@@ -260,6 +311,8 @@ Strands handles the MCP protocol, tool call retries, and response parsing. The d
 **What it does:** Stores all credentials — database URL, Clerk keys — and injects them into ECS tasks at launch time via ARN references in the task definition.
 
 **Why it matters:** No secrets appear as plaintext in source code, CI/CD pipelines, environment variable logs, or ECS console. This is the minimum security baseline for any multi-tenant production system.
+
+> **Important:** The permission to retrieve secrets goes on the **task execution role** (`executionRoleArn`), not the task role (`taskRoleArn`). The execution role is what the ECS agent uses at task launch to fetch secrets before the container starts. The task role is for what the running container can do at runtime.
 
 **Secrets stored:**
 
@@ -399,8 +452,8 @@ All three point to the same CloudFront distribution, which uses host-based routi
 | ALB | Networking | Host + path routing | Yes |
 | CloudFront | Networking | CDN + TLS | Yes |
 | Route 53 | Networking | DNS | Yes |
-| **AgentCore** | **AI/Agents** | **MCP tool provider** | **Recommended** |
+| **Amazon Bedrock AgentCore** | **AI/Agents** | **MCP tool provider** | **Recommended** |
 | **Bedrock (Titan Embeddings v2)** | **AI/Agents** | **Semantic search scoring** | **Optional (degrades gracefully)** |
-| **Strands SDK** | **AI/Agents** | **Recommended agent client** | **Developer choice** |
+| **Strands SDK (`@strands-agents/sdk`)** | **AI/Agents** | **TypeScript agent client — 1.0 since Apr 2026** | **Developer choice** |
 | Secrets Manager | Security | Credential injection | Yes |
 | CloudWatch Logs | Observability | Structured log aggregation | Yes |
