@@ -96,10 +96,12 @@ describe("checkPublishReadiness", () => {
     expect(result.blocking).not.toContain("contact");
   });
 
-  it("blocks when categoryId is missing", () => {
+  it("recommends categoryId when missing but does not block", () => {
     const result = checkPublishReadiness(makeBusiness({ categoryId: null }));
-    expect(result.ready).toBe(false);
-    expect(result.blocking).toContain("categoryId");
+    expect(result.recommended).toContain("categoryId");
+    expect(result.blocking).not.toContain("categoryId");
+    // Missing categoryId alone should not prevent publishing
+    expect(result.ready).toBe(true);
   });
 
   it("recommends description when missing", () => {
@@ -127,13 +129,16 @@ describe("checkPublishReadiness", () => {
         phone: null,
         whatsapp: null,
         website: null,
+        contact: "",
         categoryId: null,
       }),
     );
     expect(result.blocking).toContain("businessName");
     expect(result.blocking).toContain("location");
     expect(result.blocking).toContain("contact");
-    expect(result.blocking).toContain("categoryId");
+    // categoryId is now recommended, not blocking
+    expect(result.blocking).not.toContain("categoryId");
+    expect(result.recommended).toContain("categoryId");
     expect(result.ready).toBe(false);
   });
 });

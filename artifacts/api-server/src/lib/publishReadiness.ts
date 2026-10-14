@@ -40,13 +40,18 @@ export function checkPublishReadiness(business: Business): ReadinessResult {
   const hasContact =
     business.phone?.trim() ||
     business.whatsapp?.trim() ||
-    business.website?.trim();
+    business.website?.trim() ||
+    // Legacy contact text field — used by the create form
+    business.contact?.trim();
   if (!hasContact) {
     blocking.push("contact");
   }
 
   if (!business.categoryId) {
-    blocking.push("categoryId");
+    // Category improves discoverability but is not required to publish.
+    // The legacy create form doesn't capture it, so blocking on it
+    // would prevent all existing businesses from publishing.
+    recommended.push("categoryId");
   }
 
   // Recommended fields

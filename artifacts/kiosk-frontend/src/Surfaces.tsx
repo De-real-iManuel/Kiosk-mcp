@@ -1468,7 +1468,37 @@ function OwnerCard({ business }: { business: Business }) {
             `${business.businessName} is now live on the marketplace`,
           );
         },
-        onError: () => toast.error("Could not publish. Try again."),
+        onError: (err: unknown) => {
+          // The API returns 422 with {blocking: string[], recommended: string[]}
+          // when required fields are missing. Show specific guidance.
+          const apiErr = err as {
+            status?: number;
+            response?: { data?: { blocking?: string[]; error?: string } };
+          };
+          if (apiErr?.status === 422) {
+            const blocking: string[] = apiErr?.response?.data?.blocking ?? [];
+            const fieldLabels: Record<string, string> = {
+              businessName: "business name",
+              location: "location",
+              contact: "contact method (phone, WhatsApp, or website)",
+              categoryId: "category",
+            };
+            if (blocking.length > 0) {
+              const missing = blocking
+                .map((f) => fieldLabels[f] ?? f)
+                .join(", ");
+              toast.error(`Complete your profile first: ${missing}`);
+            } else {
+              toast.error(
+                apiErr?.response?.data?.error ??
+                  "Profile is not ready to publish.",
+              );
+            }
+            setShowPreview(false);
+          } else {
+            toast.error("Could not publish. Try again.");
+          }
+        },
       },
     );
   }
