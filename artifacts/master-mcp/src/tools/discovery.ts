@@ -8,6 +8,7 @@ import {
 } from "@workspace/db";
 import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
+import { scoreAndRank } from "../lib/bedrock.js";
 
 export function registerDiscoveryTools(server: McpServer): void {
   // ── Tool 1: discover_categories ──────────────────────────────────────────────
@@ -45,7 +46,9 @@ Use this after discover_categories when you have a category slug, or directly wh
 you have a specific business name, service, product, or location in mind.
 
 Supports the following filters (all optional, combinable):
-- query: free-text match against business name and description
+- query: free-text match against business name and description. When Amazon Bedrock
+  is enabled, results are ranked by semantic similarity so "something for my hair"
+  finds hair salons even without exact keyword matches.
 - city: filter by city name
 - country: filter by ISO 3166-1 alpha-2 country code (e.g. "US", "GB")
 - category_slug: narrow to a specific business category (use discover_categories first)
@@ -171,6 +174,13 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
         return { content: [{ type: "text", text: JSON.stringify([]) }] };
       }
 
+      // ── Semantic ranking via Amazon Bedrock Titan Embeddings V2 ─────────────
+      // When BEDROCK_ENABLED=true, re-ranks results by semantic similarity to
+      // the query. Falls back to SQL order silently if Bedrock is unavailable.
+      if (query) {
+        filtered = await scoreAndRank(query, filtered);
+      }
+
       // ── Fetch enabled capabilities for matched businesses ────────────────────
       const businessIds = filtered.map((b) => b.id);
       const capabilityRows = await db
@@ -217,7 +227,7 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
           location,
           phone,
           whatsapp,
-          mcpEndpoint: `https://mcp.kiosk.example/business/${slug}`,
+          mcpEndpoint: `${(process.env.MCP_BASE_URL ?? "https://mcp.kiosk.example").replace(/\/$/, "")}/mcp/business/${slug}`,
           capabilities: capsByBusiness.get(id) ?? [],
           openingHours,
           timezone,
