@@ -506,7 +506,8 @@ router.delete("/businesses/:id", async (req, res): Promise<void> => {
   // acknowledges the MCP endpoint will go offline.
   if (business.status === "published") {
     res.status(422).json({
-      error: "Cannot delete a published Kiosk. Unpublish it first, then delete.",
+      error:
+        "Cannot delete a published Kiosk. Unpublish it first, then delete.",
       code: "MUST_UNPUBLISH_FIRST",
     });
     return;
@@ -516,9 +517,7 @@ router.delete("/businesses/:id", async (req, res): Promise<void> => {
   // deleting the business row removes capabilities, products, services, and
   // endpoints automatically. Agent events use ON DELETE SET NULL so they're
   // preserved for analytics history.
-  await db
-    .delete(businessesTable)
-    .where(eq(businessesTable.id, params.id));
+  await db.delete(businessesTable).where(eq(businessesTable.id, params.id));
 
   res.status(204).send();
 });

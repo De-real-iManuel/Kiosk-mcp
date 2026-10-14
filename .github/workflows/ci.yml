@@ -279,12 +279,74 @@ jobs:
             "artifacts/kiosk-frontend/src/**/*.{ts,tsx}" \
             --ignore-path .prettierignore
 
-  # ── 7. Build & Push Docker Images (main branch only) ─────────────────────
-  docker:
-    name: Docker Build & Push
+  # ── 7. Docker Build Verify (no AWS needed) ──────────────────────────────────
+  # Builds all four Docker images locally to verify the Dockerfiles are valid.
+  # Does NOT push to ECR — that requires AWS credentials (job 8 below).
+  docker-build:
+    name: Docker Build Verify
     runs-on: ubuntu-latest
     needs: build
-    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: echo "TAG=${GITHUB_SHA::8}" >> $GITHUB_OUTPUT
+
+      - name: Build api-server image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.api-server
+          push: false
+          tags: kiosk-api-server:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build master-mcp image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.master-mcp
+          push: false
+          tags: kiosk-master-mcp:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build business-mcp image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.business-mcp
+          push: false
+          tags: kiosk-business-mcp:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build kiosk-frontend image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: docker/Dockerfile.kiosk-frontend
+          push: false
+          build-args: |
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_API_URL=http://localhost:4000
+          tags: kiosk-frontend:${{ steps.tag.outputs.TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ── 8. Push to ECR + Deploy (main branch, AWS secrets required) ──────────────
+  # Skipped automatically when AWS_ROLE_ARN secret is not configured —
+  # this keeps CI green for forks and contributors without AWS access.
+  docker-push:
+    name: Docker Push & Deploy
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: |
+      github.ref == 'refs/heads/main' &&
+      github.event_name == 'push' &&
+      secrets.AWS_ROLE_ARN != ''
     permissions:
       id-token: write
       contents: read
@@ -348,10 +410,10 @@ jobs:
         with:
           context: .
           file: docker/Dockerfile.kiosk-frontend
+          push: true
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
-          push: true
           tags: |
             ${{ env.ECR_REGISTRY }}/kiosk-frontend:latest
             ${{ env.ECR_REGISTRY }}/kiosk-frontend:${{ steps.tag.outputs.TAG }}

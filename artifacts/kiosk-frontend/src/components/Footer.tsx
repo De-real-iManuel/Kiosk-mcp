@@ -154,7 +154,8 @@ export function Footer({ variant = "dark" }: FooterProps) {
           className={`mt-10 flex flex-col gap-2 border-t pt-6 sm:flex-row sm:items-center sm:justify-between ${divider}`}
         >
           <p className={`text-[11px] ${muted}`}>
-            © {new Date().getFullYear()} Kiosk Technologies Ltd. All rights reserved.
+            © {new Date().getFullYear()} Kiosk Technologies Ltd. All rights
+            reserved.
           </p>
           <span className={`mono text-[10px] ${muted}`}>
             A first step, not a deployment.

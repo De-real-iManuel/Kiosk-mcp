@@ -1421,7 +1421,7 @@ function OwnerCard({ business }: { business: Business }) {
   const [editing, setEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   // Delete confirmation: 'idle' → 'confirm' (first click) → fires delete
-  const [deleteStep, setDeleteStep] = useState<'idle' | 'confirm'>('idle');
+  const [deleteStep, setDeleteStep] = useState<"idle" | "confirm">("idle");
   const [form, setForm] = useState<BusinessInput>({
     businessName: business.businessName,
     services: business.services,
@@ -1523,19 +1523,25 @@ function OwnerCard({ business }: { business: Business }) {
           </button>
 
           {/* Delete — two-step confirmation so it can't be fired by accident */}
-          {deleteStep === 'idle' ? (
+          {deleteStep === "idle" ? (
             <button
               className="surface-button surface-button-light !min-h-10 !px-3 !text-[#9C493F] border-[#9C493F]/30 hover:border-[#9C493F]"
-              onClick={() => setDeleteStep('confirm')}
-              disabled={business.status === 'published'}
-              title={business.status === 'published' ? 'Unpublish this Kiosk before deleting' : 'Delete this Kiosk'}
+              onClick={() => setDeleteStep("confirm")}
+              disabled={business.status === "published"}
+              title={
+                business.status === "published"
+                  ? "Unpublish this Kiosk before deleting"
+                  : "Delete this Kiosk"
+              }
               data-testid={`delete-business-${business.id}`}
             >
               Delete
             </button>
           ) : (
             <div className="flex items-center gap-2 border border-[#9C493F]/40 bg-[#9C493F]/5 px-3 py-1.5">
-              <span className="text-[12px] text-[#9C493F]">Delete permanently?</span>
+              <span className="text-[12px] text-[#9C493F]">
+                Delete permanently?
+              </span>
               <button
                 className="text-[12px] font-semibold text-[#9C493F] underline hover:no-underline"
                 disabled={deleteBusiness.isPending}
@@ -1543,29 +1549,37 @@ function OwnerCard({ business }: { business: Business }) {
                   deleteBusiness.mutate(business.id, {
                     onSuccess: () => {
                       toast.success(`${business.businessName} deleted`);
-                      client.invalidateQueries({ queryKey: ['/api/businesses'] });
+                      client.invalidateQueries({
+                        queryKey: ["/api/businesses"],
+                      });
                     },
                     onError: (err: unknown) => {
-                      const msg = (err as { message?: string })?.message ?? 'Could not delete';
-                      toast.error(msg.includes('Unpublish') ? 'Unpublish this Kiosk before deleting.' : 'Delete failed. Try again.');
-                      setDeleteStep('idle');
+                      const msg =
+                        (err as { message?: string })?.message ??
+                        "Could not delete";
+                      toast.error(
+                        msg.includes("Unpublish")
+                          ? "Unpublish this Kiosk before deleting."
+                          : "Delete failed. Try again.",
+                      );
+                      setDeleteStep("idle");
                     },
                   });
                 }}
                 data-testid={`delete-confirm-${business.id}`}
               >
-                {deleteBusiness.isPending ? 'Deleting…' : 'Yes, delete'}
+                {deleteBusiness.isPending ? "Deleting…" : "Yes, delete"}
               </button>
               <button
                 className="text-[12px] text-[#777064] hover:text-[#12110F]"
-                onClick={() => setDeleteStep('idle')}
+                onClick={() => setDeleteStep("idle")}
                 data-testid={`delete-cancel-${business.id}`}
               >
                 Cancel
               </button>
             </div>
           )}
-          {business.status === 'published' && deleteStep === 'idle' && (
+          {business.status === "published" && deleteStep === "idle" && (
             <p className="w-full text-[11px] text-[#777064] mt-1">
               Unpublish first to enable deletion.
             </p>
