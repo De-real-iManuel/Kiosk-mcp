@@ -3,10 +3,20 @@
     "version":  "0.0.0",
     "private":  true,
     "type":  "module",
-    "exports":  {
-                    ".":  "./src/index.ts",
-                    "./schema":  "./src/schema/index.ts"
-                },
+    "exports": {
+        ".": {
+            "workspace": "./src/index.ts",
+            "types": "./dist/index.d.ts",
+            "import": "./dist/index.js",
+            "default": "./dist/index.js"
+        },
+        "./schema": {
+            "workspace": "./src/schema/index.ts",
+            "types": "./dist/schema/index.d.ts",
+            "import": "./dist/schema/index.js",
+            "default": "./dist/schema/index.js"
+        }
+    },
     "scripts":  {
                     "push":  "drizzle-kit push --config ./drizzle.config.ts",
                     "push-force":  "drizzle-kit push --force --config ./drizzle.config.ts",

@@ -1,30 +1,27 @@
-# ── Stage 1: install all deps ───────────────────────────────────────────────
-FROM node:20-alpine AS base
+# Stage 1: install dependencies for building
+FROM node:20-bookworm-slim AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json               ./lib/db/
-COPY lib/api-zod/package.json          ./lib/api-zod/
-COPY lib/api-spec/package.json         ./lib/api-spec/
+COPY lib/db/package.json ./lib/db/
+COPY lib/api-zod/package.json ./lib/api-zod/
+COPY lib/api-spec/package.json ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY artifacts/kiosk-frontend/package.json ./artifacts/kiosk-frontend/
 
-RUN pnpm install --frozen-lockfile --ignore-scripts
+RUN pnpm install --frozen-lockfile
 
-# ── Stage 2: build Next.js ───────────────────────────────────────────────────
+# Stage 2: build the application
 FROM base AS builder
 COPY tsconfig.json tsconfig.base.json ./
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY lib/                   ./lib/
+COPY lib/ ./lib/
 COPY artifacts/kiosk-frontend/ ./artifacts/kiosk-frontend/
 
-# Build lib declarations (needed by frontend typecheck at build time)
 RUN pnpm run typecheck:libs
 
-# Build the Next.js app
-# NEXT_PUBLIC_* vars must be baked in at build time
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
@@ -32,28 +29,20 @@ ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
 
 RUN pnpm --filter @workspace/kiosk-frontend build
 
-# ── Stage 3: production runner ───────────────────────────────────────────────
-FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Stage 3: minimal runtime
+FROM node:20-bookworm-slim AS runner
 WORKDIR /app
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+ENV PORT=3000
+ENV HOSTNAME=0.0.0.0
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json               ./lib/db/
-COPY lib/api-zod/package.json          ./lib/api-zod/
-COPY lib/api-spec/package.json         ./lib/api-spec/
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY artifacts/kiosk-frontend/package.json ./artifacts/kiosk-frontend/
-
-RUN pnpm install --frozen-lockfile --ignore-scripts --prod
-
-# Copy Next.js build output
-COPY --from=builder /app/artifacts/kiosk-frontend/.next     ./artifacts/kiosk-frontend/.next
-COPY --from=builder /app/artifacts/kiosk-frontend/public    ./artifacts/kiosk-frontend/public
-COPY --from=builder /app/artifacts/kiosk-frontend/next.config.ts ./artifacts/kiosk-frontend/
+# Copy only the traced standalone runtime and required static assets.
+COPY --from=builder /app/artifacts/kiosk-frontend/.next/standalone ./
+COPY --from=builder /app/artifacts/kiosk-frontend/.next/static ./artifacts/kiosk-frontend/.next/static
+COPY --from=builder /app/artifacts/kiosk-frontend/public ./artifacts/kiosk-frontend/public
 
 EXPOSE 3000
-ENV PORT=3000
 
-CMD ["pnpm", "--filter", "@workspace/kiosk-frontend", "serve"]
+CMD ["node", "artifacts/kiosk-frontend/server.js"]

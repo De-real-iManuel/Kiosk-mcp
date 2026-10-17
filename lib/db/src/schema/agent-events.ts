@@ -8,7 +8,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
-import { businessesTable } from "./businesses";
+import { businessesTable } from "./businesses.js";
 
 export const agentEventsTable = pgTable(
   "agent_events",

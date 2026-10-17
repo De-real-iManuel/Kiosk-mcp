@@ -9,7 +9,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
-import { businessesTable } from "./businesses";
+import { businessesTable } from "./businesses.js";
 
 export const businessProductsTable = pgTable(
   "business_products",

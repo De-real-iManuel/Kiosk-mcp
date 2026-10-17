@@ -1,7 +1,7 @@
 import { createInsertSchema } from "drizzle-zod";
 import { index, pgTable, text, timestamp, uuid } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
-import { businessesTable } from "./businesses";
+import { businessesTable } from "./businesses.js";
 
 export const marketplaceEventsTable = pgTable(
   "marketplace_events",

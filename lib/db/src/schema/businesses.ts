@@ -11,7 +11,7 @@ import {
   uuid,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
-import { categoriesTable } from "./categories";
+import { categoriesTable } from "./categories.js";
 
 // ─── Opening Hours Types ──────────────────────────────────────────────────────
 

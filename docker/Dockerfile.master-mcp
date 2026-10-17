@@ -23,7 +23,6 @@ RUN pnpm --filter @workspace/master-mcp build
 
 # ── Stage 3: production ──────────────────────────────────────────────────────
 FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 ENV NODE_ENV=production
 
@@ -34,9 +33,13 @@ COPY lib/api-spec/package.json         ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY artifacts/master-mcp/package.json ./artifacts/master-mcp/
 
-RUN pnpm install --frozen-lockfile --ignore-scripts --prod
+RUN corepack enable \
+    && corepack prepare pnpm@latest --activate \
+    && pnpm install --frozen-lockfile --ignore-scripts --prod \
+    && rm -rf /root/.cache /root/.local/share/pnpm/store
 
 COPY --from=builder /app/artifacts/master-mcp/dist ./artifacts/master-mcp/dist
+COPY --from=builder /app/lib/db/dist ./lib/db/dist
 
 EXPOSE 5000
 ENV PORT=5000

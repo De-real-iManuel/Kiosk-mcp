@@ -1,49 +1,45 @@
-# ── Stage 1: workspace base ──────────────────────────────────────────────────
-# Install all workspace dependencies including devDeps needed for building.
+# Stage 1: install dependencies needed for building
 FROM node:20-alpine AS base
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 
-# Copy manifests first for layer caching
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json                    ./lib/db/
-COPY lib/api-zod/package.json               ./lib/api-zod/
-COPY lib/api-spec/package.json              ./lib/api-spec/
-COPY lib/api-client-react/package.json      ./lib/api-client-react/
-COPY artifacts/api-server/package.json      ./artifacts/api-server/
+COPY lib/db/package.json ./lib/db/
+COPY lib/api-zod/package.json ./lib/api-zod/
+COPY lib/api-spec/package.json ./lib/api-spec/
+COPY lib/api-client-react/package.json ./lib/api-client-react/
+COPY artifacts/api-server/package.json ./artifacts/api-server/
 
-# Install all deps (including devDeps for building)
 RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# ── Stage 2: build ──────────────────────────────────────────────────────────
+# Stage 2: build the application
 FROM base AS builder
 COPY tsconfig.json tsconfig.base.json ./
-COPY lib/       ./lib/
+COPY lib/ ./lib/
 COPY artifacts/api-server/ ./artifacts/api-server/
 
-# Build lib declaration files first (composite project references)
 RUN pnpm run typecheck:libs
-# Build the api-server bundle via esbuild
 RUN pnpm --filter @workspace/api-server build
 
-# ── Stage 3: production image ───────────────────────────────────────────────
+# Stage 3: minimal production runtime
 FROM node:20-alpine AS runner
-RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 ENV NODE_ENV=production
 
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json               ./lib/db/
-COPY lib/api-zod/package.json          ./lib/api-zod/
-COPY lib/api-spec/package.json         ./lib/api-spec/
+COPY lib/db/package.json ./lib/db/
+COPY lib/api-zod/package.json ./lib/api-zod/
+COPY lib/api-spec/package.json ./lib/api-spec/
 COPY lib/api-client-react/package.json ./lib/api-client-react/
 COPY artifacts/api-server/package.json ./artifacts/api-server/
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --ignore-scripts --prod
+RUN corepack enable \
+    && corepack prepare pnpm@latest --activate \
+    && pnpm install --frozen-lockfile --ignore-scripts --prod \
+    && rm -rf /root/.cache /root/.local/share/pnpm/store
 
-# Copy built bundle
 COPY --from=builder /app/artifacts/api-server/dist ./artifacts/api-server/dist
+COPY --from=builder /app/lib/db/dist ./lib/db/dist
 
 EXPOSE 4000
 ENV PORT=4000
