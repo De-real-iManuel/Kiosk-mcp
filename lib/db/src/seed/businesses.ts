@@ -12,6 +12,17 @@ import {
 import { generateSlug } from "../lib/slug.js";
 import type { OpeningHours } from "../schema/businesses.js";
 
+// ─── Helper: resolve MCP base URL from env ───────────────────────────────────
+// Falls back to localhost so the seed works without any env config.
+// Set MCP_BASE_URL=https://your-ngrok-url in .env before seeding for demo use.
+
+function mcpBase(): string {
+  return (process.env.MCP_BASE_URL ?? "http://localhost:5001").replace(
+    /\/$/,
+    "",
+  );
+}
+
 // ─── Helper: look up a category ID by slug ───────────────────────────────────
 
 async function getCategoryId(slug: string): Promise<string> {
@@ -127,7 +138,7 @@ export async function seedBusinesses(): Promise<void> {
       .insert(businessEndpointsTable)
       .values({
         businessId: bid,
-        endpointUrl: `https://mcp.kiosk.example/business/${mamasRow.slug}`,
+        endpointUrl: `${mcpBase()}/mcp/business/${mamasRow.slug}`,
         transport: "streamable-http",
         status: "active",
         capabilities: ["menu", "ordering", "delivery", "contact"],
@@ -230,7 +241,7 @@ export async function seedBusinesses(): Promise<void> {
       .insert(businessEndpointsTable)
       .values({
         businessId: bid,
-        endpointUrl: `https://mcp.kiosk.example/business/${styleRow.slug}`,
+        endpointUrl: `${mcpBase()}/mcp/business/${styleRow.slug}`,
         transport: "streamable-http",
         status: "active",
         capabilities: ["services", "booking", "contact"],
@@ -332,7 +343,7 @@ export async function seedBusinesses(): Promise<void> {
       .insert(businessEndpointsTable)
       .values({
         businessId: bid,
-        endpointUrl: `https://mcp.kiosk.example/business/${techRow.slug}`,
+        endpointUrl: `${mcpBase()}/mcp/business/${techRow.slug}`,
         transport: "streamable-http",
         status: "active",
         capabilities: ["services", "contact", "information"],

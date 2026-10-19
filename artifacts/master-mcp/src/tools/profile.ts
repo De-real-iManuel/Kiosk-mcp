@@ -45,7 +45,14 @@ async function findPublishedBusiness(slug: string) {
   return business ?? null;
 }
 
-// ── Tool registration ─────────────────────────────────────────────────────────
+// ── Shared: build the business MCP endpoint URL from env ────────────────────
+function buildMcpEndpoint(slug: string): string {
+  const base = (process.env.MCP_BASE_URL ?? "http://localhost:5001").replace(
+    /\/$/,
+    "",
+  );
+  return `${base}/mcp/business/${slug}`;
+}
 
 export function registerProfileTools(server: McpServer): void {
   // ── Tool 1: get_business ─────────────────────────────────────────────────────
@@ -109,7 +116,7 @@ Does NOT return the business owner's private information.`,
         publishedAt: business.publishedAt,
         createdAt: business.createdAt,
         capabilities,
-        mcpEndpoint: `https://mcp.kiosk.example/business/${business.slug}`,
+        mcpEndpoint: buildMcpEndpoint(business.slug),
       };
 
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
@@ -211,7 +218,7 @@ you are ready to interact with a specific business.`,
             transport: externalEndpoint.transport,
           }
         : {
-            endpoint_url: `https://mcp.kiosk.example/business/${business.slug}`,
+            endpoint_url: buildMcpEndpoint(business.slug),
             transport: "streamable-http",
           };
 
