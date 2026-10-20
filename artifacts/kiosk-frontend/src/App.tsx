@@ -4,6 +4,7 @@ import {
   type ChangeEvent,
   type FormEvent,
   type ReactNode,
+  useEffect,
   useState,
 } from "react";
 import { motion, useReducedMotion, type Variants } from "framer-motion";
@@ -12,6 +13,7 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  Copy,
   Menu,
   X,
 } from "lucide-react";
@@ -154,6 +156,278 @@ const appear: Variants = {
     transition: { duration: 0.72, ease: [0.22, 1, 0.36, 1] as const },
   },
 };
+
+// ── How Kiosk MCP works ────────────────────────────────────────────────────────
+
+const FLOW_STEPS = [
+  {
+    number: "01",
+    label: "Register",
+    detail:
+      "Fill in your business name, services, location, contact, and hours. Takes about two minutes.",
+  },
+  {
+    number: "02",
+    label: "Publish",
+    detail:
+      "Review your profile and publish. Kiosk provisions a live MCP endpoint for your business.",
+  },
+  {
+    number: "03",
+    label: "Discoverable",
+    detail:
+      "Your business appears in the Kiosk marketplace and through the Master MCP discovery interface.",
+  },
+  {
+    number: "04",
+    label: "AI can engage",
+    detail:
+      "Compatible AI agents can find your business, browse services, and help customers reach you.",
+  },
+] as const;
+
+const MASTER_MCP_ENDPOINT =
+  typeof process !== "undefined" && process.env.NEXT_PUBLIC_MCP_BASE_URL
+    ? `${process.env.NEXT_PUBLIC_MCP_BASE_URL.replace(/\/$/, "")}/mcp`
+    : "https://mcp.kiosk.example/mcp";
+
+function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
+  const [copied, setCopied] = useState(false);
+  const [activeStep, setActiveStep] = useState(0);
+
+  // Auto-advance steps every 2.8 s unless reduceMotion is on
+  useEffect(() => {
+    if (reduceMotion) return;
+    const t = setInterval(
+      () => setActiveStep((s) => (s + 1) % FLOW_STEPS.length),
+      2800,
+    );
+    return () => clearInterval(t);
+  }, [reduceMotion]);
+
+  async function copyEndpoint() {
+    try {
+      await navigator.clipboard.writeText(MASTER_MCP_ENDPOINT);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      /* ignore */
+    }
+  }
+
+  const reveal = reduceMotion
+    ? {}
+    : {
+        initial: "hidden" as const,
+        whileInView: "visible" as const,
+        viewport: { once: true, amount: 0.15 },
+        variants: appear,
+      };
+
+  return (
+    <section className="border-b border-white/10 bg-[#0E0D0B]">
+      <div className="mx-auto max-w-[1440px] px-6 py-24 md:px-12 md:py-32">
+        {/* Header */}
+        <motion.div {...reveal} className="max-w-[640px]">
+          <p className="eyebrow mb-5 text-[#8A8478]">What is Kiosk MCP?</p>
+          <h2 className="text-[clamp(2.4rem,5.5vw,4.6rem)] font-semibold leading-[.92] tracking-[-.075em] text-[#EDE7DC]">
+            Your business,
+            <br />
+            <span className="serif font-normal italic tracking-[-.055em]">
+              open to AI agents.
+            </span>
+          </h2>
+          <p className="mt-6 max-w-[520px] text-[15px] leading-7 text-[#A49D90]">
+            Kiosk gives every local business its own AI-readable endpoint using
+            the Model Context Protocol. No code required from the business
+            owner. Compatible AI assistants can discover your business, browse
+            your services, and help customers reach you.
+          </p>
+        </motion.div>
+
+        {/* Animated step flow */}
+        <div className="mt-16 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {FLOW_STEPS.map((step, i) => {
+            const isActive = activeStep === i;
+            return (
+              <motion.button
+                key={step.number}
+                onClick={() => setActiveStep(i)}
+                {...(reduceMotion
+                  ? {}
+                  : {
+                      initial: { opacity: 0, y: 12 },
+                      whileInView: { opacity: 1, y: 0 },
+                      viewport: { once: true },
+                      transition: { delay: i * 0.1, duration: 0.5 },
+                    })}
+                className={`group relative text-left border p-5 transition-colors duration-300 ${
+                  isActive
+                    ? "border-[#EDE7DC]/30 bg-[#1C1A16]"
+                    : "border-white/8 bg-transparent hover:border-white/15"
+                }`}
+                aria-pressed={isActive}
+              >
+                {/* Active indicator line */}
+                {!reduceMotion && (
+                  <span
+                    className={`absolute left-0 top-0 h-full w-[2px] transition-all duration-300 ${
+                      isActive ? "bg-[#EDE7DC]" : "bg-transparent"
+                    }`}
+                  />
+                )}
+                <span className="mono text-[10px] text-[#8A8478]">
+                  {step.number}
+                </span>
+                <p className="mt-3 text-[15px] font-semibold text-[#EDE7DC]">
+                  {step.label}
+                </p>
+                <p
+                  className={`mt-2 text-[13px] leading-5 transition-colors ${
+                    isActive ? "text-[#C5BFB2]" : "text-[#625D53]"
+                  }`}
+                >
+                  {step.detail}
+                </p>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {/* Flow diagram — text-based, no heavy dependency */}
+        <motion.div
+          {...(reduceMotion
+            ? {}
+            : {
+                initial: { opacity: 0 },
+                whileInView: { opacity: 1 },
+                viewport: { once: true },
+                transition: { delay: 0.4, duration: 0.6 },
+              })}
+          className="mt-12 flex flex-wrap items-center gap-2 text-[11px] tracking-[.12em] uppercase text-[#625D53]"
+          aria-hidden="true"
+        >
+          {[
+            "Business profile",
+            "→",
+            "Kiosk platform",
+            "→",
+            "Master MCP",
+            "→",
+            "Business MCP",
+            "→",
+            "AI assistant",
+            "→",
+            "Customer",
+          ].map((part, i) => (
+            <span
+              key={i}
+              className={
+                part === "→"
+                  ? "text-[#8A8478]"
+                  : "border border-white/10 px-2 py-0.5 text-[#A49D90]"
+              }
+            >
+              {part}
+            </span>
+          ))}
+        </motion.div>
+
+        {/* Developer onboarding box */}
+        <motion.div
+          {...reveal}
+          className="mt-16 border border-white/10 bg-[#1C1A16] p-6 md:p-8"
+        >
+          <p className="eyebrow text-[#8A8478] mb-3">For developers</p>
+          <h3 className="text-[18px] font-semibold tracking-[-.04em] text-[#EDE7DC] mb-2">
+            Connect a compatible AI agent to Kiosk
+          </h3>
+          <p className="text-[13px] leading-6 text-[#A49D90] mb-6 max-w-[580px]">
+            Kiosk exposes a Master MCP discovery endpoint using Streamable HTTP
+            transport (MCP spec 2025-11-25). Any compatible MCP client can
+            connect to discover businesses and retrieve their individual
+            endpoints.
+          </p>
+
+          {/* Endpoint copy block */}
+          <div className="mb-6">
+            <p className="mono text-[10px] text-[#8A8478] mb-2">
+              MASTER MCP ENDPOINT
+            </p>
+            <div className="flex items-center gap-3 border border-white/15 bg-[#12110F] px-4 py-3">
+              <code className="mono text-[12px] text-[#EDE7DC] flex-1 truncate">
+                POST {MASTER_MCP_ENDPOINT}
+              </code>
+              <button
+                onClick={copyEndpoint}
+                className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A8478] hover:text-[#EDE7DC] transition-colors"
+                aria-label="Copy endpoint URL"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} className="text-[#47745F]" />
+                    <span className="text-[#47745F]">Copied</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    Copy
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+
+          {/* Connection steps */}
+          <div className="grid gap-4 sm:grid-cols-3 mb-6">
+            {[
+              {
+                step: "1",
+                title: "Add to your client",
+                body: 'In Claude Desktop, ChatGPT, Cursor, or any MCP-compatible tool, add this URL as a custom connector or MCP server with type "http".',
+              },
+              {
+                step: "2",
+                title: "Discover businesses",
+                body: "Call search_businesses or discover_categories to find published businesses. Each result includes an mcp_endpoint URL for the specific business.",
+              },
+              {
+                step: "3",
+                title: "Connect to a business",
+                body: "Use the returned mcp_endpoint to connect directly to that business's MCP server for services, hours, contact, and supported interactions.",
+              },
+            ].map(({ step, title, body }) => (
+              <div key={step} className="border border-white/8 p-4">
+                <span className="mono text-[10px] text-[#8A8478]">0{step}</span>
+                <p className="mt-2 text-[13px] font-semibold text-[#EDE7DC]">
+                  {title}
+                </p>
+                <p className="mt-1.5 text-[12px] leading-5 text-[#625D53]">
+                  {body}
+                </p>
+              </div>
+            ))}
+          </div>
+
+          <p className="text-[11px] leading-5 text-[#625D53]">
+            Connection steps vary between AI clients. See{" "}
+            <a
+              href="https://github.com/De-real-iManuel/Kiosk-mcp/blob/main/docs/connect-ai-assistants.md"
+              className="text-[#8A8478] underline underline-offset-4 hover:text-[#EDE7DC] transition-colors"
+              target="_blank"
+              rel="noreferrer"
+            >
+              docs/connect-ai-assistants.md
+            </a>{" "}
+            for client-specific guides. The endpoint above is the master
+            discovery server — individual business endpoints are returned
+            dynamically.
+          </p>
+        </motion.div>
+      </div>
+    </section>
+  );
+}
 
 export function LandingPage() {
   const reduceMotion = useReducedMotion();
@@ -322,10 +596,12 @@ export function LandingPage() {
         </div>
       </section>
 
+      {/* ── What is Kiosk MCP? ─────────────────────────────────────────────── */}
+      <KioskMcpSection reduceMotion={!!reduceMotion} />
+
       <section className="bg-[#EDE7DC] text-[#12110F]">
-        <div className="mx-auto grid max-w-[1440px] items-end gap-10 px-6 py-20 md:grid-cols-[1fr_auto] md:px-12 md:py-28">
+        <div className="mx-auto flex max-w-7xl flex-col gap-12 px-6 py-20 md:flex-row md:items-end md:justify-between">
           <div>
-            <p className="eyebrow mb-6 text-[#777064]">Start at the window</p>
             <h2 className="kiosk-wordmark text-[clamp(4rem,10vw,9rem)] leading-[.78]">
               Kiosk
             </h2>

@@ -1,36 +1,62 @@
-# Stage 1: install dependencies for building
+# ── Stage 1: dependency installation ─────────────────────────────────────────
+# Pin pnpm to the exact version used in the repo to avoid surprise upgrades.
+# Node 20 LTS matches the CI and ECS task definition.
 FROM node:20-bookworm-slim AS base
-RUN corepack enable && corepack prepare pnpm@latest --activate
+
+RUN corepack enable && corepack prepare pnpm@12.8.1 --activate
+
 WORKDIR /app
 
-COPY package.json pnpm-workspace.yaml pnpm-lock.yaml ./
-COPY lib/db/package.json ./lib/db/
-COPY lib/api-zod/package.json ./lib/api-zod/
-COPY lib/api-spec/package.json ./lib/api-spec/
-COPY lib/api-client-react/package.json ./lib/api-client-react/
-COPY artifacts/kiosk-frontend/package.json ./artifacts/kiosk-frontend/
+# Copy only the manifest files first so Docker layer-caches the install step.
+# A source-code change will not re-run pnpm install unless a manifest changes.
+COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY lib/db/package.json                    ./lib/db/
+COPY lib/api-zod/package.json               ./lib/api-zod/
+COPY lib/api-spec/package.json              ./lib/api-spec/
+COPY lib/api-client-react/package.json      ./lib/api-client-react/
+COPY artifacts/kiosk-frontend/package.json  ./artifacts/kiosk-frontend/
 
-RUN pnpm install --frozen-lockfile
+# Install all workspace dependencies.
+# --frozen-lockfile: fail if lockfile is out of date.
+# --ignore-scripts: skip lifecycle scripts here; they already ran during
+#   the pnpm-approve-builds flow and are not needed inside Docker.
+RUN pnpm install --frozen-lockfile --ignore-scripts
 
-# Stage 2: build the application
+# ── Stage 2: build ────────────────────────────────────────────────────────────
 FROM base AS builder
-COPY tsconfig.json tsconfig.base.json ./
+
 ENV NEXT_TELEMETRY_DISABLED=1
 
-COPY lib/ ./lib/
+# Bring in source files needed for the build.
+COPY tsconfig.json tsconfig.base.json ./
+COPY lib/  ./lib/
 COPY artifacts/kiosk-frontend/ ./artifacts/kiosk-frontend/
 
+# Build shared lib declaration files first (required by tsc project references).
 RUN pnpm run typecheck:libs
 
+# ── Public environment variables ──────────────────────────────────────────────
+# These are baked into the browser bundle at build time.
+# Provide the correct production values via --build-arg in CI/CD.
+# Defaults are safe for local Docker builds only.
 ARG NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
 ARG NEXT_PUBLIC_API_URL=http://localhost:4000
+ARG NEXT_PUBLIC_MCP_BASE_URL=http://localhost:5001
+
+# Fail the build if the Clerk key is missing — a missing key produces a
+# broken authentication UI that is difficult to debug at runtime.
+RUN test -n "${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}" || \
+    (echo "ERROR: NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY build arg is required" && exit 1)
+
 ENV NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY}
 ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_MCP_BASE_URL=${NEXT_PUBLIC_MCP_BASE_URL}
 
 RUN pnpm --filter @workspace/kiosk-frontend build
 
-# Stage 3: minimal runtime
+# ── Stage 3: minimal production runtime ───────────────────────────────────────
 FROM node:20-bookworm-slim AS runner
+
 WORKDIR /app
 
 ENV NODE_ENV=production
@@ -38,11 +64,27 @@ ENV NEXT_TELEMETRY_DISABLED=1
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0
 
-# Copy only the traced standalone runtime and required static assets.
-COPY --from=builder /app/artifacts/kiosk-frontend/.next/standalone ./
-COPY --from=builder /app/artifacts/kiosk-frontend/.next/static ./artifacts/kiosk-frontend/.next/static
-COPY --from=builder /app/artifacts/kiosk-frontend/public ./artifacts/kiosk-frontend/public
+# Create a non-root user for the runtime container.
+# The standalone Next.js server does not require root.
+RUN groupadd --system --gid 1001 nodejs && \
+    useradd  --system --uid 1001 --gid nodejs nextjs
+
+# Copy only what the standalone server needs:
+#   - the standalone server bundle (includes a self-contained node_modules)
+#   - the compiled static assets
+#   - the public directory
+COPY --from=builder --chown=nextjs:nodejs \
+    /app/artifacts/kiosk-frontend/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs \
+    /app/artifacts/kiosk-frontend/.next/static \
+    ./artifacts/kiosk-frontend/.next/static
+COPY --from=builder --chown=nextjs:nodejs \
+    /app/artifacts/kiosk-frontend/public \
+    ./artifacts/kiosk-frontend/public
+
+USER nextjs
 
 EXPOSE 3000
 
+# Logs go to stdout/stderr for CloudWatch to collect.
 CMD ["node", "artifacts/kiosk-frontend/server.js"]

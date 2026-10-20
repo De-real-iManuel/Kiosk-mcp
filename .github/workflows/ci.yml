@@ -332,6 +332,7 @@ jobs:
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_API_URL=http://localhost:4000
+            NEXT_PUBLIC_MCP_BASE_URL=http://localhost:5001
           tags: kiosk-frontend:${{ steps.tag.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -414,19 +415,20 @@ jobs:
           build-args: |
             NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
             NEXT_PUBLIC_API_URL=${{ secrets.NEXT_PUBLIC_API_URL }}
+            NEXT_PUBLIC_MCP_BASE_URL=${{ secrets.NEXT_PUBLIC_MCP_BASE_URL }}
           tags: |
             ${{ env.ECR_REGISTRY }}/kiosk-frontend:latest
             ${{ env.ECR_REGISTRY }}/kiosk-frontend:${{ steps.tag.outputs.TAG }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      - name: Trigger ECS rolling deploy
+      - name: Trigger ECS rolling deploy (frontend only)
         run: |
-          for SERVICE in kiosk-api-server kiosk-master-mcp kiosk-business-mcp kiosk-frontend; do
-            aws ecs update-service \
-              --cluster kiosk \
-              --service $SERVICE \
-              --force-new-deployment \
-              --region ${{ env.AWS_REGION }} > /dev/null
-            echo "$SERVICE deploy triggered"
-          done
+          # Deploy only the frontend service — backend services are unchanged.
+          # Cluster: kiosk-mcp-production (actual deployed cluster name).
+          aws ecs update-service \
+            --cluster kiosk-mcp-production \
+            --service kiosk-frontend \
+            --force-new-deployment \
+            --region ${{ env.AWS_REGION }} > /dev/null
+          echo "kiosk-frontend deploy triggered on cluster kiosk-mcp-production"

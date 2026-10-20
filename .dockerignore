@@ -1,16 +1,48 @@
+# Version control
 .git
+.gitignore
+.gitattributes
+
+# Kiro / IDE
 .kiro
+
+# Dependencies — each stage installs from lockfile
 node_modules
 **/node_modules
+
+# Build outputs — each stage builds fresh
 **/.next
 **/dist
+**/out
+
+# TypeScript build info
 **/.tsbuildinfo
 **/tsconfig.tsbuildinfo
+
+# Docs and scripts not needed in the image
 docs
-scripts/src
-artifacts/mockup-sandbox
-docker
+README.md
+LICENSE
+
+# Test files
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+
+# Local dev artifacts
 *.log
+.DS_Store
+
+# Secrets — never copy into the image
 .env
 .env.*
 !.env.example
+
+# Docker files themselves
+docker
+docker-compose.yml
+
+# Hackathon planning
+artifacts/master-mcp/.agents
+artifacts/kiosk-frontend/.agents
