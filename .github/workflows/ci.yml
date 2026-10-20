@@ -346,8 +346,7 @@ jobs:
     needs: docker-build
     if: |
       github.ref == 'refs/heads/main' &&
-      github.event_name == 'push' &&
-      secrets.AWS_ROLE_ARN != ''
+      github.event_name == 'push'
     permissions:
       id-token: write
       contents: read
