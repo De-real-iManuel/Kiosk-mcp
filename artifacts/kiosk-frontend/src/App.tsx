@@ -186,10 +186,22 @@ const FLOW_STEPS = [
   },
 ] as const;
 
-const MASTER_MCP_ENDPOINT =
-  typeof process !== "undefined" && process.env.NEXT_PUBLIC_MCP_BASE_URL
-    ? `${process.env.NEXT_PUBLIC_MCP_BASE_URL.replace(/\/$/, "")}/mcp`
-    : "https://mcp.kiosk.example/mcp";
+// The Master MCP discovery endpoint — for developers to connect AI agents.
+// In production, NEXT_PUBLIC_MCP_BASE_URL includes /business-mcp (e.g.
+// https://cloudfront-domain/business-mcp). We strip that suffix to get the
+// root domain, then append /mcp for the Master MCP discovery endpoint.
+// In local dev, master-mcp runs on port 5000 (separate from business-mcp on 5001).
+const MASTER_MCP_ENDPOINT = (() => {
+  const mcpBase =
+    (typeof process !== "undefined" && process.env.NEXT_PUBLIC_MCP_BASE_URL) ||
+    "";
+  if (mcpBase.includes("/business-mcp")) {
+    // Production: strip /business-mcp, append /mcp
+    return `${mcpBase.replace(/\/business-mcp$/, "").replace(/\/$/, "")}/mcp`;
+  }
+  // Local dev: master-mcp runs on localhost:5000
+  return "http://localhost:5000/mcp";
+})();
 
 function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
   const [copied, setCopied] = useState(false);
