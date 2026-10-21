@@ -10,10 +10,14 @@ WORKDIR /app
 # Copy only the manifest files first so Docker layer-caches the install step.
 # A source-code change will not re-run pnpm install unless a manifest changes.
 COPY package.json pnpm-workspace.yaml pnpm-lock.yaml .npmrc ./
+COPY scripts/package.json                   ./scripts/
 COPY lib/db/package.json                    ./lib/db/
 COPY lib/api-zod/package.json               ./lib/api-zod/
 COPY lib/api-spec/package.json              ./lib/api-spec/
 COPY lib/api-client-react/package.json      ./lib/api-client-react/
+COPY artifacts/api-server/package.json      ./artifacts/api-server/
+COPY artifacts/business-mcp/package.json    ./artifacts/business-mcp/
+COPY artifacts/master-mcp/package.json      ./artifacts/master-mcp/
 COPY artifacts/kiosk-frontend/package.json  ./artifacts/kiosk-frontend/
 
 # Install all workspace dependencies.
