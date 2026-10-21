@@ -138,23 +138,38 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
       // ── Fetch businesses ─────────────────────────────────────────────────────
       const effectiveLimit = Math.min(limit ?? 20, 50);
 
-      const rows = await db
-        .select({
-          id: businessesTable.id,
-          slug: businessesTable.slug,
-          name: businessesTable.businessName,
-          description: businessesTable.description,
-          city: businessesTable.city,
-          country: businessesTable.country,
-          location: businessesTable.location,
-          phone: businessesTable.phone,
-          whatsapp: businessesTable.whatsapp,
-          openingHours: businessesTable.openingHours,
-          timezone: businessesTable.timezone,
-        })
-        .from(businessesTable)
-        .where(and(...conditions))
-        .limit(effectiveLimit);
+      let rows;
+      try {
+        rows = await db
+          .select({
+            id: businessesTable.id,
+            slug: businessesTable.slug,
+            name: businessesTable.businessName,
+            description: businessesTable.description,
+            city: businessesTable.city,
+            country: businessesTable.country,
+            location: businessesTable.location,
+            phone: businessesTable.phone,
+            whatsapp: businessesTable.whatsapp,
+            openingHours: businessesTable.openingHours,
+            timezone: businessesTable.timezone,
+          })
+          .from(businessesTable)
+          .where(and(...conditions))
+          .limit(effectiveLimit);
+      } catch (error) {
+        const err = error as {
+          message?: string;
+          code?: string;
+          cause?: { message?: string; code?: string };
+        };
+        console.error("[search_businesses] Database query failed", {
+          code: err.cause?.code ?? err.code ?? "UNKNOWN",
+          message:
+            err.cause?.message ?? err.message ?? "Unknown database error",
+        });
+        throw error;
+      }
 
       // ── Apply open_now filter in-memory ──────────────────────────────────────
       let filtered = rows;
