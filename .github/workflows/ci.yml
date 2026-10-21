@@ -99,6 +99,9 @@ jobs:
           restore-keys: ${{ runner.os }}-pnpm-
       - run: pnpm install --frozen-lockfile
 
+      - name: Build library packages for tests
+        run: pnpm run typecheck:libs
+
       - name: lib/db — generateSlug + isBusinessOpen property tests
         run: pnpm --filter @workspace/db test
 
