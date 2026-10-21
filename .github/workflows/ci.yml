@@ -338,8 +338,9 @@ jobs:
           context: .
           file: docker/Dockerfile.kiosk-frontend
           push: false
+          # Build-only test key; this image is never pushed or deployed.
           build-args: |
-            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+            NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=pk_test_dGVzdC1jbGVyay5hY2NvdW50cy5kZXYk
             NEXT_PUBLIC_API_URL=http://localhost:4000
             NEXT_PUBLIC_MCP_BASE_URL=http://localhost:5001
           tags: kiosk-frontend:${{ steps.tag.outputs.TAG }}
