@@ -656,6 +656,15 @@ const blankInput: BusinessInput = {
   booking: null,
 };
 
+// Separate structured contact fields — the API accepts these via CreateBusinessBodyV2
+// but the orval-generated BusinessInput type doesn't include them, so we track them
+// separately and merge on submit.
+const blankContact = {
+  phone: "",
+  whatsapp: "",
+  website: "",
+};
+
 const CAPABILITY_OPTIONS = [
   {
     key: "ordering",
@@ -684,6 +693,7 @@ export function CreateBusinessSurface() {
   const client = useQueryClient();
   const create = useCreateBusiness();
   const [form, setForm] = useState<BusinessInput>(blankInput);
+  const [contact, setContact] = useState(blankContact);
   // These map plain business questions → MCP capabilities invisibly
   const [extraCaps, setExtraCaps] = useState<Record<string, boolean>>({
     ordering: false,
@@ -713,6 +723,16 @@ export function CreateBusinessSurface() {
       {
         data: {
           ...form,
+          // Legacy contact field — set to phone for backward compat
+          contact:
+            contact.phone ||
+            contact.whatsapp ||
+            contact.website ||
+            form.contact,
+          // Structured contact fields — accepted by CreateBusinessBodyV2
+          phone: contact.phone || null,
+          whatsapp: contact.whatsapp || null,
+          website: contact.website || null,
           capabilities: allCaps.map((c) => ({
             capability: c as "contact",
             enabled: true,
@@ -890,12 +910,6 @@ export function CreateBusinessSurface() {
                       true,
                     ],
                     ["hours", "Opening hours", "e.g. Mon–Sat 8am–8pm", true],
-                    [
-                      "contact",
-                      "Phone, WhatsApp, or website",
-                      "How customers can reach you",
-                      true,
-                    ],
                   ] as const
                 ).map(([key, label, hint, required]) => (
                   <label className="block" key={key}>
@@ -921,7 +935,6 @@ export function CreateBusinessSurface() {
                       <input
                         required
                         className="field-control"
-                        inputMode={key === "contact" ? "tel" : "text"}
                         value={form[key]}
                         onChange={(e) =>
                           setForm({ ...form, [key]: e.target.value })
@@ -931,6 +944,75 @@ export function CreateBusinessSurface() {
                     )}
                   </label>
                 ))}
+
+                {/* Separate contact fields — phone, WhatsApp, website */}
+                <div className="border-t border-white/15 pt-5">
+                  <p className="form-label mb-1">
+                    How can customers reach you?
+                    <span className="ml-1 text-[#8A8478]">*</span>
+                  </p>
+                  <p className="form-hint mb-4">
+                    At least one contact method is required to publish.
+                  </p>
+
+                  <div className="space-y-4">
+                    <label className="block">
+                      <span className="form-label">Phone number</span>
+                      <span className="form-hint block mb-2">
+                        e.g. +234 801 234 5678
+                      </span>
+                      <input
+                        className="field-control"
+                        inputMode="tel"
+                        value={contact.phone}
+                        onChange={(e) =>
+                          setContact({ ...contact, phone: e.target.value })
+                        }
+                        data-testid="create-phone"
+                        placeholder="+234 801 234 5678"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="form-label">
+                        WhatsApp number
+                        <span className="ml-1 text-[#8A8478] text-[11px]">
+                          (international format)
+                        </span>
+                      </span>
+                      <span className="form-hint block mb-2">
+                        Digits only, e.g. 2348012345678
+                      </span>
+                      <input
+                        className="field-control"
+                        inputMode="tel"
+                        value={contact.whatsapp}
+                        onChange={(e) =>
+                          setContact({ ...contact, whatsapp: e.target.value })
+                        }
+                        data-testid="create-whatsapp"
+                        placeholder="2348012345678"
+                      />
+                    </label>
+
+                    <label className="block">
+                      <span className="form-label">Website</span>
+                      <span className="form-hint block mb-2">
+                        e.g. https://mamaskitchen.ng
+                      </span>
+                      <input
+                        className="field-control"
+                        inputMode="url"
+                        value={contact.website}
+                        onChange={(e) =>
+                          setContact({ ...contact, website: e.target.value })
+                        }
+                        data-testid="create-website"
+                        placeholder="https://mamaskitchen.ng"
+                      />
+                    </label>
+                  </div>
+                </div>
 
                 {/* Price — optional */}
                 <label className="block border-t border-white/15 pt-5">
