@@ -8,7 +8,7 @@ import {
 } from "@workspace/db";
 import { and, asc, eq, ilike, inArray, or } from "drizzle-orm";
 import { z } from "zod";
-import { scoreAndRank } from "../lib/bedrock.js";
+import { isBedrockEnabled, scoreAndRank } from "../lib/bedrock.js";
 
 export function registerDiscoveryTools(server: McpServer): void {
   // ── Tool 1: discover_categories ──────────────────────────────────────────────
@@ -102,13 +102,19 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
       ];
 
       if (query) {
-        const pattern = `%${query}%`;
-        conditions.push(
-          or(
-            ilike(businessesTable.businessName, pattern),
-            ilike(businessesTable.description, pattern),
-          )!,
-        );
+        // When Bedrock semantic ranking is enabled, skip the SQL keyword filter —
+        // the ilike pattern would pre-filter results that Bedrock would rank highly
+        // via semantic similarity ("somewhere to get my hair done" → hair salons).
+        // Bedrock scores the full candidate set; SQL order is the fallback only.
+        if (!isBedrockEnabled()) {
+          const pattern = `%${query}%`;
+          conditions.push(
+            or(
+              ilike(businessesTable.businessName, pattern),
+              ilike(businessesTable.description, pattern),
+            )!,
+          );
+        }
       }
 
       if (city) {
