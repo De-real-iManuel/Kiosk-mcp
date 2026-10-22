@@ -9,8 +9,32 @@
 [![MCP Protocol](https://img.shields.io/badge/MCP-2025--11--25-orange)](https://modelcontextprotocol.io)
 [![AWS ECS Fargate](https://img.shields.io/badge/AWS-ECS_Fargate-FF9900?logo=amazonaws&logoColor=white)](https://aws.amazon.com/ecs/)
 [![Tests](https://img.shields.io/badge/Tests-49_passing-brightgreen)](#running-tests)
+[![Live](https://img.shields.io/badge/Live-Deployed-brightgreen)](https://d127130891zv0m.cloudfront.net)
 
 </div>
+
+---
+
+## Live Deployment
+
+Kiosk is deployed and running on AWS ECS Fargate behind CloudFront:
+
+| Service | URL |
+|---|---|
+| **Frontend** | [https://d127130891zv0m.cloudfront.net](https://d127130891zv0m.cloudfront.net) |
+| **Master MCP** | `POST https://d127130891zv0m.cloudfront.net/mcp` |
+| **Business MCP** | `POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/:slug` |
+| **REST API** | `https://d127130891zv0m.cloudfront.net/api/` |
+
+**ECS Cluster:** `kiosk-mcp-production` (us-east-1) — 4 services running
+**ECR Registry:** `292207393504.dkr.ecr.us-east-1.amazonaws.com`
+**CloudFront Distribution:** `EM8DAE1OUHC3F` — HTTPS with `redirect-to-https` viewer protocol, all HTTP methods allowed, single origin pointing to the ALB
+**Secrets Manager:** `kiosk/database-url`, `kiosk/clerk-secret-key`, `kiosk/clerk-publishable-key`
+
+Try it now — connect ChatGPT, Claude Desktop, or any MCP-compatible client to:
+```
+https://d127130891zv0m.cloudfront.net/mcp
+```
 
 ---
 
@@ -266,14 +290,14 @@ flowchart TB
 
 ### ALB Routing Rules
 
-| Priority | Host | Path | Target Service |
-|---|---|---|---|
-| 10 | `mcp.kiosk.example` | `/mcp/business/*` | business-mcp :5001 |
-| 20 | `mcp.kiosk.example` | `/mcp`, `/mcp/sse` | master-mcp :5000 |
-| 30 | `api.kiosk.example` | `/*` | api-server :4000 |
-| 40 | `kiosk.example` | `/*` | kiosk-frontend :3000 |
+| Priority | Path | Target Service |
+|---|---|---|
+| 10 | `/business-mcp/*` | business-mcp :5001 |
+| 20 | `/mcp` | master-mcp :5000 |
+| 30 | `/api/*` | api-server :4000 |
+| 40 | `/*` | kiosk-frontend :3000 |
 
-> The business-mcp rule (priority 10) must be registered before master-mcp (priority 20) so `/mcp/business/*` routes correctly.
+CloudFront sits in front of the ALB with HTTPS (`redirect-to-https`) and routes all paths to the same origin. The ALB uses path-based routing to direct requests to the correct ECS target group.
 
 ### Service Sizing and Auto-Scaling
 
@@ -436,16 +460,22 @@ pnpm dev
 
 ### Step 5 — Open the app
 
-Go to [http://localhost:3000](http://localhost:3000)
+Go to [https://d127130891zv0m.cloudfront.net](https://d127130891zv0m.cloudfront.net) (live deployment) or [http://localhost:3000](http://localhost:3000) (local dev).
 
 ### Step 6 — Verify MCP is working
 
 ```bash
-# List all available tools on a demo business endpoint
-curl -s -X POST http://localhost:5001/mcp/business/stylehouse-salon-PORT-HERE \
+# List all available tools on the Master MCP discovery endpoint
+curl -s -X POST https://d127130891zv0m.cloudfront.net/mcp \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
-  | jq '.result.tools[].name'
+  | jq '[.result.tools[].name]'
+
+# Or list tools on a specific business endpoint
+curl -s -X POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/YOUR_SLUG \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}' \
+  | jq '[.result.tools[].name]'
 
 # Expected output:
 # "get_business_info"
@@ -456,7 +486,7 @@ curl -s -X POST http://localhost:5001/mcp/business/stylehouse-salon-PORT-HERE \
 # "request_booking"    ← only if booking capability enabled
 ```
 
-> Replace `stylehouse-salon-PORT-HERE` with the actual slug from your seeded demo data (check your database or the dashboard after logging in).
+> Replace `YOUR_SLUG` with the actual slug from your seeded demo data (check your database or the dashboard after logging in).
 
 ---
 
@@ -547,7 +577,7 @@ cd artifacts/kiosk-frontend && npx tsc --noEmit
 
 ## MCP Endpoints Reference
 
-### Business MCP — `POST /mcp/business/:slug`
+### Business MCP — `POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/:slug`
 
 Every published business gets a unique endpoint. Tools are registered at request time based on the business's enabled capabilities.
 
@@ -573,7 +603,7 @@ Every published business gets a unique endpoint. Tools are registered at request
 ### Example tool call
 
 ```bash
-curl -X POST http://localhost:5001/mcp/business/mamas-kitchen-abc123 \
+curl -X POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/mamas-kitchen-abc123 \
   -H "Content-Type: application/json" \
   -d '{
     "jsonrpc": "2.0",
@@ -597,7 +627,7 @@ curl -X POST http://localhost:5001/mcp/business/mamas-kitchen-abc123 \
 }
 ```
 
-### Master MCP — `POST /mcp`
+### Master MCP — `POST https://d127130891zv0m.cloudfront.net/mcp`
 
 Discovery tools for AI agents to find businesses across the platform. All queries filter `status = 'published' AND is_active = true` at the SQL layer.
 
@@ -622,7 +652,7 @@ A complete judge walkthrough is in [`docs/demo.md`](docs/demo.md). Quick version
 
 ### 1. Sign up as a business owner
 
-Go to [http://localhost:3000](http://localhost:3000) → **Create your Kiosk** → fill the form → publish.
+Go to [https://d127130891zv0m.cloudfront.net](https://d127130891zv0m.cloudfront.net) → **Create your Kiosk** → fill the form → publish.
 
 ### 2. See your MCP endpoint appear
 
@@ -630,7 +660,7 @@ On the dashboard, click **Publish Kiosk**. The panel shows:
 
 ```
 AI-readable business presence — ACTIVE
-http://localhost:5001/mcp/business/your-business-name-abc123
+https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/your-business-name-abc123
 ```
 
 Copy that URL.
@@ -639,19 +669,25 @@ Copy that URL.
 
 ```bash
 # See all tools
-curl -X POST <your-mcp-url> \
+curl -X POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/your-business-name-abc123 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/list","params":{}}'
 
 # Get business info
-curl -X POST <your-mcp-url> \
+curl -X POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/your-business-name-abc123 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","id":1,"method":"tools/call","params":{"name":"get_business_info","arguments":{}}}'
 ```
 
 ### 4. Browse the demo businesses
 
-Go to [http://localhost:3000/marketplace](http://localhost:3000/marketplace) to see the seeded demo businesses (Mama's Kitchen, StyleHouse Salon, TechFix Solutions).
+Go to [https://d127130891zv0m.cloudfront.net/marketplace](https://d127130891zv0m.cloudfront.net/marketplace) to see the seeded demo businesses (Mama's Kitchen, StyleHouse Salon, TechFix Solutions).
+
+### 5. Connect ChatGPT or Claude
+
+Add `https://d127130891zv0m.cloudfront.net/mcp` as a custom MCP connector in ChatGPT Settings → Apps & Connectors, or Claude Desktop → Settings → Connectors. Then ask:
+
+> "Find me an open restaurant in Port Harcourt that delivers jollof rice"
 
 ---
 
@@ -771,15 +807,16 @@ erDiagram
 | Rate limiting | In-process, per-instance | Redis-backed `express-rate-limit` for multi-instance |
 | Session cache | In-memory Map, 30s TTL | Redis with distributed invalidation |
 | Clerk user deletion | No webhook — orphaned business records possible | Add `user.deleted` Clerk webhook |
-| HTTPS enforcement | TLS at load balancer only | Add HSTS headers at app layer |
+| HTTPS enforcement | CloudFront TLS with `redirect-to-https` — fully enforced | Add HSTS headers at app layer |
 | Master MCP auth | Unauthenticated discovery | API key or Clerk JWT for private catalogues |
+| Bedrock semantic search | Code implemented, falls back to keyword search when `BEDROCK_ENABLED=false` | Enable model access and set `BEDROCK_ENABLED=true` on master-mcp task |
 | Catalogue (products/images) | Data model ready, UI not exposed | Phase 2 feature |
-| Strands SDK language | TypeScript SDK (`@strands-agents/sdk`) reached 1.0 Apr 2026 — full stack is now TypeScript | No gap remaining — use `@strands-agents/sdk` |
+| ALB | HTTP-only (CloudFront provides TLS) | Configure HTTPS listener on ALB for end-to-end encryption |
 
 ---
 
 <div align="center">
 
-Built for the AWS Hackathon · Kiosk Technologies Ltd · 2026
+Built for the Amazon Builders Challenge 2026 · Emmanuel Okechukwu Nwajari (De real iManuel) · MIT License
 
 </div>
