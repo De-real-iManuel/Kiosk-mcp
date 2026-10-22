@@ -54,6 +54,7 @@ https://d127130891zv0m.cloudfront.net/mcp
 - [Demo Script](#demo-script)
 - [Data Model](#data-model)
 - [Key Engineering Decisions](#key-engineering-decisions)
+- [Engineering Evidence](#engineering-evidence)
 - [Known Limitations and Future Work](#known-limitations-and-future-work)
 
 ---
@@ -683,9 +684,9 @@ curl -X POST https://d127130891zv0m.cloudfront.net/business-mcp/mcp/business/you
 
 Go to [https://d127130891zv0m.cloudfront.net/marketplace](https://d127130891zv0m.cloudfront.net/marketplace) to see the seeded demo businesses (Mama's Kitchen, StyleHouse Salon, TechFix Solutions).
 
-### 5. Connect ChatGPT or Claude
+### 5. Connect an MCP-compatible AI agent
 
-Add `https://d127130891zv0m.cloudfront.net/mcp` as a custom MCP connector in ChatGPT Settings → Apps & Connectors, or Claude Desktop → Settings → Connectors. Then ask:
+Add `https://d127130891zv0m.cloudfront.net/mcp` as a custom MCP connector in ChatGPT (Settings → Apps & Connectors) or Claude Desktop (Settings → Connectors) to simulate how Alexa+ would discover businesses through Kiosk's Master MCP. Then ask:
 
 > "Find me an open restaurant in Port Harcourt that delivers jollof rice"
 
@@ -797,6 +798,31 @@ erDiagram
 **Tenant isolation by session closure** — Every tool handler closes over its `session.business.id`. All database queries inside tool handlers use that ID as a filter. Tests use `InMemoryTransport` to create real connected server/client pairs and verify that two tenant servers return only their own data.
 
 **Rate limiting without new dependencies** — An in-process token-bucket limiter covers public MCP (60 req/min) and write API endpoints (30 req/min) with no external package. Swap to Redis-backed `express-rate-limit` before multi-instance production.
+
+---
+
+## Engineering Evidence
+
+This project includes a full engineering record for the hackathon. Both documents live in [`docs/hackathon/`](docs/hackathon/).
+
+### Friction Log — `docs/hackathon/friction-log.md`
+
+13 incidents tracked from root cause to fix to verification. Highlights:
+
+| ID | Incident | Status |
+|---|---|---|
+| F-001 | `registerBusinessTools` was never called — tools/list returned Method Not Found | Resolved |
+| F-003 | Mixed content: HTTPS frontend calling HTTP ALB — all API calls browser-blocked | Resolved |
+| F-004 | MCP connector compatibility — bare `GET /mcp` returned 406; custom handler built to distinguish SSE probe from URL validation | Resolved |
+| F-006 | Hardcoded `mcp.kiosk.example` in source — AI agents received non-existent endpoint URLs | Resolved |
+| F-007 | 422 on publish — legacy contact field not accepted; categoryId was a hard blocker for form-created businesses | Resolved |
+| F-008 | AWS account verification (error `880104`) blocked deployment for ~1 week; continued on separate account | Resolved |
+| F-009 | Slug uniqueness: 8-char UUID suffix caused property-test collision; extended to 12 hex chars | Resolved |
+| F-012 | business-mcp integration tests fail to load (vite `@workspace/db` resolution) | Open |
+
+### Evidence Audit — `docs/hackathon/evidence-audit.md`
+
+A matrix of every claim made in this project against the evidence backing it. Includes what is verified, what is partially verified, and what remains unconfirmed. Also documents known mocks, fallbacks, and simulated behaviour (Bedrock fallback, demo businesses, order-to-WhatsApp handoff).
 
 ---
 

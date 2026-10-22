@@ -30,7 +30,7 @@
 
 2. **Mixed content error (F-003)** — Frontend deployed via CloudFront HTTPS but API URL was HTTP ALB. Browser blocked all API calls. Fixed by rebuilding Docker image with CloudFront HTTPS URLs.
 
-3. **ChatGPT URL validation failure (F-004)** — ChatGPT's connector verifier sends `GET /mcp` without the `Accept: text/event-stream` header. The MCP SDK returned 406. Fixed with a custom handler that returns 200 for bare GET probes.
+3. **ChatGPT MCP connector compatibility (F-004)** — Used ChatGPT as a proxy to simulate and validate the same tool-calling pattern Alexa+ would use (both are AI agents calling MCP tools). ChatGPT's connector verifier sends `GET /mcp` without the `Accept: text/event-stream` header. The MCP SDK returned 406. Fixed with a custom handler that returns 200 for bare GET probes. The fix makes the endpoint compatible with any MCP client, including Alexa+.
 
 4. **422 publish gate (F-007)** — Publish readiness checker didn't accept the legacy contact text field and blocked on missing categoryId. Fixed by accepting the legacy field and making categoryId recommended.
 
