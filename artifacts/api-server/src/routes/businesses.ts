@@ -132,11 +132,11 @@ router.post("/businesses", async (req, res): Promise<void> => {
     timezone: parsed.data.timezone ?? "Africa/Lagos",
     isActive: true,
     status: "draft",
-    // Legacy NOT NULL text columns — use empty strings until schema migration removes them
-    services: "",
-    audience: "",
-    hours: "",
-    contact: "",
+    // Legacy NOT NULL text columns — normalise empty strings to "" (not null)
+    services: parsed.data.services || "",
+    audience: parsed.data.audience || "",
+    hours: parsed.data.hours || "",
+    contact: parsed.data.contact || "",
   });
 
   const capabilities = parsed.data.capabilities ?? [];

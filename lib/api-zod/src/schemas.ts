@@ -67,10 +67,14 @@ export const ServiceInputSchema = z.object({
 
 export const CreateBusinessBodyV2 = z.object({
   businessName: z.string().min(1).max(120),
-  services: z.string().min(1).max(4000).optional(),
-  audience: z.string().min(1).max(1000).optional(),
-  hours: z.string().min(1).max(500).optional(),
-  contact: z.string().min(1).max(1000).optional(),
+  // Legacy free-text fields — optional AND accept empty strings (treated as not
+  // provided). The form initialises these to "" which would fail .min(1) without
+  // the .or(z.literal("")) branch. Empty strings are normalised to undefined
+  // before DB insertion so the columns stay NULL rather than "".
+  services: z.string().min(1).max(4000).optional().or(z.literal("")),
+  audience: z.string().min(1).max(1000).optional().or(z.literal("")),
+  hours: z.string().min(1).max(500).optional().or(z.literal("")),
+  contact: z.string().min(1).max(1000).optional().or(z.literal("")),
   price: z.string().max(250).nullable().optional(),
   booking: z.enum(["yes", "no"]).nullable().optional(),
   categoryId: z.string().uuid().optional(),

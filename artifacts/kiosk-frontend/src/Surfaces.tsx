@@ -745,11 +745,13 @@ export function CreateBusinessSurface() {
           client.invalidateQueries({ queryKey: ["/api/businesses"] });
         },
         onError: (err: unknown) => {
-          const apiErr = err as { status?: number };
+          const apiErr = err as { status?: number; data?: { error?: string } };
           if (apiErr?.status === 409) {
+            // Duplicate draft — treat as success, navigate to dashboard
             setCreatedName(form.businessName);
             client.invalidateQueries({ queryKey: ["/api/businesses"] });
           }
+          // All other errors: create.isError becomes true, message shown below
         },
       },
     );
@@ -871,16 +873,31 @@ export function CreateBusinessSurface() {
               <p className="eyebrow border-b border-white/15 pb-5 text-[#A49D90]">
                 Tell us about your business
               </p>
-              {create.isError && (
-                <p
-                  className="mt-5 border-l-2 border-[#D1786B] bg-[#D1786B]/10 p-3 text-sm text-[#E8B2A8]"
-                  role="alert"
-                  data-testid="create-error"
-                >
-                  We could not save this Kiosk. Your details are still here —
-                  please try again.
-                </p>
-              )}
+              {create.isError &&
+                (() => {
+                  const apiErr = create.error as {
+                    status?: number;
+                    data?: { error?: string };
+                  } | null;
+                  const status = apiErr?.status;
+                  const msg =
+                    status === 400
+                      ? "Some details look incorrect. Check your business name and contact fields, then try again."
+                      : status === 401
+                        ? "You need to be signed in to save a Kiosk. Please refresh and sign in."
+                        : status === 429
+                          ? "Too many requests. Please wait a moment and try again."
+                          : "We could not save this Kiosk. Your details are still here — please try again.";
+                  return (
+                    <p
+                      className="mt-5 border-l-2 border-[#D1786B] bg-[#D1786B]/10 p-3 text-sm text-[#E8B2A8]"
+                      role="alert"
+                      data-testid="create-error"
+                    >
+                      {msg}
+                    </p>
+                  );
+                })()}
               <form className="mt-6 space-y-5" onSubmit={submit}>
                 {/* Core fields */}
                 {(
