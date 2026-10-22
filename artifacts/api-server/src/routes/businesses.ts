@@ -21,6 +21,7 @@ import {
   businessEndpointsTable,
   marketplaceEventsTable,
   agentEventsTable,
+  bookingRequestsTable,
   generateSlug,
 } from "@workspace/db";
 import { requireAuth } from "../middlewares/require-auth";
@@ -473,6 +474,32 @@ router.get("/businesses/:id/analytics", async (req, res): Promise<void> => {
   };
 
   res.json(GetBusinessAnalyticsResponse.parse(analytics));
+});
+
+/**
+ * GET /businesses/:id/bookings
+ *
+ * Returns all booking requests for a business, newest first.
+ * Only accessible by the business owner.
+ */
+router.get("/businesses/:id/bookings", async (req, res): Promise<void> => {
+  let params: { id: string };
+  try {
+    params = BusinessIdParams.parse(req.params);
+  } catch {
+    res.status(400).json({ error: "Invalid business ID" });
+    return;
+  }
+
+  await assertOwnership(params.id, getOwnerId(res));
+
+  const bookings = await db
+    .select()
+    .from(bookingRequestsTable)
+    .where(eq(bookingRequestsTable.businessId, params.id))
+    .orderBy(desc(bookingRequestsTable.createdAt));
+
+  res.json(bookings);
 });
 
 /**

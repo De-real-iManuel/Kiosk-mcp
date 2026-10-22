@@ -6,6 +6,7 @@ import {
   businessProductsTable,
   businessCapabilitiesTable,
   agentEventsTable,
+  bookingRequestsTable,
 } from "@workspace/db";
 import type { BusinessSession } from "../businessSession.js";
 
@@ -132,36 +133,72 @@ export function registerOptionalTools(
   if (has("request_booking")) {
     server.tool(
       "request_booking",
-      "Records a booking request. Does NOT guarantee availability — the business will confirm out-of-band. Returns a booking reference.",
+      `Submits a booking inquiry for this business.
+
+IMPORTANT: This records a booking REQUEST — not a confirmed reservation.
+Kiosk does not provide real-time availability checking or calendar integration.
+The business will review and confirm (or decline) the request out-of-band,
+typically via WhatsApp or phone. Always communicate this to the customer.
+
+Returns a booking_ref, current status ("pending"), and the business contact
+details so the customer can follow up if needed.`,
       {
-        service_name: z.string(),
-        preferred_date: z.string().describe("YYYY-MM-DD"),
-        preferred_time: z.string().describe("HH:MM"),
-        contact_name: z.string(),
-        contact_phone: z.string(),
-        notes: z.string().optional(),
+        service_name: z.string().min(1).describe("Name of the service to book"),
+        preferred_date: z
+          .string()
+          .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")
+          .describe("Requested date in YYYY-MM-DD format"),
+        preferred_time: z
+          .string()
+          .regex(/^\d{2}:\d{2}$/, "Must be HH:MM")
+          .describe("Requested time in HH:MM (24-hour) format"),
+        contact_name: z.string().min(1).describe("Customer's name"),
+        contact_phone: z.string().min(1).describe("Customer's phone number"),
+        notes: z
+          .string()
+          .optional()
+          .describe("Any additional notes or special requests"),
       },
       async (input) => {
         const booking_ref = "BKG-" + Date.now();
         const whatsapp_url = business.whatsapp
           ? "https://wa.me/" + business.whatsapp.replace(/\D/g, "")
           : null;
+
+        // Persist to the dedicated booking_requests table (not fire-and-forget)
+        await db.insert(bookingRequestsTable).values({
+          businessId: bid,
+          bookingRef: booking_ref,
+          serviceName: input.service_name,
+          preferredDate: input.preferred_date,
+          preferredTime: input.preferred_time,
+          contactName: input.contact_name,
+          contactPhone: input.contact_phone,
+          notes: input.notes ?? null,
+          status: "pending",
+        });
+
+        // Also log to agent_events for analytics
         db.insert(agentEventsTable)
           .values({
             businessId: bid,
             eventType: "booking_request",
             toolName: "request_booking",
-            metadata: { booking_ref, ...input },
+            metadata: { booking_ref },
           })
           .catch(() => {});
+
         return {
           content: [
             {
               type: "text" as const,
               text: JSON.stringify({
                 booking_ref,
+                status: "pending",
                 message:
-                  "Booking request recorded. The business will confirm availability.",
+                  "Booking request submitted. This is NOT a confirmed reservation — the business will review and confirm availability.",
+                next_steps:
+                  "Contact the business directly to confirm your booking.",
                 whatsapp_url,
                 phone: business.phone,
               }),

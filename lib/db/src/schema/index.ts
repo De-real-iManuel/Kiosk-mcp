@@ -25,3 +25,4 @@ export * from "./agent-events.js";
 export * from "./capabilities.js";
 export * from "./products.js";
 export * from "./services.js";
+export * from "./booking-requests.js";
