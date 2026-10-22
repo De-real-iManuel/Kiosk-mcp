@@ -262,7 +262,7 @@ Four services: `kiosk-frontend` (Next.js 15), `api-server` (Express), `master-mc
 | Area | Current state | Evidence |
 |---|---|---|
 | Integration tests | 14 tests written but fail to load due to vite resolution | `vitest run` shows 1 failed file, 7 passed tests |
-| Bedrock semantic search | Code implemented (`bedrock.ts`), falls back to keyword search when `BEDROCK_ENABLED=false` | Source code inspection; no deployed runtime evidence |
+| Bedrock semantic search | LIVE — `BEDROCK_ENABLED=true` on deployed task, Titan V2 invoked, semantic query verified Oct 22, 2026. Bug fixed: SQL `ilike` pre-filter was blocking Bedrock (commit `0b1495e`) | Live curl against ALB; 1024-dim embedding confirmed from local AWS CLI call |
 | AWS deployment health | Last verified: all 4 services ACTIVE with 1 running task each | AWS CLI query (session now expired — needs re-auth) |
 | Business deletion | API endpoint and UI implemented, tested locally | Commit `8e714e9`; not tested on deployed instance |
 | Alexa+ | Not directly integrated; ChatGPT used as a proxy to simulate and validate the same tool-calling pattern Alexa+ would use | No Alexa+ SDK code in the repo; same MCP protocol layer applies |
@@ -288,12 +288,15 @@ Four services: `kiosk-frontend` (Next.js 15), `api-server` (Express), `master-mc
 |---|---|---|
 | `lib/db` (12 tests) | 12/12 pass | Oct 21, 2026 |
 | `api-server` (16 tests) | 16/16 pass | Oct 21, 2026 |
-| `master-mcp` (4 tests) | 4/4 pass | Oct 21, 2026 |
+| `master-mcp` (4 tests) | 4/4 pass | Oct 22, 2026 |
 | `business-mcp` (7 tests + 14 failing to load) | 7 pass, 14 not running | Oct 21, 2026 |
 | Frontend typecheck | Pass (zero errors) | Oct 21, 2026 |
 | Docker build (frontend) | Succeeded, pushed to ECR | Oct 21, 2026 |
 | Docker build (frontend — Master MCP endpoint fix) | Succeeded, pushed to ECR, ECS redeployed | Oct 22, 2026 |
+| Docker build (master-mcp — Bedrock SQL fix) | Succeeded, pushed to ECR, task rev 7 running | Oct 22, 2026 |
 | ECS deployment | All 4 services ACTIVE, 1 running task each | Oct 22, 2026 |
+| Live Bedrock invocation | `"somewhere to get my hair done"` → Glow & Grace Salon (semantic, no keyword overlap) | Oct 22, 2026 |
+| Live Titan V2 embedding (local AWS CLI) | 1024-dimension embedding confirmed | Oct 22, 2026 |
 | Live frontend test | `https://d127130891zv0m.cloudfront.net/` returns 200 | Oct 22, 2026 |
 | Live legal pages | `/legal/terms`, `/legal/privacy`, `/legal/cookies` all return 200 | Oct 21, 2026 |
 
@@ -301,9 +304,9 @@ Four services: `kiosk-frontend` (Next.js 15), `api-server` (Express), `master-mc
 
 ## What remains unverified
 
-1. **Whether the deployed Master MCP returns real business records from the database.** The database query error handling (F-002) was added, but the root cause of the original database failure was not fully diagnosed. Live testing against the deployed endpoint is needed after AWS session re-authentication.
+1. **Whether the deployed Master MCP returns real business records from the database.** Partially verified — `search_businesses` with no filters returned Glow & Grace Salon. Full DB health (all seeded businesses, all services) not re-verified.
 
-2. **Whether Bedrock is actually invoked in the deployed workflow.** The code exists (`bedrock.ts`), but `BEDROCK_ENABLED` is not confirmed as `true` on the deployed master-mcp task, and no model access has been verified.
+2. **Whether Bedrock is actually invoked on the deployed instance.** VERIFIED Oct 22, 2026 — `BEDROCK_ENABLED=true` confirmed in task definition, `bedrock:InvokeModel` IAM policy confirmed, semantic query `"somewhere to get my hair done"` returned a hair salon with no keyword match. Also found and fixed a SQL pre-filter bug that was silently blocking Bedrock (commit `0b1495e`).
 
 3. **Whether business onboarding works end-to-end on the deployed instance.** The form, API, and publish flow work locally, but the deployed instance has not been tested with a real sign-up → create → publish → discover flow.
 
