@@ -50,6 +50,7 @@ import type {
   Business,
   BusinessAnalytics,
   BusinessInput,
+  BusinessUpdate,
 } from "@workspace/api-client-react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { Footer } from "@/components/Footer";
@@ -1517,6 +1518,7 @@ function OwnerCard({ business }: { business: Business }) {
   const update = useUpdateBusiness();
   const publish = useSetBusinessPublished();
   const deleteBusiness = useDeleteBusiness();
+  const categories = useCategories();
   const [editing, setEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   // Delete confirmation: 'idle' → 'confirm' (first click) → fires delete
@@ -1530,6 +1532,17 @@ function OwnerCard({ business }: { business: Business }) {
     contact: business.contact,
     price: business.price,
     booking: business.booking,
+  });
+  // Structured fields not in the legacy BusinessInput type — tracked separately
+  const biz = business as unknown as Record<string, string | null>;
+  const [structured, setStructured] = useState({
+    description: biz.description ?? "",
+    city: biz.city ?? "",
+    country: biz.country ?? "",
+    categoryId: biz.categoryId ?? "",
+    phone: biz.phone ?? "",
+    whatsapp: biz.whatsapp ?? "",
+    website: biz.website ?? "",
   });
 
   function refresh() {
@@ -1724,7 +1737,19 @@ function OwnerCard({ business }: { business: Business }) {
           onSubmit={(e) => {
             e.preventDefault();
             update.mutate(
-              { id: business.id, data: form },
+              {
+                id: business.id,
+                data: {
+                  ...form,
+                  description: structured.description || undefined,
+                  city: structured.city || undefined,
+                  country: structured.country || undefined,
+                  categoryId: structured.categoryId || undefined,
+                  phone: structured.phone || null,
+                  whatsapp: structured.whatsapp || null,
+                  website: structured.website || null,
+                } as unknown as BusinessUpdate,
+              },
               {
                 onSuccess: () => {
                   setEditing(false);
@@ -1738,6 +1763,7 @@ function OwnerCard({ business }: { business: Business }) {
           }}
           data-testid={`edit-form-${business.id}`}
         >
+          {/* Legacy text fields */}
           {(
             [
               "businessName",
@@ -1779,6 +1805,102 @@ function OwnerCard({ business }: { business: Business }) {
               )}
             </label>
           ))}
+
+          {/* Structured fields */}
+          <label>
+            <span className="surface-label">Description</span>
+            <textarea
+              rows={2}
+              className="surface-input"
+              value={structured.description}
+              onChange={(e) =>
+                setStructured({ ...structured, description: e.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            <span className="surface-label">Category</span>
+            <select
+              className="surface-input"
+              value={structured.categoryId}
+              onChange={(e) =>
+                setStructured({ ...structured, categoryId: e.target.value })
+              }
+            >
+              <option value="">— Select category —</option>
+              {((categories.data as { id: string; name: string }[]) ?? []).map(
+                (cat) => (
+                  <option key={cat.id} value={cat.id}>
+                    {cat.name}
+                  </option>
+                ),
+              )}
+            </select>
+          </label>
+
+          <label>
+            <span className="surface-label">City</span>
+            <input
+              className="surface-input"
+              value={structured.city}
+              placeholder="e.g. Port Harcourt"
+              onChange={(e) =>
+                setStructured({ ...structured, city: e.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            <span className="surface-label">Country</span>
+            <input
+              className="surface-input"
+              value={structured.country}
+              placeholder="e.g. NG"
+              onChange={(e) =>
+                setStructured({ ...structured, country: e.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            <span className="surface-label">Phone</span>
+            <input
+              className="surface-input"
+              inputMode="tel"
+              value={structured.phone}
+              placeholder="+234 801 234 5678"
+              onChange={(e) =>
+                setStructured({ ...structured, phone: e.target.value })
+              }
+            />
+          </label>
+
+          <label>
+            <span className="surface-label">WhatsApp</span>
+            <input
+              className="surface-input"
+              inputMode="tel"
+              value={structured.whatsapp}
+              placeholder="2348012345678"
+              onChange={(e) =>
+                setStructured({ ...structured, whatsapp: e.target.value })
+              }
+            />
+          </label>
+
+          <label className="sm:col-span-2">
+            <span className="surface-label">Website</span>
+            <input
+              className="surface-input"
+              inputMode="url"
+              value={structured.website}
+              placeholder="https://yourbusiness.com"
+              onChange={(e) =>
+                setStructured({ ...structured, website: e.target.value })
+              }
+            />
+          </label>
           <div className="flex flex-wrap items-center gap-3 sm:col-span-2">
             <button
               className="surface-button"
