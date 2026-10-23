@@ -115,7 +115,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  *   - Score = 0.65 × semantic + 0.35 × keyword (combined ranking)
  *
  * When Bedrock fails during semantic search:
- *   - Falls back to lexical matching and excludes candidates with no query-word match
+ *   - Falls back to lexical matching and excludes candidates without query matches
  *
  * @param query - The user's search query
  * @param rows  - Business rows from the DB query
@@ -129,8 +129,12 @@ export function keywordFallbackRank<
     location: string | null;
   },
 >(query: string, rows: T[]): T[] {
-  const words = [...new Set(query.toLowerCase().split(/\W+/))].filter(
-    (word) => word.length > 1 && !STOP_WORDS.has(word),
+  // Unicode property escapes preserve words in scripts such as Arabic and
+  // Chinese, including single-character terms that are meaningful in CJK.
+  const words = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
+    (word) =>
+      (word.length > 1 || /[^\x00-\x7F]/u.test(word)) &&
+      !STOP_WORDS.has(word),
   );
   if (words.length === 0) return [];
 
