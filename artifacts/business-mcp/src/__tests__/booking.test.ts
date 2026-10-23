@@ -259,6 +259,62 @@ describe("request_booking — successful submission", () => {
     }
   });
 
+  it("gives phone fallback instructions when WhatsApp is unavailable", async () => {
+    const { client, cleanup } = await makeConnectedPair(
+      makeSession({ whatsapp: null, phone: "+2348087654321" }),
+    );
+    try {
+      const result = await client.callTool({
+        name: "request_booking",
+        arguments: {
+          service_name: "Hair styling",
+          preferred_date: "2026-11-26",
+          preferred_time: "13:00",
+          contact_name: "Test Customer",
+          contact_phone: "+2348000000000",
+        },
+      });
+      const data = JSON.parse(
+        (result.content as Array<{ type: string; text: string }>)[0].text,
+      ) as Record<string, unknown>;
+      expect(data.whatsapp_url).toBeNull();
+      expect(data.status).toBe("pending");
+      expect(data.message).toMatch(/no WhatsApp contact configured/i);
+      expect(data.next_steps).toMatch(/phone/i);
+      expect(data.next_steps).toMatch(/pending/i);
+    } finally {
+      await cleanup();
+    }
+  });
+
+  it("warns when neither WhatsApp nor phone is configured", async () => {
+    const { client, cleanup } = await makeConnectedPair(
+      makeSession({ whatsapp: null, phone: null }),
+    );
+    try {
+      const result = await client.callTool({
+        name: "request_booking",
+        arguments: {
+          service_name: "Consultation",
+          preferred_date: "2026-11-27",
+          preferred_time: "10:00",
+          contact_name: "Test Customer",
+          contact_phone: "+2348000000000",
+        },
+      });
+      const data = JSON.parse(
+        (result.content as Array<{ type: string; text: string }>)[0].text,
+      ) as Record<string, unknown>;
+      expect(data.whatsapp_url).toBeNull();
+      expect(data.status).toBe("pending");
+      expect(data.message).toMatch(/no WhatsApp contact configured/i);
+      expect(data.next_steps).toMatch(/no WhatsApp or phone contact is configured/i);
+      expect(data.next_steps).toMatch(/not confirmed/i);
+    } finally {
+      await cleanup();
+    }
+  });
+
   it("includes phone in response", async () => {
     const { client, cleanup } = await makeConnectedPair(
       makeSession({ phone: "+2348087654321" }),
