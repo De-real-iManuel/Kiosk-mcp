@@ -243,6 +243,31 @@ Four services: `kiosk-frontend` (Next.js 15), `api-server` (Express), `master-mc
 
 ---
 
+### F-014 — AWS account-verification and support experience created an unresolved builder dead end
+
+**Status:** INCIDENT DOCUMENTED; PRODUCT FEEDBACK PROPOSED  
+**Date:** Oct 8–15, 2026 (approximately one week)  
+**Component:** AWS account verification, billing support, and customer escalation experience  
+**Related case:** `179222368900739`
+
+**Observed experience (builder testimony):** Account verification failed with error `880104` (`ForbiddenInstrumentOperation`) while attempting to verify with a Zenith Bank Nigeria Mastercard. The builder opened an AWS Support case. The hackathon support contact explained that they could not escalate an individual verification case and suggested other support routes. The issue was not resolved within the hackathon timeline, so deployment continued through a separate verified AWS account.
+
+**User impact:** The error and support path did not give the builder enough actionable clarity about what had failed, what steps remained available, or how the case could be reviewed in time. The uncertainty consumed approximately one week and nearly undermined confidence that participation could continue. This entry records one firsthand experience; it does not claim that every AWS customer encounters the same problem.
+
+**Product feedback / proposed improvements:**
+
+1. **Actionable error states:** Where security policy permits, distinguish a failed payment instrument verification, a verification still under review, and an account-level restriction. Explain the next available action without exposing sensitive fraud or risk signals.
+2. **Structured case creation and tracking:** Make it clear how to open the correct account/billing case, retain a case reference, see its status, and understand the next steps or expected update channel.
+3. **Escalation guidance:** When standard troubleshooting does not resolve an account-level block, explain the legitimate route to specialist review and what evidence the customer should provide. Do not imply that restrictions should be bypassed.
+4. **Human support for exceptional cases:** Automated and AI support can handle routine questions, but the user experience should provide a clear path to qualified human assistance when an account restriction blocks a time-sensitive workflow.
+5. **Status communication:** If a review cannot be expedited, say so clearly and give the customer a realistic way to follow progress rather than leaving them uncertain.
+
+**Resolution/workaround:** The project was deployed through a separate verified AWS account. This restored the ability to ship but did not resolve the original account verification case.
+
+**Evidence and limits:** Builder-provided error code and support case details; correspondence from the hackathon contact; deployment history documented under F-008. The recommendations above are product feedback, not claims about AWS policy or commitments from AWS. F-008 remains the primary chronology for the incident; this entry records the product-experience lessons so they are not lost among deployment details.
+
+---
+
 ## Lessons learned
 
 1. **MCP transport success does not mean application success.** An HTTP 200 from the MCP transport can contain an application-level error in the event stream. Always check the response content, not just the status code.
