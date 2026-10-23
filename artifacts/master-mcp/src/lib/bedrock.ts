@@ -5,8 +5,8 @@
  * "something for my hair" find hair salons even without keyword matches.
  *
  * Enabled when BEDROCK_ENABLED=true and AWS credentials are available.
- * Falls back to keyword scoring silently when Bedrock is unavailable —
- * search still works, just without semantic ranking.
+ * If semantic ranking fails, falls back to lexical matches rather than
+ * returning unrelated candidates.
  *
  * Model: amazon.titan-embed-text-v2:0
  * Dimensions: 1024 (default for V2)
@@ -114,9 +114,8 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  *   - Embeds the query and each business's profile text
  *   - Score = 0.65 × semantic + 0.35 × keyword (combined ranking)
  *
- * When Bedrock is unavailable (disabled, no credentials, API error):
- *   - Falls back to keyword scoring only
- *   - Every result gets score=1 (original SQL order is preserved)
+ * When Bedrock fails during semantic search:
+ *   - Falls back to lexical matching and excludes candidates with no query-word match
  *
  * @param query - The user's search query
  * @param rows  - Business rows from the DB query
@@ -130,7 +129,7 @@ export function keywordFallbackRank<
     location: string | null;
   },
 >(query: string, rows: T[]): T[] {
-  const words = [...new Set(query.toLowerCase().split(/\\W+/))].filter(
+  const words = [...new Set(query.toLowerCase().split(/\W+/))].filter(
     (word) => word.length > 1 && !STOP_WORDS.has(word),
   );
   if (words.length === 0) return [];
