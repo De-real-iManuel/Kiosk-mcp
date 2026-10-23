@@ -10,6 +10,20 @@ import {
 } from "@workspace/db";
 import type { BusinessSession } from "../businessSession.js";
 
+/**
+ * Build a WhatsApp click-to-chat URL with a pre-filled message.
+ * The message is URL-encoded so it opens directly in WhatsApp with the
+ * booking or order details ready to send — no copy-paste needed.
+ */
+function buildWhatsAppUrl(
+  whatsapp: string | null,
+  message: string,
+): string | null {
+  if (!whatsapp) return null;
+  const digits = whatsapp.replace(/\D/g, "");
+  return `https://wa.me/${digits}?text=${encodeURIComponent(message)}`;
+}
+
 export function registerOptionalTools(
   server: McpServer,
   session: BusinessSession,
@@ -84,44 +98,63 @@ export function registerOptionalTools(
   if (has("create_order_request")) {
     server.tool(
       "create_order_request",
-      "Records an order request on behalf of a customer. Does NOT process payment — provides instructions for out-of-band completion. Returns an order reference and contact details.",
+      "Records an order request on behalf of a customer. Does NOT process payment — provides instructions for out-of-band completion. Returns an order reference and a pre-filled WhatsApp link the customer can use to confirm directly with the business.",
       {
         items: z.array(
           z.object({
-            product_name: z.string(),
+            product_name: z.string().min(1),
             quantity: z.number().int().positive(),
             notes: z.string().optional(),
           }),
         ),
-        contact_name: z.string(),
-        contact_phone: z.string(),
+        contact_name: z.string().min(1),
+        contact_phone: z.string().min(1),
         delivery_address: z.string().optional(),
       },
       async (input) => {
         const order_ref = "ORD-" + Date.now();
-        const whatsapp_url = business.whatsapp
-          ? "https://wa.me/" + business.whatsapp.replace(/\D/g, "")
-          : null;
-        db.insert(agentEventsTable)
-          .values({
-            businessId: bid,
-            eventType: "order_request",
-            toolName: "create_order_request",
-            metadata: { order_ref, ...input },
-          })
-          .catch(() => {});
+
+        // Build pre-filled WhatsApp message with all order details
+        const itemLines = input.items
+          .map(
+            (i) =>
+              `• ${i.quantity}x ${i.product_name}${i.notes ? ` (${i.notes})` : ""}`,
+          )
+          .join("\n");
+        const waMessage = [
+          `📦 New Order Request — ${order_ref}`,
+          ``,
+          `Customer: ${input.contact_name}`,
+          `Phone: ${input.contact_phone}`,
+          ...(input.delivery_address
+            ? [`Delivery: ${input.delivery_address}`]
+            : []),
+          ``,
+          `Items:`,
+          itemLines,
+        ].join("\n");
+
+        const whatsapp_url = buildWhatsAppUrl(business.whatsapp, waMessage);
+
+        // Persist (not fire-and-forget)
+        await db.insert(agentEventsTable).values({
+          businessId: bid,
+          eventType: "order_request",
+          toolName: "create_order_request",
+          metadata: { order_ref, ...input },
+        });
+
         return {
           content: [
             {
               type: "text" as const,
               text: JSON.stringify({
                 order_ref,
+                status: "pending",
                 message:
-                  "Order request recorded. Contact the business to confirm and pay.",
+                  "Order request recorded. Use the WhatsApp link to send the order details directly to the business and confirm.",
                 whatsapp_url,
                 phone: business.phone,
-                instructions:
-                  "Contact the business directly to confirm your order and arrange payment.",
               }),
             },
           ],
@@ -161,9 +194,22 @@ details so the customer can follow up if needed.`,
       },
       async (input) => {
         const booking_ref = "BKG-" + Date.now();
-        const whatsapp_url = business.whatsapp
-          ? "https://wa.me/" + business.whatsapp.replace(/\D/g, "")
-          : null;
+
+        // Build pre-filled WhatsApp message with all booking details
+        const waMessage = [
+          `📅 Booking Request — ${booking_ref}`,
+          ``,
+          `Service: ${input.service_name}`,
+          `Date: ${input.preferred_date}`,
+          `Time: ${input.preferred_time}`,
+          `Customer: ${input.contact_name}`,
+          `Phone: ${input.contact_phone}`,
+          ...(input.notes ? [`Notes: ${input.notes}`] : []),
+          ``,
+          `Please confirm availability.`,
+        ].join("\n");
+
+        const whatsapp_url = buildWhatsAppUrl(business.whatsapp, waMessage);
 
         // Persist to the dedicated booking_requests table (not fire-and-forget)
         await db.insert(bookingRequestsTable).values({
@@ -196,9 +242,9 @@ details so the customer can follow up if needed.`,
                 booking_ref,
                 status: "pending",
                 message:
-                  "Booking request submitted. This is NOT a confirmed reservation — the business will review and confirm availability.",
+                  "Booking request submitted. This is NOT a confirmed reservation — the business will review and confirm availability. Use the WhatsApp link to send the booking details directly to the business.",
                 next_steps:
-                  "Contact the business directly to confirm your booking.",
+                  "Tap the WhatsApp link to contact the business and confirm your booking.",
                 whatsapp_url,
                 phone: business.phone,
               }),

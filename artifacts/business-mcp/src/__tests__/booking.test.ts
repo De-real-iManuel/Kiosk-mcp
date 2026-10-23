@@ -225,7 +225,11 @@ describe("request_booking — successful submission", () => {
       const data = JSON.parse(
         (result.content as Array<{ type: string; text: string }>)[0].text,
       ) as Record<string, unknown>;
-      expect(data.whatsapp_url).toBe("https://wa.me/2348012345678");
+      // URL must contain the WhatsApp number
+      expect(data.whatsapp_url as string).toContain("wa.me/2348012345678");
+      // URL must contain a pre-filled message with the booking ref
+      expect(data.whatsapp_url as string).toContain("text=");
+      expect(data.whatsapp_url as string).toContain("BKG-");
     } finally {
       await cleanup();
     }
