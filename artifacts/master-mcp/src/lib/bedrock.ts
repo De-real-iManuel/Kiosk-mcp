@@ -122,7 +122,7 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  * @param rows  - Business rows from the DB query
  * @returns The same rows sorted by descending relevance score
  */
-function keywordFallbackRank<
+export function keywordFallbackRank<
   T extends {
     name: string;
     description: string | null;
