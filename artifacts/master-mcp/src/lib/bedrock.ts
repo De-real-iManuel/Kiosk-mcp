@@ -131,9 +131,7 @@ export function keywordFallbackRank<
 >(query: string, rows: T[]): T[] {
   // Unicode property escapes preserve words in scripts such as Arabic and
   // Chinese, including single-character terms that are meaningful in CJK.
-  const words = [
-    ...new Set(query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? []),
-  ].filter(
+  const words = [...new Set(query.toLowerCase().match(/[\p{L}\p{N}]+/gu) ?? [])].filter(
     (word) =>
       (word.length > 1 || /[^\x00-\x7F]/u.test(word)) &&
       !STOP_WORDS.has(word),
@@ -142,12 +140,7 @@ export function keywordFallbackRank<
 
   return rows
     .map((row) => {
-      const profile = [
-        row.name,
-        row.description,
-        row.city,
-        row.location,
-      ]
+      const profile = [row.name, row.description, row.city, row.location]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
