@@ -36,7 +36,7 @@ export function registerOptionalTools(
   if (has("get_products")) {
     server.tool(
       "get_products",
-      "Lists products offered by this business. Only returns available products. Filter by category if needed.",
+      "Lists only products configured and marked available by this business. An empty array means no products are currently listed; do not invent products, prices, or availability. Filter by category if needed.",
       {
         category: z
           .string()
@@ -174,10 +174,10 @@ Kiosk does not provide real-time availability checking or calendar integration.
 The business will review and confirm (or decline) the request out-of-band,
 typically via WhatsApp or phone. Always communicate this to the customer.
 
-If get_services returned an empty list, you can still submit a booking —
-use a general service description like "General appointment" or "Consultation"
-as the service_name. The business will clarify the specific service when
-they confirm.
+If get_services returned an empty list, do not imply that a particular service
+is offered. You may submit a clearly described general inquiry only if the
+customer wants to contact the business without a listed service; it remains
+pending and is not a reservation or availability confirmation.
 
 Returns a booking_ref, current status ("pending"), and a pre-filled WhatsApp
 link with all booking details ready to send to the business.`,
