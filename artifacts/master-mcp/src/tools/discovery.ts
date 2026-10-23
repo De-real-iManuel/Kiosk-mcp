@@ -55,11 +55,13 @@ Supports the following filters (all optional, combinable):
 - open_now + local_time: only return businesses that are currently open; provide the
   caller's local time as an ISO-8601 string (e.g. "2024-06-01T14:30:00")
 
-Each result includes the business MCP endpoint (mcpEndpoint) which you can use to
-invoke business-specific actions such as placing orders, making bookings, or browsing menus.
+Each result includes the business MCP endpoint (mcpEndpoint). Only tools listed in
+that business's enabled capabilities are available. Product/service lists may be
+empty; do not infer unlisted offerings. Booking requests are inquiries, not confirmed
+reservations, and order requests do not process payment.
 
 Does NOT return draft, inactive, or unpublished businesses.
-Does NOT execute any business action — use the mcpEndpoint for that.`,
+Does NOT execute any business action — use the mcpEndpoint for supported tools.`,
     {
       query: z
         .string()
