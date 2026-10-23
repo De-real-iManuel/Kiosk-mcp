@@ -143,6 +143,13 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
 
       // ── Fetch businesses ─────────────────────────────────────────────────────
       const effectiveLimit = Math.min(limit ?? 20, 50);
+      // Semantic ranking needs a candidate pool larger than the requested
+      // result count; otherwise an arbitrary first page can hide relevant
+      // businesses before Bedrock ever scores them.
+      const candidateLimit =
+        query && isBedrockEnabled()
+          ? Math.min(Math.max(effectiveLimit * 5, 50), 250)
+          : effectiveLimit;
 
       let rows;
       try {
@@ -162,7 +169,7 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
           })
           .from(businessesTable)
           .where(and(...conditions))
-          .limit(effectiveLimit);
+          .limit(candidateLimit);
       } catch (error) {
         const err = error as {
           message?: string;
@@ -201,6 +208,9 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
       if (query) {
         filtered = await scoreAndRank(query, filtered);
       }
+
+      // Rank the larger candidate pool first, then apply the caller's limit.
+      filtered = filtered.slice(0, effectiveLimit);
 
       // ── Fetch enabled capabilities for matched businesses ────────────────────
       const businessIds = filtered.map((b) => b.id);
