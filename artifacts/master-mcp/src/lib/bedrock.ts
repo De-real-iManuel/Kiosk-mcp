@@ -20,6 +20,31 @@ import {
 
 const REGION = process.env.AWS_REGION ?? "us-east-1";
 const MODEL_ID = "amazon.titan-embed-text-v2:0";
+const STOP_WORDS = new Set([
+  "a",
+  "an",
+  "and",
+  "are",
+  "at",
+  "can",
+  "do",
+  "for",
+  "find",
+  "get",
+  "i",
+  "in",
+  "is",
+  "me",
+  "my",
+  "near",
+  "of",
+  "please",
+  "the",
+  "to",
+  "want",
+  "where",
+  "with",
+]);
 
 // Lazy-initialise client — only created when first needed
 let _client: BedrockRuntimeClient | null = null;
@@ -97,6 +122,38 @@ export function cosineSimilarity(a: number[], b: number[]): number {
  * @param rows  - Business rows from the DB query
  * @returns The same rows sorted by descending relevance score
  */
+function keywordFallbackRank<
+  T extends {
+    name: string;
+    description: string | null;
+    city: string | null;
+    location: string | null;
+  },
+>(query: string, rows: T[]): T[] {
+  const words = [...new Set(query.toLowerCase().split(/\\W+/))].filter(
+    (word) => word.length > 1 && !STOP_WORDS.has(word),
+  );
+  if (words.length === 0) return [];
+
+  return rows
+    .map((row) => {
+      const profile = [
+        row.name,
+        row.description,
+        row.city,
+        row.location,
+      ]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase();
+      const matches = words.filter((word) => profile.includes(word)).length;
+      return { row, matches };
+    })
+    .filter(({ matches }) => matches > 0)
+    .sort((a, b) => b.matches - a.matches)
+    .map(({ row }) => row);
+}
+
 export async function scoreAndRank<
   T extends {
     name: string;
@@ -106,7 +163,7 @@ export async function scoreAndRank<
   },
 >(query: string, rows: T[]): Promise<T[]> {
   if (!isBedrockEnabled() || !query || rows.length === 0) {
-    return rows; // preserve SQL order
+    return rows; // SQL filtering already handles non-semantic searches.
   }
 
   try {
@@ -142,8 +199,13 @@ export async function scoreAndRank<
 
     scored.sort((a, b) => b.score - a.score);
     return scored.map((s) => s.row);
-  } catch {
-    // Bedrock unavailable (no credentials, quota, network) — degrade silently
-    return rows;
+  } catch (error) {
+    // Do not return arbitrary businesses when semantic ranking is unavailable.
+    // Fall back to lexical matches, and return no results if none match.
+    console.warn(
+      "[search_businesses] Bedrock ranking unavailable; using keyword fallback",
+      error instanceof Error ? error.message : "Unknown Bedrock error",
+    );
+    return keywordFallbackRank(query, rows);
   }
 }
