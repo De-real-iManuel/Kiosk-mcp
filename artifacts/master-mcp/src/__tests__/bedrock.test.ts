@@ -42,4 +42,38 @@ describe("keywordFallbackRank", () => {
       "Glow & Grace Salon",
     ]);
   });
+  it("preserves non-ASCII search terms during fallback ranking", () => {
+    const multilingualBusinesses = [
+      {
+        name: "صالون الجمال",
+        description: "خدمات تصفيف الشعر",
+        city: "Port Harcourt",
+        location: null,
+      },
+      {
+        name: "美发沙龙",
+        description: "理发和造型服务",
+        city: "Port Harcourt",
+        location: null,
+      },
+      {
+        name: "Unrelated Electronics",
+        description: "Phones and computers",
+        city: "Port Harcourt",
+        location: null,
+      },
+    ];
+
+    expect(
+      keywordFallbackRank("美发", multilingualBusinesses).map(
+        (business) => business.name,
+      ),
+    ).toEqual(["美发沙龙"]);
+    expect(
+      keywordFallbackRank("الجمال", multilingualBusinesses).map(
+        (business) => business.name,
+      ),
+    ).toEqual(["صالون الجمال"]);
+  });
+
 });
