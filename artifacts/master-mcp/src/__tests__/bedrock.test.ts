@@ -42,6 +42,7 @@ describe("keywordFallbackRank", () => {
       "Glow & Grace Salon",
     ]);
   });
+
   it("preserves non-ASCII search terms during fallback ranking", () => {
     const multilingualBusinesses = [
       {
@@ -75,5 +76,4 @@ describe("keywordFallbackRank", () => {
       ),
     ).toEqual(["صالون الجمال"]);
   });
-
 });
