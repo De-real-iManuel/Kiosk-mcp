@@ -308,7 +308,9 @@ describe("request_booking — successful submission", () => {
       expect(data.whatsapp_url).toBeNull();
       expect(data.status).toBe("pending");
       expect(data.message).toMatch(/no WhatsApp contact configured/i);
-      expect(data.next_steps).toMatch(/no WhatsApp or phone contact is configured/i);
+      expect(data.next_steps).toMatch(
+        /no WhatsApp or phone contact is configured/i,
+      );
       expect(data.next_steps).toMatch(/not confirmed/i);
     } finally {
       await cleanup();
