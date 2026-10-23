@@ -151,8 +151,9 @@ export function registerOptionalTools(
               text: JSON.stringify({
                 order_ref,
                 status: "pending",
-                message:
-                  "Order request recorded. Use the WhatsApp link to send the order details directly to the business and confirm.",
+                message: whatsapp_url
+                  ? "Order request recorded as pending. Use the WhatsApp link to send the order details to the business and confirm availability. Kiosk has not processed payment or confirmed the order."
+                  : "Order request recorded as pending, but this business has no WhatsApp contact configured. Contact the business by phone if a number is available. Kiosk has not processed payment or confirmed the order.",
                 whatsapp_url,
                 phone: business.phone,
               }),
@@ -246,10 +247,14 @@ link with all booking details ready to send to the business.`,
               text: JSON.stringify({
                 booking_ref,
                 status: "pending",
-                message:
-                  "Booking request submitted. This is NOT a confirmed reservation — the business will review and confirm availability. Use the WhatsApp link to send the booking details directly to the business.",
-                next_steps:
-                  "Tap the WhatsApp link to contact the business and confirm your booking.",
+                message: whatsapp_url
+                  ? "Booking request submitted with pending status. This is NOT a confirmed reservation — the business must review and confirm availability. Use the WhatsApp link to contact the business."
+                  : "Booking request recorded with pending status, but this business has no WhatsApp contact configured. This is NOT a confirmed reservation — contact the business by phone if available to confirm availability.",
+                next_steps: whatsapp_url
+                  ? "Open the WhatsApp link to send the request and ask the business to confirm availability."
+                  : business.phone
+                    ? "Contact the business by phone to ask about availability; the request is still pending."
+                    : "No WhatsApp or phone contact is configured. The request is pending and is not confirmed.",
                 whatsapp_url,
                 phone: business.phone,
               }),
