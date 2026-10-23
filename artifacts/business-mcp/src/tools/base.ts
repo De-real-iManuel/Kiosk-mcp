@@ -39,7 +39,7 @@ export function registerBaseTools(
 
   server.tool(
     "get_services",
-    "Lists all available services with name, description, and pricing. Returns empty array if no services configured.",
+    "Lists only services configured and marked available by this business. An empty array means no services are currently listed; do not invent services or imply that any specific service is offered.",
     {},
     async () => {
       recordToolEvent(bid, "get_services");
