@@ -142,7 +142,12 @@ export function keywordFallbackRank<
 
   return rows
     .map((row) => {
-      const profile = [row.name, row.description, row.city, row.location]
+      const profile = [
+        row.name,
+        row.description,
+        row.city,
+        row.location,
+      ]
         .filter(Boolean)
         .join(" ")
         .toLowerCase();
