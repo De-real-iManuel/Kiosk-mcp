@@ -173,8 +173,13 @@ Kiosk does not provide real-time availability checking or calendar integration.
 The business will review and confirm (or decline) the request out-of-band,
 typically via WhatsApp or phone. Always communicate this to the customer.
 
-Returns a booking_ref, current status ("pending"), and the business contact
-details so the customer can follow up if needed.`,
+If get_services returned an empty list, you can still submit a booking —
+use a general service description like "General appointment" or "Consultation"
+as the service_name. The business will clarify the specific service when
+they confirm.
+
+Returns a booking_ref, current status ("pending"), and a pre-filled WhatsApp
+link with all booking details ready to send to the business.`,
       {
         service_name: z.string().min(1).describe("Name of the service to book"),
         preferred_date: z
