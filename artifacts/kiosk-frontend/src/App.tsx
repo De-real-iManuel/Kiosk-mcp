@@ -390,13 +390,101 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
             </div>
           </div>
 
+          {/* One-click connection buttons */}
+          <div className="mb-6">
+            <p className="mono text-[10px] text-[#8A8478] mb-3">
+              ONE-CLICK CONNECT
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {/* ChatGPT */}
+              <a
+                href={`https://chatgpt.com/?q=${encodeURIComponent(`Add this MCP connector: ${MASTER_MCP_ENDPOINT}`)}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 41 41"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835A9.964 9.964 0 0 0 18.306.5a10.079 10.079 0 0 0-9.614 6.977 9.967 9.967 0 0 0-6.664 4.834 10.08 10.08 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 7.516 3.35 10.078 10.078 0 0 0 9.617-6.981 9.967 9.967 0 0 0 6.663-4.834 10.079 10.079 0 0 0-1.243-11.813zM22.498 37.886a7.474 7.474 0 0 1-4.799-1.735c.061-.033.168-.091.237-.134l7.964-4.6a1.294 1.294 0 0 0 .655-1.134V19.054l3.366 1.944a.12.12 0 0 1 .066.092v9.299a7.505 7.505 0 0 1-7.49 7.496zM6.392 31.006a7.471 7.471 0 0 1-.894-5.023c.06.036.162.099.237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103l-8.051 4.649a7.504 7.504 0 0 1-10.24-2.744zM4.297 13.62A7.469 7.469 0 0 1 8.2 10.333c0 .068-.004.19-.004.274v9.201a1.294 1.294 0 0 0 .654 1.132l9.723 5.614-3.366 1.944a.12.12 0 0 1-.114.012L7.044 23.86a7.504 7.504 0 0 1-2.747-10.24zm27.658 6.437l-9.724-5.615 3.367-1.943a.121.121 0 0 1 .114-.012l8.048 4.648a7.498 7.498 0 0 1-1.158 13.528v-9.476a1.293 1.293 0 0 0-.647-1.13zm3.35-5.043c-.059-.037-.162-.099-.236-.141l-7.965-4.6a1.298 1.298 0 0 0-1.308 0l-9.723 5.614v-3.888a.12.12 0 0 1 .048-.103l8.05-4.645a7.497 7.497 0 0 1 11.135 7.763zm-21.063 6.929l-3.367-1.944a.12.12 0 0 1-.065-.092v-9.299a7.497 7.497 0 0 1 12.293-5.756 6.94 6.94 0 0 0-.236.134l-7.965 4.6a1.294 1.294 0 0 0-.654 1.132l-.006 11.225zm1.829-3.943l4.33-2.501 4.332 2.5v4.999l-4.331 2.5-4.331-2.5V18z" />
+                </svg>
+                Add to ChatGPT
+              </a>
+
+              {/* Claude */}
+              <a
+                href={`https://claude.ai/settings/integrations`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M17.3 2.001H6.7C4.12 2.001 2 4.121 2 6.701v10.6C2 19.881 4.12 22 6.7 22h10.6c2.58 0 4.7-2.12 4.7-4.7V6.7c0-2.58-2.12-4.7-4.7-4.699zM8.647 16.25l-1.093-.618 2.45-4.246-2.37-4.127 1.093-.617 2.37 4.127.003.006 2.37-4.133 1.093.617-2.37 4.127 2.45 4.246-1.094.618L12 12.124l-3.353 4.126z" />
+                </svg>
+                Add to Claude
+              </a>
+
+              {/* Cursor */}
+              <a
+                href="https://docs.cursor.com/context/model-context-protocol"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  aria-hidden="true"
+                >
+                  <path d="M11.926 0L23.85 6.98v4.893l-3.458-1.998v-1.46L11.926 3.46 3.458 8.414v1.46L0 11.873V6.98L11.926 0zM0 17.021l3.458 1.998v1.46l8.468 4.954 8.467-4.954v-1.46L23.85 17.02V21.913L11.926 28.893 0 21.913V17.02z" />
+                </svg>
+                Add to Cursor
+              </a>
+
+              {/* Copy URL fallback */}
+              <button
+                onClick={copyEndpoint}
+                className="inline-flex items-center gap-2 border border-white/10 bg-transparent px-4 py-2.5 text-[12px] font-semibold text-[#8A8478] transition-colors hover:text-[#EDE7DC]"
+              >
+                {copied ? (
+                  <>
+                    <Check size={12} className="text-[#47745F]" />
+                    <span className="text-[#47745F]">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy size={12} />
+                    Copy URL
+                  </>
+                )}
+              </button>
+            </div>
+            <p className="mt-3 text-[11px] text-[#625D53]">
+              Clicking "Add to ChatGPT" or "Add to Claude" opens the app — paste{" "}
+              <span className="mono text-[#8A8478]">{MASTER_MCP_ENDPOINT}</span>{" "}
+              when prompted for the server URL.
+            </p>
+          </div>
+
           {/* Connection steps */}
           <div className="grid gap-4 sm:grid-cols-3 mb-6">
             {[
               {
                 step: "1",
-                title: "Add to your client",
-                body: 'In Claude Desktop, ChatGPT, Cursor, or any MCP-compatible tool, add this URL as a custom connector or MCP server with type "http".',
+                title: "Tap a button above",
+                body: "Click your AI client above. It opens the app with the connection flow ready.",
               },
               {
                 step: "2",

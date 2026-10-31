@@ -703,6 +703,7 @@ export function CreateBusinessSurface() {
     delivery: false,
     products: false,
   });
+  const [location, setLocation] = useState({ city: "", country: "" });
   const [createdName, setCreatedName] = useState("");
 
   function toggleCap(key: string) {
@@ -735,6 +736,8 @@ export function CreateBusinessSurface() {
           phone: contact.phone || null,
           whatsapp: contact.whatsapp || null,
           website: contact.website || null,
+          city: location.city || null,
+          country: location.country || null,
           capabilities: allCaps.map((c) => ({
             capability: c as "contact",
             enabled: true,
@@ -925,7 +928,7 @@ export function CreateBusinessSurface() {
                     [
                       "location",
                       "Location or service area",
-                      "e.g. Port Harcourt, or within 10 km of Ikeja",
+                      "e.g. 10b Agip Road, Port Harcourt",
                       true,
                     ],
                     ["hours", "Opening hours", "e.g. Mon–Sat 8am–8pm", true],
@@ -963,6 +966,50 @@ export function CreateBusinessSurface() {
                     )}
                   </label>
                 ))}
+
+                {/* City + Country — structured for AI discovery */}
+                <div className="grid grid-cols-2 gap-3">
+                  <label className="block">
+                    <span className="form-label">
+                      City <span className="ml-1 text-[#8A8478]">*</span>
+                    </span>
+                    <span className="form-hint block mb-2">
+                      e.g. Port Harcourt
+                    </span>
+                    <input
+                      required
+                      className="field-control"
+                      value={location.city}
+                      placeholder="Port Harcourt"
+                      onChange={(e) =>
+                        setLocation({ ...location, city: e.target.value })
+                      }
+                      data-testid="create-city"
+                    />
+                  </label>
+                  <label className="block">
+                    <span className="form-label">
+                      Country <span className="ml-1 text-[#8A8478]">*</span>
+                    </span>
+                    <span className="form-hint block mb-2">
+                      2-letter code, e.g. NG
+                    </span>
+                    <input
+                      required
+                      className="field-control uppercase"
+                      maxLength={2}
+                      value={location.country}
+                      placeholder="NG"
+                      onChange={(e) =>
+                        setLocation({
+                          ...location,
+                          country: e.target.value.toUpperCase(),
+                        })
+                      }
+                      data-testid="create-country"
+                    />
+                  </label>
+                </div>
 
                 {/* Separate contact fields — phone, WhatsApp, website */}
                 <div className="border-t border-white/15 pt-5">
@@ -2094,11 +2141,15 @@ function OwnerCard({ business }: { business: Business }) {
           <label>
             <span className="surface-label">Country</span>
             <input
-              className="surface-input"
+              className="surface-input uppercase"
+              maxLength={2}
               value={structured.country}
-              placeholder="e.g. NG"
+              placeholder="NG"
               onChange={(e) =>
-                setStructured({ ...structured, country: e.target.value })
+                setStructured({
+                  ...structured,
+                  country: e.target.value.toUpperCase(),
+                })
               }
             />
           </label>
@@ -2179,6 +2230,31 @@ function OwnerCard({ business }: { business: Business }) {
           <p className="mt-2 text-[10px] leading-4 text-[#777064]">
             Share this URL on your website, social media, or with developers.
           </p>
+
+          {/* One-click connect buttons for the business endpoint */}
+          <div className="mt-3 flex flex-wrap gap-2 border-t border-black/10 pt-3">
+            <p className="w-full text-[10px] text-[#777064] mb-1">
+              Let customers connect this business to their AI assistant:
+            </p>
+            <a
+              href={`https://chatgpt.com/?q=${encodeURIComponent(`Add this MCP connector: ${getMcpUrl(business.slug)}`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 border border-black/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#12110F] hover:border-black/30 transition-colors"
+            >
+              + ChatGPT
+            </a>
+            <a
+              href="https://claude.ai/settings/integrations"
+              target="_blank"
+              rel="noreferrer"
+              className="inline-flex items-center gap-1.5 border border-black/15 bg-white px-3 py-1.5 text-[11px] font-semibold text-[#12110F] hover:border-black/30 transition-colors"
+            >
+              + Claude
+            </a>
+            <CopyMcpButton slug={business.slug} />
+          </div>
+
           <div className="mt-3 flex items-center gap-4 border-t border-black/10 pt-3">
             <Link
               className="surface-link text-[11px]"
