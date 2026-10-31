@@ -44,8 +44,9 @@ import {
   useSetBusinessPublished,
   useGetBusinessAnalytics,
   useDeleteBusiness,
+  useCategories,
+  useSubmitFeedback,
 } from "@workspace/api-client-react";
-import { useCategories } from "@workspace/api-client-react";
 import type {
   Business,
   BusinessAnalytics,
@@ -1243,6 +1244,216 @@ function PreviewModal({
   );
 }
 
+// ─── Feedback Modal (shown before first publish) ────────────────────────────────
+
+interface FeedbackAnswers {
+  howCustomersFindYou: string;
+  wouldPay: string;
+  wouldPayPriority: string;
+  monthlyAdSpend: string;
+  wouldRefer: string;
+  oneThing: string;
+}
+
+function FeedbackModal({
+  businessName,
+  onSubmit,
+  onCancel,
+  isSubmitting,
+}: {
+  businessName: string;
+  onSubmit: (answers: FeedbackAnswers) => void;
+  onCancel: () => void;
+  isSubmitting: boolean;
+}) {
+  const [answers, setAnswers] = useState<FeedbackAnswers>({
+    howCustomersFindYou: "",
+    wouldPay: "",
+    wouldPayPriority: "",
+    monthlyAdSpend: "",
+    wouldRefer: "",
+    oneThing: "",
+  });
+
+  function update(key: keyof FeedbackAnswers, value: string) {
+    setAnswers((prev) => ({ ...prev, [key]: value }));
+  }
+
+  const canSubmit =
+    answers.howCustomersFindYou.trim() &&
+    answers.wouldPay &&
+    answers.wouldRefer;
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-4 sm:items-center"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="feedback-title"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 16 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: 16 }}
+        transition={{ duration: 0.2 }}
+        className="w-full max-w-[640px] bg-[#EDE7DC] text-[#12110F]"
+      >
+        <div className="border-b border-black/10 px-6 py-4">
+          <p className="eyebrow text-[#777064]">Quick questions (1 min)</p>
+          <h2
+            id="feedback-title"
+            className="mt-1 text-xl font-semibold tracking-[-.05em]"
+          >
+            Help us understand {businessName}
+          </h2>
+          <p className="mt-2 text-[12px] leading-5 text-[#777064]">
+            Your answers help us build a better product for you. This stays
+            between us — your customers never see this.
+          </p>
+        </div>
+
+        <div className="max-h-[60vh] overflow-y-auto px-6 py-5 space-y-5">
+          {/* Q1: How customers find you */}
+          <div>
+            <p className="surface-label">
+              How do customers find your business right now?
+            </p>
+            <p className="form-hint mb-2">
+              Word of mouth, Instagram, passing by, etc.
+            </p>
+            <input
+              className="surface-input"
+              value={answers.howCustomersFindYou}
+              onChange={(e) => update("howCustomersFindYou", e.target.value)}
+              placeholder="e.g. Mostly word of mouth and Instagram"
+            />
+          </div>
+
+          {/* Q2: Willingness to pay */}
+          <div>
+            <p className="surface-label">
+              If AI assistants could find your business and send you customers,
+              would you pay &#8358;5,000/month?
+            </p>
+            <div className="mt-2 flex gap-2">
+              {["Yes", "No", "Maybe"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => update("wouldPay", opt)}
+                  className={`surface-button !min-h-9 !px-4 !text-[13px] ${
+                    answers.wouldPay === opt
+                      ? "!bg-[#12110F] !text-[#EDE7DC]"
+                      : "surface-button-light"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Q3: Priority placement */}
+          <div>
+            <p className="surface-label">
+              Would you pay &#8358;10,000/month to appear first when someone
+              searches for your type of business?
+            </p>
+            <div className="mt-2 flex gap-2">
+              {["Yes", "No", "Maybe"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => update("wouldPayPriority", opt)}
+                  className={`surface-button !min-h-9 !px-4 !text-[13px] ${
+                    answers.wouldPayPriority === opt
+                      ? "!bg-[#12110F] !text-[#EDE7DC]"
+                      : "surface-button-light"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Q4: Current ad spend */}
+          <div>
+            <p className="surface-label">
+              How much do you spend on advertising per month?
+            </p>
+            <p className="form-hint mb-2">
+              &#8358;0 if nothing — that&apos;s completely fine
+            </p>
+            <input
+              className="surface-input"
+              value={answers.monthlyAdSpend}
+              onChange={(e) => update("monthlyAdSpend", e.target.value)}
+              placeholder="e.g. ₦2,000 or ₦0"
+            />
+          </div>
+
+          {/* Q5: Referral */}
+          <div>
+            <p className="surface-label">
+              Would you refer 3 other businesses to Kiosk if you got 2 months
+              free?
+            </p>
+            <div className="mt-2 flex gap-2">
+              {["Yes", "No", "Maybe"].map((opt) => (
+                <button
+                  key={opt}
+                  type="button"
+                  onClick={() => update("wouldRefer", opt)}
+                  className={`surface-button !min-h-9 !px-4 !text-[13px] ${
+                    answers.wouldRefer === opt
+                      ? "!bg-[#12110F] !text-[#EDE7DC]"
+                      : "surface-button-light"
+                  }`}
+                >
+                  {opt}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Q6: One thing (optional) */}
+          <div>
+            <p className="surface-label">
+              What&apos;s the one thing you wish more customers knew about your
+              business?
+            </p>
+            <p className="form-hint mb-2">Optional</p>
+            <textarea
+              rows={2}
+              className="surface-input resize-y"
+              value={answers.oneThing}
+              onChange={(e) => update("oneThing", e.target.value)}
+              placeholder="e.g. We do home service calls, not just in-shop"
+            />
+          </div>
+        </div>
+
+        <div className="flex justify-end gap-3 border-t border-black/10 px-6 py-4">
+          <button
+            onClick={onCancel}
+            className="inline-flex items-center gap-2 border border-black/20 px-4 py-2 text-[13px] font-semibold text-[#625D53] transition-colors hover:border-black/40"
+          >
+            Back
+          </button>
+          <button
+            onClick={() => canSubmit && onSubmit(answers)}
+            disabled={!canSubmit || isSubmitting}
+            className="surface-button !min-h-10 !px-5"
+          >
+            {isSubmitting ? "Saving…" : "Submit & Publish"}
+          </button>
+        </div>
+      </motion.div>
+    </div>
+  );
+}
+
 const PIE_COLORS = ["#12110F", "#8A8478", "#EDE7DC"];
 
 interface TooltipProps {
@@ -1519,8 +1730,10 @@ function OwnerCard({ business }: { business: Business }) {
   const publish = useSetBusinessPublished();
   const deleteBusiness = useDeleteBusiness();
   const categories = useCategories();
+  const feedback = useSubmitFeedback(business.id);
   const [editing, setEditing] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [showFeedback, setShowFeedback] = useState(false);
   // Delete confirmation: 'idle' → 'confirm' (first click) → fires delete
   const [deleteStep, setDeleteStep] = useState<"idle" | "confirm">("idle");
   const [form, setForm] = useState<BusinessInput>({
@@ -1623,9 +1836,36 @@ function OwnerCard({ business }: { business: Business }) {
       {showPreview && (
         <PreviewModal
           business={business}
-          onConfirm={confirmPublish}
+          onConfirm={() => {
+            setShowPreview(false);
+            setShowFeedback(true);
+          }}
           onCancel={() => setShowPreview(false)}
           isPublishing={publish.isPending}
+        />
+      )}
+
+      {showFeedback && (
+        <FeedbackModal
+          businessName={business.businessName}
+          isSubmitting={feedback.isPending}
+          onCancel={() => {
+            setShowFeedback(false);
+            setShowPreview(true);
+          }}
+          onSubmit={(answers) => {
+            feedback.mutate(answers as unknown as Record<string, unknown>, {
+              onSuccess: () => {
+                setShowFeedback(false);
+                confirmPublish();
+              },
+              onError: () => {
+                // Even if feedback fails, still publish
+                setShowFeedback(false);
+                confirmPublish();
+              },
+            });
+          }}
         />
       )}
       <div className="flex flex-col justify-between gap-5 sm:flex-row sm:items-start">

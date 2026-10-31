@@ -303,6 +303,20 @@ export function useDeleteBusiness(): UseMutationResult<unknown, Error, string> {
   });
 }
 
+// --- Onboarding feedback ----------------------------------------------------
+
+export function useSubmitFeedback(
+  businessId: string,
+): UseMutationResult<unknown, Error, Record<string, unknown>> {
+  return useMutation({
+    mutationFn: (answers: Record<string, unknown>) =>
+      customFetch<unknown>(`/api/businesses/${businessId}/feedback`, {
+        method: "POST",
+        body: JSON.stringify(answers),
+      }),
+  });
+}
+
 // --- Marketplace (V2) ---------------------------------------------------------
 
 export function useMarketplaceSearch(params: {

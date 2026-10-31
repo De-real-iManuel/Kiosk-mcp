@@ -35,6 +35,7 @@ router.use(requireAuth);
 
 // Apply write limiter to mutating routes only
 router.post("/businesses", writeLimiter);
+router.post("/businesses/:id/feedback", writeLimiter);
 router.patch("/businesses/:id", writeLimiter);
 router.patch("/businesses/:id/publish", writeLimiter);
 
@@ -474,6 +475,57 @@ router.get("/businesses/:id/analytics", async (req, res): Promise<void> => {
   };
 
   res.json(GetBusinessAnalyticsResponse.parse(analytics));
+});
+
+/**
+ * POST /businesses/:id/feedback
+ *
+ * Stores onboarding feedback from the business owner. Called before
+ * the first publish to validate willingness to pay and market interest.
+ * Stored in agent_events with eventType "onboarding_feedback".
+ */
+router.post("/businesses/:id/feedback", async (req, res): Promise<void> => {
+  let params: { id: string };
+  try {
+    params = BusinessIdParams.parse(req.params);
+  } catch {
+    res.status(400).json({ error: "Invalid business ID" });
+    return;
+  }
+
+  await assertOwnership(params.id, getOwnerId(res));
+
+  const {
+    howCustomersFindYou,
+    wouldPay,
+    wouldPayPriority,
+    monthlyAdSpend,
+    wouldRefer,
+    oneThing,
+  } = req.body as {
+    howCustomersFindYou?: string;
+    wouldPay?: string;
+    wouldPayPriority?: string;
+    monthlyAdSpend?: string;
+    wouldRefer?: string;
+    oneThing?: string;
+  };
+
+  await db.insert(agentEventsTable).values({
+    businessId: params.id,
+    eventType: "onboarding_feedback",
+    toolName: "feedback_form",
+    metadata: {
+      howCustomersFindYou: howCustomersFindYou ?? "",
+      wouldPay: wouldPay ?? "",
+      wouldPayPriority: wouldPayPriority ?? "",
+      monthlyAdSpend: monthlyAdSpend ?? "",
+      wouldRefer: wouldRefer ?? "",
+      oneThing: oneThing ?? "",
+    },
+  });
+
+  res.status(201).json({ ok: true });
 });
 
 /**
