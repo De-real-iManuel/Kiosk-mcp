@@ -114,9 +114,23 @@ describe("checkPublishReadiness", () => {
     expect(result.recommended).toContain("openingHours");
   });
 
-  it("does NOT recommend city when already set", () => {
-    const result = checkPublishReadiness(makeBusiness({ city: "Lagos" }));
+  it("does NOT recommend city when already set — city is now a blocking field", () => {
+    // city is blocking (not recommended) — a missing city prevents publishing
+    const result = checkPublishReadiness(makeBusiness({ city: null }));
+    expect(result.blocking).toContain("city");
     expect(result.recommended).not.toContain("city");
+  });
+
+  it("blocks when city is missing", () => {
+    const result = checkPublishReadiness(makeBusiness({ city: null }));
+    expect(result.ready).toBe(false);
+    expect(result.blocking).toContain("city");
+  });
+
+  it("blocks when country is missing", () => {
+    const result = checkPublishReadiness(makeBusiness({ country: null }));
+    expect(result.ready).toBe(false);
+    expect(result.blocking).toContain("country");
   });
 
   it("reports all blocking fields at once", () => {
@@ -135,8 +149,10 @@ describe("checkPublishReadiness", () => {
     );
     expect(result.blocking).toContain("businessName");
     expect(result.blocking).toContain("location");
+    expect(result.blocking).toContain("city");
+    expect(result.blocking).toContain("country");
     expect(result.blocking).toContain("contact");
-    // categoryId is now recommended, not blocking
+    // categoryId is recommended, not blocking
     expect(result.blocking).not.toContain("categoryId");
     expect(result.recommended).toContain("categoryId");
     expect(result.ready).toBe(false);

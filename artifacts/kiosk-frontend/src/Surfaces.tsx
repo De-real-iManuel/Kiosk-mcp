@@ -55,6 +55,7 @@ import type {
 } from "@workspace/api-client-react";
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { Footer } from "@/components/Footer";
+import { COUNTRIES } from "@/lib/countries";
 
 function getMcpUrl(slug: string): string {
   const base = (
@@ -992,22 +993,24 @@ export function CreateBusinessSurface() {
                       Country <span className="ml-1 text-[#8A8478]">*</span>
                     </span>
                     <span className="form-hint block mb-2">
-                      2-letter code, e.g. NG
+                      Where is your business based?
                     </span>
-                    <input
+                    <select
                       required
-                      className="field-control uppercase"
-                      maxLength={2}
+                      className="field-control"
                       value={location.country}
-                      placeholder="NG"
                       onChange={(e) =>
-                        setLocation({
-                          ...location,
-                          country: e.target.value.toUpperCase(),
-                        })
+                        setLocation({ ...location, country: e.target.value })
                       }
                       data-testid="create-country"
-                    />
+                    >
+                      <option value="">Select country</option>
+                      {COUNTRIES.map((c) => (
+                        <option key={c.code} value={c.code}>
+                          {c.name}
+                        </option>
+                      ))}
+                    </select>
                   </label>
                 </div>
 
@@ -1852,6 +1855,8 @@ function OwnerCard({ business }: { business: Business }) {
             const fieldLabels: Record<string, string> = {
               businessName: "business name",
               location: "location",
+              city: "city",
+              country: "country",
               contact: "contact method (phone, WhatsApp, or website)",
               categoryId: "category",
             };
@@ -2140,18 +2145,20 @@ function OwnerCard({ business }: { business: Business }) {
 
           <label>
             <span className="surface-label">Country</span>
-            <input
-              className="surface-input uppercase"
-              maxLength={2}
+            <select
+              className="surface-input"
               value={structured.country}
-              placeholder="NG"
               onChange={(e) =>
-                setStructured({
-                  ...structured,
-                  country: e.target.value.toUpperCase(),
-                })
+                setStructured({ ...structured, country: e.target.value })
               }
-            />
+            >
+              <option value="">Select country</option>
+              {COUNTRIES.map((c) => (
+                <option key={c.code} value={c.code}>
+                  {c.name}
+                </option>
+              ))}
+            </select>
           </label>
 
           <label>
