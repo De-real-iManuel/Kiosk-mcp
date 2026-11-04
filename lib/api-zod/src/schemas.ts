@@ -53,6 +53,9 @@ export const ProductInputSchema = z.object({
   category: z.string().optional(),
   price: z.string().optional(),
   available: z.boolean().default(true),
+  imageUrl: z.string().optional(),
+  quantity: z.string().optional(),
+  currencyCode: z.string().max(3).optional().default("NGN"),
   metadata: z.record(z.unknown()).optional(),
 });
 

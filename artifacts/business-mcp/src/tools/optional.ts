@@ -58,6 +58,9 @@ export function registerOptionalTools(
             category: businessProductsTable.category,
             price: businessProductsTable.price,
             available: businessProductsTable.available,
+            imageUrl: businessProductsTable.imageUrl,
+            quantity: businessProductsTable.quantity,
+            currencyCode: businessProductsTable.currencyCode,
           })
           .from(businessProductsTable)
           .where(and(...conditions));

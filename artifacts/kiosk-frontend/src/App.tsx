@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import {
   type ChangeEvent,
@@ -64,7 +64,7 @@ function Header({ paper = false }: { paper?: boolean }) {
           <span
             className={`eyebrow ${paper ? "text-[#777064]" : "text-[#8A8478]"}`}
           >
-            The stall for agent commerce
+            Your business, found by everyone
           </span>
           <Link
             href="/marketplace"
@@ -157,7 +157,7 @@ const appear: Variants = {
   },
 };
 
-// ── How Kiosk MCP works ────────────────────────────────────────────────────────
+// How Kiosk Works
 
 const FLOW_STEPS = [
   {
@@ -170,7 +170,7 @@ const FLOW_STEPS = [
     number: "02",
     label: "Publish",
     detail:
-      "Review your profile and publish. Kiosk provisions a live MCP endpoint for your business.",
+      "Review your profile and publish. Your business becomes visible to AI assistants straight away.",
   },
   {
     number: "03",
@@ -186,7 +186,7 @@ const FLOW_STEPS = [
   },
 ] as const;
 
-// The Master MCP discovery endpoint — for developers to connect AI agents.
+// The Master MCP discovery endpoint for developers to connect AI agents.
 // In production, NEXT_PUBLIC_MCP_BASE_URL includes /business-mcp (e.g.
 // https://cloudfront-domain/business-mcp). We strip that suffix to get the
 // root domain, then append /mcp for the Master MCP discovery endpoint.
@@ -241,19 +241,19 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
       <div className="mx-auto max-w-[1440px] px-6 py-24 md:px-12 md:py-32">
         {/* Header */}
         <motion.div {...reveal} className="max-w-[640px]">
-          <p className="eyebrow mb-5 text-[#8A8478]">What is Kiosk MCP?</p>
+          <p className="eyebrow mb-5 text-[#C8873A]">How it works</p>
           <h2 className="text-[clamp(2.4rem,5.5vw,4.6rem)] font-semibold leading-[.92] tracking-[-.075em] text-[#EDE7DC]">
             Your business,
             <br />
             <span className="serif font-normal italic tracking-[-.055em]">
-              open to AI agents.
+              open to AI.
             </span>
           </h2>
           <p className="mt-6 max-w-[520px] text-[15px] leading-7 text-[#A49D90]">
             Kiosk gives every local business its own AI-readable endpoint using
-            the Model Context Protocol. No code required from the business
-            owner. Compatible AI assistants can discover your business, browse
-            your services, and help customers reach you.
+            AI assistants. No code required from the business owner. Compatible
+            AI assistants can discover your business, browse your services, and
+            help customers reach you.
           </p>
         </motion.div>
 
@@ -306,7 +306,7 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
           })}
         </div>
 
-        {/* Flow diagram — text-based, no heavy dependency */}
+        {/* Flow diagram text-based, no heavy dependency */}
         <motion.div
           {...(reduceMotion
             ? {}
@@ -321,21 +321,21 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
         >
           {[
             "Business profile",
-            "→",
+            "",
             "Kiosk platform",
-            "→",
+            "",
             "Master MCP",
-            "→",
+            "",
             "Business MCP",
-            "→",
+            "",
             "AI assistant",
-            "→",
+            "",
             "Customer",
           ].map((part, i) => (
             <span
               key={i}
               className={
-                part === "→"
+                part === "â†’"
                   ? "text-[#8A8478]"
                   : "border border-white/10 px-2 py-0.5 text-[#A49D90]"
               }
@@ -472,7 +472,7 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
               </button>
             </div>
             <p className="mt-3 text-[11px] text-[#625D53]">
-              Clicking "Add to ChatGPT" or "Add to Claude" opens the app — paste{" "}
+              Clicking "Add to ChatGPT" or "Add to Claude" opens the app” paste{" "}
               <span className="mono text-[#8A8478]">{MASTER_MCP_ENDPOINT}</span>{" "}
               when prompted for the server URL.
             </p>
@@ -520,7 +520,7 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
               docs/connect-ai-assistants.md
             </a>{" "}
             for client-specific guides. The endpoint above is the master
-            discovery server — individual business endpoints are returned
+            discovery server â€” individual business endpoints are returned
             dynamically.
           </p>
         </motion.div>
@@ -585,17 +585,17 @@ export function LandingPage() {
             className="max-w-[680px] md:pl-3"
           >
             <p className="eyebrow mb-5 text-[#8A8478]">
-              Agent commerce, made local
+              Small business, found by everyone
             </p>
             <h1 className="kiosk-wordmark text-[clamp(5.2rem,12.5vw,11.8rem)] leading-[.78] text-[#EDE7DC]">
               Kiosk
             </h1>
             <p className="serif mt-9 max-w-[650px] text-[clamp(2.1rem,4.1vw,4rem)] leading-[1.03] tracking-[-.035em] text-[#EDE7DC]">
-              Where agents come
-              <br className="hidden md:block" /> to buy.
+              Where local business
+              <br className="hidden md:block" /> meets AI.
             </p>
             <p className="mt-6 max-w-[470px] text-[15px] leading-7 text-[#A49D90] md:text-[17px]">
-              Turn your business into an Agent Skill in 2 minutes. No code
+              Make your business visible to AI assistants in 2 minutes. No code
               required.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-5">
@@ -603,14 +603,14 @@ export function LandingPage() {
                 href="/create"
                 className="group inline-flex min-h-[54px] items-center gap-8 bg-[#EDE7DC] px-6 text-[13px] font-semibold text-[#12110F] transition-colors hover:bg-white"
               >
-                Create your Kiosk{" "}
+                Get Started{" "}
                 <ArrowRight
                   size={17}
                   className="transition-transform group-hover:translate-x-1"
                 />
               </Link>
               <span className="eyebrow text-[#8A8478]">
-                About two minutes · No code
+                About two minutes Â· No code
               </span>
             </div>
           </motion.div>
@@ -621,20 +621,18 @@ export function LandingPage() {
       <section className="border-b border-white/10 bg-[#1C1A16]">
         <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-20 md:grid-cols-[.8fr_1.2fr] md:gap-20 md:px-12 md:py-28">
           <motion.div {...reveal}>
-            <p className="eyebrow mb-5 text-[#8A8478]">
-              A clearer way to show up
-            </p>
+            <p className="eyebrow mb-5 text-[#C8873A]">The problem</p>
             <h2 className="max-w-[400px] text-[clamp(2.7rem,5.3vw,5rem)] font-semibold leading-[.94] tracking-[-.075em]">
-              Your business.
+              Missing out
               <br />
-              In the right window.
+              on customers.
             </h2>
           </motion.div>
           <motion.div {...reveal} className="md:pt-2">
             <p className="serif max-w-[670px] text-[clamp(1.55rem,2.5vw,2.4rem)] leading-[1.27] text-[#D0C9BC]">
-              A kiosk is a stall. You walk up, find what you need, and get on
-              with your day. Kiosk gives AI agents a clear window into what your
-              business offers and how to reach you.
+              When someone asks an AI assistant to find a local business, it
+              often directs them to large chains with websites. Small businesses
+              without a technical team are left out. Kiosk changes that.
             </p>
             <div className="mt-10 grid gap-5 border-t border-white/15 pt-6 sm:grid-cols-3">
               <div>
@@ -663,14 +661,12 @@ export function LandingPage() {
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="mx-auto grid max-w-[1440px] items-center gap-16 px-6 py-24 md:grid-cols-[1fr_1fr] md:px-12 md:py-32">
           <motion.div {...reveal}>
-            <p className="eyebrow mb-6 text-[#8A8478]">
-              Made for independent business
-            </p>
+            <p className="eyebrow mb-6 text-[#C8873A]">What Kiosk does</p>
             <h2 className="max-w-[600px] text-[clamp(2.8rem,6vw,5.7rem)] font-semibold leading-[.9] tracking-[-.08em]">
-              Small business.
+              Be visible
               <br />
               <span className="serif font-normal italic tracking-[-.055em]">
-                Open to more.
+                to every assistant.
               </span>
             </h2>
           </motion.div>
@@ -680,14 +676,15 @@ export function LandingPage() {
           >
             <span className="absolute -left-[4px] top-0 h-2 w-2 bg-[#EDE7DC]" />
             <p className="serif max-w-[480px] text-[clamp(1.7rem,3vw,2.8rem)] leading-[1.18] text-[#D0C9BC]">
-              No new software to learn. No code to write. Just the details that
-              make your business yours.
+              No new software to learn. No code to write. Just fill in your
+              details and your business becomes visible to AI assistants
+              everywhere.
             </p>
             <Link
               href="/create"
               className="group mt-9 inline-flex items-center gap-3 text-[13px] font-semibold text-[#EDE7DC]"
             >
-              Make your business discoverable{" "}
+              Get found by AI assistants{" "}
               <span className="grid h-9 w-9 place-items-center rounded-full border border-white/25 transition-colors group-hover:bg-[#EDE7DC] group-hover:text-[#12110F]">
                 <ArrowUpRight size={16} />
               </span>
@@ -696,7 +693,7 @@ export function LandingPage() {
         </div>
       </section>
 
-      {/* ── What is Kiosk MCP? ─────────────────────────────────────────────── */}
+      {/* How it works */}
       <KioskMcpSection reduceMotion={!!reduceMotion} />
 
       <section className="bg-[#EDE7DC] text-[#12110F]">
@@ -706,7 +703,7 @@ export function LandingPage() {
               Kiosk
             </h2>
             <p className="serif mt-8 text-[clamp(1.7rem,3.4vw,3rem)]">
-              Where agents come to buy.
+              Be found by every assistant.
             </p>
             <p className="mt-4 max-w-[480px] text-sm leading-6 text-[#686257]">
               Set up your business profile in about two minutes. Your
@@ -885,7 +882,7 @@ export function CreateKioskPage() {
                   Your business details are ready.
                 </h2>
                 <p className="serif mt-6 max-w-[520px] text-[21px] leading-[1.35] text-[#C5BFB2]">
-                  We’ve brought your information together for the next step.
+                  Weâ€™ve brought your information together for the next step.
                   Nothing has been published or deployed.
                 </p>
                 <div className="mt-8 border-y border-white/15 py-5">
@@ -931,7 +928,7 @@ export function CreateKioskPage() {
                     </p>
                   </div>
                   <span className="eyebrow whitespace-nowrap text-[#A49D90]">
-                    01 — 06
+                    01 â€” 06
                   </span>
                 </div>
                 <form onSubmit={onSubmit} noValidate>
@@ -1021,7 +1018,7 @@ export function CreateKioskPage() {
                         name="hours"
                         rows={2}
                         className="field-control resize-y"
-                        placeholder="e.g. Tue–Sat, 9am–5pm"
+                        placeholder="e.g. Tueâ€“Sat, 9amâ€“5pm"
                         value={details.hours}
                         onChange={update("hours")}
                         required
@@ -1058,7 +1055,7 @@ export function CreateKioskPage() {
                           id="price"
                           name="price"
                           className="field-control"
-                          placeholder="e.g. From £25, or £25–£80"
+                          placeholder="e.g. From Â£25, or Â£25â€“Â£80"
                           value={details.price}
                           onChange={update("price")}
                         />

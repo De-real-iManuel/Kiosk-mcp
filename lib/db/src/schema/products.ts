@@ -23,6 +23,10 @@ export const businessProductsTable = pgTable(
     category: text("category"),
     price: text("price"),
     available: boolean("available").notNull().default(true),
+    // ── Phase 2 additions ──────────────────────────────────────────────────
+    imageUrl: text("image_url"),
+    quantity: text("quantity"),
+    currencyCode: text("currency_code").default("NGN"),
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

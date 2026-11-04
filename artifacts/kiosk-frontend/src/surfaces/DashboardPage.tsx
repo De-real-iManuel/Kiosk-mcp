@@ -56,6 +56,7 @@ import type {
 import { LoadingSpinner } from "@/components/ui/spinner";
 import { Footer } from "@/components/Footer";
 import { COUNTRIES } from "@/lib/countries";
+import { CatalogPanel } from "./CatalogPanel";
 
 function getMcpUrl(slug: string): string {
   const base = (
@@ -950,6 +951,62 @@ function AnalyticsPanel({ business }: { business: Business }) {
   );
 }
 
+function OnboardingBanner({ business }: { business: Business }) {
+  const biz = business as unknown as Record<string, unknown>;
+  // Only show for drafts that have never been published
+  if (business.status === "published" || biz.publishedAt) return null;
+  const hasContact = !!(
+    biz.phone ||
+    biz.whatsapp ||
+    biz.website ||
+    business.contact
+  );
+  const hasCategory = !!biz.categoryId;
+  const steps = [
+    { done: true, label: "Kiosk created" },
+    {
+      done: hasContact && hasCategory,
+      label:
+        hasContact && hasCategory
+          ? "Profile complete"
+          : "Complete your profile (add category + contact)",
+    },
+    { done: false, label: "Publish to go live" },
+  ];
+  return (
+    <div
+      className="mb-6 border border-black/10 bg-[#F2EDE4] p-4 sm:p-5"
+      data-testid={`onboarding-banner-${business.id}`}
+    >
+      <p className="eyebrow text-[#777064] mb-3">
+        Next steps for {business.businessName}
+      </p>
+      <ol className="flex flex-col gap-2 sm:flex-row sm:gap-6">
+        {steps.map(({ done, label }, i) => (
+          <li key={i} className="flex items-center gap-2 text-[13px]">
+            <span
+              className={`grid h-5 w-5 shrink-0 place-items-center rounded-full border text-[10px] font-semibold ${
+                done
+                  ? "border-[#47745F] bg-[#47745F] text-white"
+                  : "border-black/20 text-[#777064]"
+              }`}
+            >
+              {done ? <Check size={10} strokeWidth={2.5} /> : i + 1}
+            </span>
+            <span
+              className={
+                done ? "text-[#47745F] line-through" : "text-[#12110F]"
+              }
+            >
+              {label}
+            </span>
+          </li>
+        ))}
+      </ol>
+    </div>
+  );
+}
+
 function OwnerCard({ business }: { business: Business }) {
   const client = useQueryClient();
   const update = useUpdateBusiness();
@@ -1197,6 +1254,7 @@ function OwnerCard({ business }: { business: Business }) {
         </div>
       </div>
 
+      <OnboardingBanner business={business} />
       <CompletenessBar business={business} />
 
       {editing && (
@@ -1449,6 +1507,16 @@ function OwnerCard({ business }: { business: Business }) {
           </div>
         </div>
       )}
+
+      <CatalogPanel
+        businessId={business.id}
+        hasProductsCapability={
+          (
+            (business as unknown as Record<string, unknown>)
+              .capabilities as string[]
+          )?.includes("products") ?? false
+        }
+      />
 
       <AnalyticsPanel business={business} />
       {publish.isError && (
