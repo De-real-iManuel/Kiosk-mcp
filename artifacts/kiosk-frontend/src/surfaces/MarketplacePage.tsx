@@ -353,160 +353,163 @@ export function MarketplacePage() {
     [activeSearch, activeLocation],
   );
   const { data, isLoading, isError, refetch } = useSearchMarketplace(params);
+  const hasFilters = Boolean(activeSearch.trim() || activeLocation.trim());
+
+  function clearFilters() {
+    setSearch("");
+    setLocation("");
+    setActiveSearch("");
+    setActiveLocation("");
+  }
+
+  function chooseCategory(name: string) {
+    const next = activeSearch === name ? "" : name;
+    setSearch(next);
+    setActiveSearch(next);
+  }
+
   return (
     <SiteFrame>
-      <section className="fine-grid border-b border-black/10">
-        <div className="mx-auto max-w-[1280px] px-5 py-14 md:px-10 md:py-20">
-          <p className="eyebrow text-[#777064]">
-            Independent businesses, easier to discover
-          </p>
-          <h1 className="mt-5 max-w-[780px] text-[clamp(3.4rem,8vw,7.2rem)] font-semibold leading-[.86] tracking-[-.09em]">
-            Find your
-            <br />
-            <span className="serif font-normal italic tracking-[-.06em]">
-              next local.
-            </span>
-          </h1>
-          <p className="serif mt-6 max-w-[570px] text-xl leading-7 text-[#625D53]">
-            Clear, useful storefronts from the people who make a place what it
-            is.
-          </p>
-          <form
-            className="mt-10 grid gap-3 border border-black/10 bg-[#F2EDE4] p-3 sm:grid-cols-[1.3fr_1fr_auto]"
-            onSubmit={(event) => {
-              event.preventDefault();
-              setActiveSearch(search);
-              setActiveLocation(location);
-            }}
-            aria-label="Search the marketplace"
-          >
-            <label className="relative">
-              <span className="sr-only">Business or service</span>
-              <Search
-                size={17}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#777064]"
-              />
-              <input
-                data-testid="marketplace-search"
-                className="surface-input !border-transparent !bg-transparent !pl-11"
-                placeholder="Business or service"
-                value={search}
-                onChange={(event) => setSearch(event.target.value)}
-              />
-            </label>
-            <label className="relative">
-              <span className="sr-only">Location</span>
-              <MapPin
-                size={17}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-[#777064]"
-              />
-              <input
-                data-testid="marketplace-location"
-                className="surface-input !border-transparent !bg-transparent !pl-11"
-                placeholder="City or neighborhood"
-                value={location}
-                onChange={(event) => setLocation(event.target.value)}
-              />
-            </label>
-            <button
-              className="surface-button min-w-[120px]"
-              type="submit"
-              data-testid="marketplace-submit"
+      <section className="relative overflow-hidden border-b border-black/10">
+        <div className="pointer-events-none absolute inset-y-0 right-0 hidden w-[38%] bg-[#C45A3A]/[.055] md:block" />
+        <div className="fine-grid relative">
+          <div className="mx-auto max-w-[1280px] px-5 py-14 md:px-10 md:py-20">
+            <p className="eyebrow flex items-center gap-2 text-[#777064]">
+              <span className="h-2 w-2 rounded-full bg-[#C45A3A]" />
+              Independent businesses, easier to discover
+            </p>
+            <h1 className="mt-5 max-w-[800px] text-[clamp(3.4rem,8vw,7.2rem)] font-semibold leading-[.86] tracking-[-.09em]">
+              Find your
+              <br />
+              <span className="serif font-normal italic tracking-[-.06em] text-[#C45A3A]">
+                next local.
+              </span>
+            </h1>
+            <p className="serif mt-6 max-w-[570px] text-xl leading-7 text-[#625D53]">
+              Discover the people, services and independent businesses around you.
+            </p>
+
+            <form
+              className="mt-10 grid gap-2 border border-black/10 bg-[#F7F3EC] p-2 shadow-[0_14px_40px_rgba(18,17,15,.045)] sm:grid-cols-[1.3fr_1fr_auto]"
+              onSubmit={(event) => {
+                event.preventDefault();
+                setActiveSearch(search);
+                setActiveLocation(location);
+              }}
+              aria-label="Search the marketplace"
             >
-              Explore <ArrowRight size={16} />
-            </button>
-          </form>
-          {categoryList.length > 0 && (
-            <div className="mt-6">
-              <p className="eyebrow mb-3 text-[#777064]">Explore by category</p>
-              <div className="flex flex-wrap gap-2">
-                {categoryList.slice(0, 10).map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    onClick={() => {
-                      setSearch(category.name);
-                      setActiveSearch(category.name);
-                      setActiveLocation(location);
-                    }}
-                    className={`min-h-9 border px-3 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D96845] ${activeSearch === category.name ? "border-[#D96845] bg-[#D96845] text-white" : "border-black/15 bg-transparent text-[#625D53] hover:border-[#D96845] hover:text-[#A94F35]"}`}
-                  >
-                    {category.name}
-                  </button>
-                ))}
+              <label className="relative">
+                <span className="sr-only">Business or service</span>
+                <Search size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#777064]" />
+                <input
+                  data-testid="marketplace-search"
+                  className="surface-input !min-h-12 !border-transparent !bg-transparent !pl-11"
+                  placeholder="What are you looking for?"
+                  value={search}
+                  onChange={(event) => setSearch(event.target.value)}
+                />
+              </label>
+              <label className="relative">
+                <span className="sr-only">Location</span>
+                <MapPin size={17} className="absolute left-4 top-1/2 -translate-y-1/2 text-[#777064]" />
+                <input
+                  data-testid="marketplace-location"
+                  className="surface-input !min-h-12 !border-transparent !bg-transparent !pl-11"
+                  placeholder="City or neighbourhood"
+                  value={location}
+                  onChange={(event) => setLocation(event.target.value)}
+                />
+              </label>
+              <button className="surface-button min-h-12 min-w-[132px] !bg-[#C45A3A] hover:!bg-[#A9482D]" type="submit" data-testid="marketplace-submit">
+                Explore <ArrowRight size={16} />
+              </button>
+            </form>
+
+            {categoryList.length > 0 && (
+              <div className="mt-7">
+                <div className="mb-3 flex items-center justify-between gap-3">
+                  <p className="eyebrow text-[#777064]">Browse by category</p>
+                  {activeSearch && categoryList.some((category) => category.name === activeSearch) && (
+                    <button type="button" onClick={() => chooseCategory(activeSearch)} className="text-[11px] font-medium text-[#A94F35] hover:underline">
+                      Clear category
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-2 overflow-x-auto pb-2">
+                  {categoryList.slice(0, 12).map((category) => {
+                    const selected = activeSearch === category.name;
+                    return (
+                      <button
+                        key={category.id}
+                        type="button"
+                        aria-pressed={selected}
+                        onClick={() => chooseCategory(category.name)}
+                        className={`min-h-9 shrink-0 rounded-full border px-4 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#C45A3A] ${selected ? "border-[#C45A3A] bg-[#C45A3A] text-white" : "border-black/15 bg-[#F2EDE4]/70 text-[#625D53] hover:border-[#C45A3A] hover:text-[#A94F35]"}`}
+                      >
+                        {category.name}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
       </section>
+
       <section className="mx-auto max-w-[1280px] px-5 py-12 md:px-10 md:py-16">
-        <div className="mb-7 flex items-end justify-between gap-4">
+        <div className="mb-7 flex flex-wrap items-end justify-between gap-4">
           <div>
             <p className="eyebrow text-[#777064]">The marketplace</p>
-            <h2 className="mt-2 text-2xl font-semibold tracking-[-.05em]">
-              Open windows
-            </h2>
+            <h2 className="mt-2 text-2xl font-semibold tracking-[-.05em]">Open windows</h2>
+            <p className="mt-1 text-sm text-[#777064]">
+              {hasFilters ? "Results matching your search" : "Independent businesses worth knowing"}
+            </p>
           </div>
-          {!isLoading && !isError && (
-            <span
-              data-testid="marketplace-result-count"
-              className="mono text-[11px] text-[#777064]"
-            >
-              {data?.length ?? 0} LISTINGS
-            </span>
-          )}
+          <div className="flex items-center gap-3">
+            {!isLoading && !isError && (
+              <span data-testid="marketplace-result-count" className="mono text-[11px] text-[#777064]">
+                {data?.length ?? 0} {data?.length === 1 ? "LISTING" : "LISTINGS"}
+              </span>
+            )}
+            {hasFilters && (
+              <button type="button" onClick={clearFilters} className="text-[11px] font-semibold text-[#A94F35] underline underline-offset-4">
+                Clear filters
+              </button>
+            )}
+          </div>
         </div>
+
+        {hasFilters && (
+          <div className="mb-5 flex flex-wrap gap-2" aria-label="Active filters">
+            {activeSearch && <span className="rounded-full bg-[#C45A3A]/10 px-3 py-1.5 text-[11px] text-[#93432E]">Search: {activeSearch}</span>}
+            {activeLocation && <span className="rounded-full bg-[#C45A3A]/10 px-3 py-1.5 text-[11px] text-[#93432E]">Location: {activeLocation}</span>}
+          </div>
+        )}
+
         {isLoading ? (
-          <div
-            className="space-y-5"
-            data-testid="marketplace-loading"
-            aria-label="Loading listings"
-          >
-            {[1, 2, 3].map((x) => (
-              <div
-                key={x}
-                className="h-[150px] animate-pulse border-t border-black/10 bg-black/[.025]"
-              />
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="marketplace-loading" aria-label="Loading listings">
+            {[1, 2, 3, 4, 5, 6].map((x) => (
+              <div key={x} className="h-[260px] animate-pulse border border-black/10 bg-black/[.025]" />
             ))}
           </div>
         ) : isError ? (
-          <div
-            className="surface-status"
-            role="alert"
-            data-testid="marketplace-error"
-          >
+          <div className="surface-status" role="alert" data-testid="marketplace-error">
             The marketplace could not be reached.{" "}
-            <button className="surface-link ml-1" onClick={() => refetch()}>
-              Try again
-            </button>
+            <button className="surface-link ml-1" onClick={() => refetch()}>Try again</button>
           </div>
         ) : data?.length ? (
-          <div data-testid="marketplace-results">
-            {data.map((business) => (
-              <BusinessCard key={business.id} business={business} />
-            ))}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="marketplace-results">
+            {data.map((business) => <BusinessCard key={business.id} business={business} />)}
           </div>
         ) : (
-          <div
-            className="border-y border-black/15 py-16 text-center"
-            data-testid="marketplace-empty"
-          >
-            <Store className="mx-auto text-[#777064]" size={25} />
-            <h3 className="mt-5 text-2xl font-semibold tracking-[-.05em]">
-              No open windows yet
-            </h3>
+          <div className="border-y border-black/15 py-16 text-center" data-testid="marketplace-empty">
+            <Store className="mx-auto text-[#C45A3A]" size={27} />
+            <h3 className="mt-5 text-2xl font-semibold tracking-[-.05em]">No open windows yet</h3>
             <p className="serif mt-3 text-lg text-[#625D53]">
-              Try another search or location.
+              {hasFilters ? "We couldn't find a match. Try a different service or location." : "New independent businesses will appear here as they join Kiosk."}
             </p>
-            <button
-              onClick={() => {
-                setSearch("");
-                setLocation("");
-              }}
-              className="surface-link mt-5 text-sm"
-            >
-              Clear search
-            </button>
+            {hasFilters && <button onClick={clearFilters} className="surface-link mt-5 text-sm">Clear search</button>}
           </div>
         )}
       </section>
@@ -566,6 +569,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
     // Record the public profile view once per slug.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [slug, !!query.data]);
+
   async function copyLink() {
     try {
       await navigator.clipboard.writeText(window.location.href);
@@ -576,124 +580,152 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
       setCopied(false);
     }
   }
-  if (query.isLoading)
+
+  if (query.isLoading) {
     return (
       <SiteFrame>
-        <div
-          className="mx-auto max-w-[1000px] animate-pulse px-5 py-20"
-          data-testid="business-detail-loading"
-        >
+        <div className="mx-auto max-w-[1000px] animate-pulse px-5 py-20" data-testid="business-detail-loading">
           <div className="h-8 w-32 bg-black/10" />
           <div className="mt-12 h-20 w-2/3 bg-black/10" />
           <div className="mt-6 h-40 bg-black/5" />
         </div>
       </SiteFrame>
     );
-  if (query.isError || !query.data)
+  }
+
+  if (query.isError || !query.data) {
     return (
       <SiteFrame>
-        <div
-          className="mx-auto max-w-[900px] px-5 py-20"
-          data-testid="business-detail-error"
-        >
+        <div className="mx-auto max-w-[900px] px-5 py-20" data-testid="business-detail-error">
           <Link href="/marketplace" className="eyebrow text-[#777064]">
             <ArrowLeft className="mr-2 inline" size={13} /> Marketplace
           </Link>
-          <h1 className="mt-10 text-4xl font-semibold tracking-[-.07em]">
-            This window isnâ€™t open.
-          </h1>
-          <p className="mt-3 text-[#625D53]">
-            The listing may have moved or is no longer published.
-          </p>
+          <h1 className="mt-10 text-4xl font-semibold tracking-[-.07em]">This window isn’t open.</h1>
+          <p className="mt-3 text-[#625D53]">The listing may have moved or is no longer published.</p>
         </div>
       </SiteFrame>
     );
+  }
+
   const business = query.data;
+  const contact = contactHref(business.contact);
+  const externalContact = /^https?:/i.test(contact);
+
   return (
     <SiteFrame>
-      <article
-        className="mx-auto max-w-[1120px] px-5 py-9 md:px-10 md:py-14"
-        data-testid="business-detail"
-      >
-        <Link
-          href="/marketplace"
-          className="inline-flex items-center gap-2 text-xs text-[#625D53] hover:text-[#12110F]"
-        >
-          <ArrowLeft size={14} /> Marketplace
+      <article className="mx-auto max-w-[1120px] px-5 py-8 md:px-10 md:py-12" data-testid="business-detail">
+        <Link href="/marketplace" className="inline-flex items-center gap-2 text-xs text-[#625D53] transition-colors hover:text-[#C45A3A]">
+          <ArrowLeft size={14} /> Back to marketplace
         </Link>
-        <div className="mt-12 grid gap-9 md:grid-cols-[1fr_280px] md:gap-16">
-          <div>
-            <p className="eyebrow text-[#777064]">{business.location}</p>
-            <div className="mt-5 flex items-start gap-5">
+
+        <div className="mt-8 border-y border-black/10 py-8 md:py-12">
+          <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[.13em] text-[#777064]">
+            <span className="h-2 w-2 rounded-full bg-[#C45A3A]" />
+            Kiosk Business Window
+            <span className="text-black/25">/</span>
+            <span>{business.location}</span>
+          </div>
+          <div className="mt-6 grid items-start gap-7 md:grid-cols-[1fr_230px] md:items-center">
+            <div className="flex min-w-0 items-start gap-4 sm:gap-6">
               <BusinessGlyph business={business} large />
-              <h1
-                className="text-[clamp(2.8rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]"
-                data-testid="business-name"
-              >
-                {business.businessName}
-              </h1>
-            </div>
-            <p className="serif mt-9 max-w-[700px] whitespace-pre-line text-[clamp(1.4rem,2.5vw,2rem)] leading-[1.35] text-[#49453D]">
-              {business.services}
-            </p>
-            <div className="mt-12 grid gap-8 border-t border-black/15 pt-7 sm:grid-cols-2">
-              <div>
-                <p className="eyebrow text-[#777064]">Made for</p>
-                <p className="mt-3 leading-6">{business.audience}</p>
-              </div>
-              <div>
-                <p className="eyebrow text-[#777064]">Hours</p>
-                <p className="mt-3 whitespace-pre-line leading-6">
-                  {business.hours}
+              <div className="min-w-0">
+                <h1 className="text-[clamp(2.7rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]" data-testid="business-name">
+                  {business.businessName}
+                </h1>
+                <p className="mt-4 max-w-[620px] text-sm leading-6 text-[#625D53]">
+                  {business.services || "Contact this business to learn more about what it offers."}
                 </p>
               </div>
             </div>
-          </div>
-          <aside className="h-fit border border-black/10 bg-[#F2EDE4] p-5 md:mt-20 md:sticky md:top-6">
-            <p className="eyebrow text-[#777064]">Reach the business</p>
-            {business.price && (
-              <div className="mt-5 border-b border-black/10 pb-4">
-                <p className="eyebrow text-[#777064]">Price</p>
-                <p className="mt-2 text-lg font-semibold">{business.price}</p>
-              </div>
-            )}
-            <a
-              href={contactHref(business.contact)}
-              target={
-                /^https?:/i.test(contactHref(business.contact))
-                  ? "_blank"
-                  : undefined
-              }
-              rel="noreferrer"
-              onClick={() =>
-                event.mutate({ slug, data: { eventType: "contact_click" } })
-              }
-              className="surface-button mt-5 w-full"
-              data-testid="contact-business"
-            >
-              Contact / book <ArrowUpRight size={15} />
-            </a>
-            {business.booking && (
-              <p className="mt-3 text-xs text-[#625D53]">
-                Booking requests{" "}
-                {business.booking === "yes" ? "welcome" : "not available"}.
-              </p>
-            )}
-            <button
-              onClick={copyLink}
-              className="mt-3 inline-flex min-h-11 w-full items-center justify-center gap-2 border border-black/20 text-xs font-semibold hover:bg-black/[.04]"
-              data-testid="copy-business-link"
-            >
-              {copied ? (
-                <>
-                  <Check size={14} /> Link copied
-                </>
-              ) : (
-                <>
-                  <Copy size={14} /> Copy link
-                </>
+            <div className="flex flex-col gap-2">
+              {business.price && (
+                <div className="border-l-2 border-[#C45A3A] bg-[#C45A3A]/[.07] px-4 py-3">
+                  <p className="eyebrow text-[#777064]">Price guide</p>
+                  <p className="mt-1 text-xl font-semibold tracking-[-.04em]">{business.price}</p>
+                </div>
               )}
-            </button>
+              <button onClick={copyLink} className="inline-flex min-h-11 items-center justify-center gap-2 border border-black/15 px-4 text-xs font-semibold transition-colors hover:border-[#C45A3A] hover:text-[#A94F35]" data-testid="copy-business-link">
+                {copied ? <><Check size={14} /> Link copied</> : <><Copy size={14} /> Share this window</>}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid gap-10 py-9 md:grid-cols-[1fr_300px] md:gap-16 md:py-12">
+          <div className="space-y-10">
+            <section aria-labelledby="business-offering">
+              <p className="eyebrow text-[#C45A3A]">What they offer</p>
+              <h2 id="business-offering" className="mt-2 text-2xl font-semibold tracking-[-.05em]">A little more about this business</h2>
+              <p className="serif mt-5 max-w-[720px] whitespace-pre-line text-xl leading-8 text-[#49453D]">
+                {business.services || "Contact the business directly for details about its services and products."}
+              </p>
+              {business.audience && (
+                <div className="mt-7 border-l-2 border-[#C45A3A]/60 pl-4">
+                  <p className="eyebrow text-[#777064]">A good fit for</p>
+                  <p className="mt-2 text-sm leading-6 text-[#49453D]">{business.audience}</p>
+                </div>
+              )}
+            </section>
+
+            <section className="border-t border-black/10 pt-7" aria-labelledby="business-practical">
+              <p className="eyebrow text-[#C45A3A]">Plan your visit</p>
+              <h2 id="business-practical" className="mt-2 text-2xl font-semibold tracking-[-.05em]">Useful details</h2>
+              <div className="mt-6 grid gap-6 sm:grid-cols-2">
+                <div className="flex items-start gap-3">
+                  <MapPin size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
+                  <div>
+                    <p className="text-xs font-semibold">Location</p>
+                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{business.location || "Contact for location details"}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Clock3 size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
+                  <div>
+                    <p className="text-xs font-semibold">Opening hours</p>
+                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{business.hours || "Contact the business to confirm opening hours."}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <CalendarCheck size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
+                  <div>
+                    <p className="text-xs font-semibold">Booking</p>
+                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{business.booking === "yes" ? "Booking requests are welcome." : business.booking ? "Booking is not currently available." : "Contact the business to ask about booking."}</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-3">
+                  <Tag size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
+                  <div>
+                    <p className="text-xs font-semibold">Pricing</p>
+                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{business.price || "Ask the business for current pricing."}</p>
+                  </div>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside className="h-fit border border-black/10 bg-[#F2EDE4] p-5 md:sticky md:top-6">
+            <p className="eyebrow text-[#777064]">Get in touch</p>
+            <h2 className="mt-2 text-xl font-semibold tracking-[-.05em]">Talk to the business</h2>
+            <p className="mt-2 text-xs leading-5 text-[#625D53]">Ask a question, confirm availability or discuss what you need directly with the business.</p>
+            <a
+              href={contact}
+              target={externalContact ? "_blank" : undefined}
+              rel={externalContact ? "noreferrer" : undefined}
+              onClick={() => event.mutate({ slug, data: { eventType: "contact_click" } })}
+              className="surface-button mt-5 w-full !bg-[#C45A3A] hover:!bg-[#A9482D]"
+              data-testid="contact-business"
+              aria-disabled={!business.contact}
+            >
+              Contact / enquire <ArrowUpRight size={15} />
+            </a>
+            {!business.contact && <p className="mt-2 text-[11px] text-[#9C493F]">Contact details have not been added yet.</p>}
+            {business.booking && (
+              <p className="mt-3 text-xs text-[#625D53]">Booking requests {business.booking === "yes" ? "welcome" : "not available"}.</p>
+            )}
+            <div className="mt-5 border-t border-black/10 pt-4">
+              <p className="eyebrow text-[#777064]">Kiosk</p>
+              <p className="mt-2 text-[11px] leading-5 text-[#777064]">A clearer way for people and AI assistants to discover local businesses.</p>
+            </div>
           </aside>
         </div>
       </article>
