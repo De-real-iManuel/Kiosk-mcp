@@ -264,7 +264,7 @@ export const MarketplaceBusinessProfileResponse = z.object({
   businessName: z.string(),
   description: z.string().nullable(),
   // Legacy business facts remain part of the public profile until migrated.
-  servicesSummary: z.string().nullable(),
+  services: z.string(),
   audience: z.string().nullable(),
   booking: z.enum(["yes", "no"]).nullable(),
   agentFacts: z.object({
