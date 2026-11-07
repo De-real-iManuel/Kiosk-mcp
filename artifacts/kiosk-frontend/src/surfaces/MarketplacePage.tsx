@@ -358,7 +358,7 @@ export function MarketplacePage() {
       <section className="fine-grid border-b border-black/10">
         <div className="mx-auto max-w-[1280px] px-5 py-14 md:px-10 md:py-20">
           <p className="eyebrow text-[#777064]">
-            A directory of independent business
+            Independent businesses, easier to discover
           </p>
           <h1 className="mt-5 max-w-[780px] text-[clamp(3.4rem,8vw,7.2rem)] font-semibold leading-[.86] tracking-[-.09em]">
             Find your
