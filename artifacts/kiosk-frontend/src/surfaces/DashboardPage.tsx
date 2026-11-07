@@ -346,14 +346,19 @@ function CopyMcpButton({ slug }: { slug: string }) {
 }
 
 function CompletenessBar({ business }: { business: Business }) {
+  const biz = business as unknown as Record<string, string | null>;
+  const hasContact = Boolean(
+    business.contact || biz.phone || biz.whatsapp || biz.website,
+  );
   const fields: Array<{ label: string; filled: boolean }> = [
-    { label: "Name", filled: !!business.businessName },
-    { label: "Services", filled: !!business.services },
-    { label: "Audience", filled: !!business.audience },
-    { label: "Location", filled: !!business.location },
-    { label: "Hours", filled: !!business.hours },
-    { label: "Contact", filled: !!business.contact },
-    { label: "Price", filled: !!business.price },
+    { label: "Business name", filled: !!business.businessName?.trim() },
+    { label: "Services", filled: !!business.services?.trim() },
+    { label: "Category", filled: !!biz.categoryId },
+    { label: "City", filled: !!biz.city?.trim() },
+    { label: "Country", filled: !!biz.country?.trim() },
+    { label: "Opening hours", filled: !!business.hours?.trim() },
+    { label: "Contact method", filled: hasContact },
+    { label: "Description", filled: !!biz.description?.trim() },
   ];
   const filled = fields.filter((f) => f.filled).length;
   const pct = Math.round((filled / fields.length) * 100);
@@ -1614,7 +1619,7 @@ function LiveTimestamp() {
 
   if (!time) return null;
   return (
-    <p className="mono mt-3 text-[10px] text-[#777064]">Last updated {time}</p>
+    <p className="mono mt-3 text-[10px] text-[#777064]">Local time {time}</p>
   );
 }
 
