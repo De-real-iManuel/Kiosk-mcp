@@ -506,6 +506,10 @@ export function LandingPage() {
       };
   return (
     <main className="grain min-h-[100dvh] overflow-hidden bg-[#12110F]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: JSON.stringify([
+        { "@context": "https://schema.org", "@type": "Organization", "name": "Kiosk", "description": "A platform that helps independent businesses publish structured information for discovery by compatible AI assistants." },
+        { "@context": "https://schema.org", "@type": "WebSite", "name": "Kiosk", "description": "Discover independent businesses through structured, AI-readable business information." }
+      ]) }} />
       <Header />
       <section className="fine-grid relative border-b border-white/10">
         <div className="mx-auto grid min-h-[700px] max-w-[1440px] items-center gap-12 px-6 py-20 md:min-h-[720px] md:grid-cols-[.92fr_1.08fr] md:gap-20 md:px-12 md:py-24">
