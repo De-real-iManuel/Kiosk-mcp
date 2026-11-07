@@ -175,7 +175,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  // Fetch related data in parallel
+  // Fetch the business's public capabilities and catalogue from the same source record.
   const [capabilities, products, services] = await Promise.all([
     db
       .select()
@@ -191,6 +191,14 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
       .where(eq(businessServicesTable.businessId, business.id)),
   ]);
 
+  const [category] = business.categoryId
+    ? await db
+        .select({ name: categoriesTable.name })
+        .from(categoriesTable)
+        .where(eq(categoriesTable.id, business.categoryId))
+        .limit(1)
+    : [];
+
   const mcpEndpoint = getMcpEndpoint(business.slug);
 
   const profile = {
@@ -198,7 +206,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     slug: business.slug,
     businessName: business.businessName,
     description: business.description ?? null,
-    services: business.services || "",
+    servicesSummary: business.services || null,
     audience: business.audience || null,
     booking: business.booking === "yes" || business.booking === "no" ? business.booking : null,
     agentFacts: {
@@ -225,6 +233,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
       verification: { status: "unverified", verifiedFields: [] },
     },
     categoryId: business.categoryId ?? null,
+    categoryName: category?.name ?? null,
     city: business.city ?? null,
     country: business.country ?? null,
     location: business.location ?? null,
