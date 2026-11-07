@@ -21,10 +21,11 @@ import Link from "next/link";
 import { useAuth } from "@clerk/react";
 import { Footer } from "@/components/Footer";
 
-function Mark({ className = "" }: { className?: string }) {
+function Mark({ className = "", style }: { className?: string; style?: React.CSSProperties }) {
   return (
     <svg
       className={`inline-block ${className}`}
+      style={style}
       viewBox="0 0 100 100"
       fill="currentColor"
       aria-hidden="true"
