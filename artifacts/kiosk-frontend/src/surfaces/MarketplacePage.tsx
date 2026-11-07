@@ -9,6 +9,9 @@ import {
   ArrowRight,
   ArrowUpRight,
   Check,
+  CalendarCheck,
+  Clock3,
+  Tag,
   ChevronDown,
   ChevronUp,
   Copy,
@@ -289,26 +292,47 @@ function BusinessCard({ business }: { business: Business }) {
     <Link
       href={`/marketplace/business?slug=${encodeURIComponent(business.slug)}`}
       data-testid={`business-card-${business.id}`}
-      className="group flex min-h-[180px] flex-col justify-between border-t border-black/15 py-6 transition-colors hover:bg-black/[.025] sm:flex-row sm:items-center sm:gap-8"
+      className="group flex h-full flex-col border border-black/10 bg-[#F2EDE4] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#D96845]/50 hover:shadow-[0_16px_40px_rgba(18,17,15,.08)] sm:p-6"
     >
-      <div className="flex items-start gap-5">
-        <BusinessGlyph business={business} />
-        <div>
-          <p className="eyebrow text-[#777064]">{business.location}</p>
-          <h2 className="mt-2 text-[24px] font-semibold leading-tight tracking-[-.055em]">
-            {business.businessName}
-          </h2>
-          <p className="mt-2 line-clamp-2 max-w-[540px] text-sm leading-6 text-[#625D53]">
-            {business.services}
-          </p>
+      <div className="flex items-start justify-between gap-4">
+        <div className="flex min-w-0 items-start gap-4">
+          <BusinessGlyph business={business} />
+          <div className="min-w-0">
+            <p className="eyebrow truncate text-[#777064]">{business.location}</p>
+            <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-.055em] group-hover:text-[#A94F35]">
+              {business.businessName}
+            </h2>
+          </div>
         </div>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 transition-colors group-hover:border-[#D96845] group-hover:bg-[#D96845] group-hover:text-[#EDE7DC]" aria-hidden="true">
+          <ArrowUpRight size={16} />
+        </span>
       </div>
-      <span className="mt-5 inline-flex items-center gap-2 self-end text-xs font-semibold sm:mt-0 sm:self-center">
-        View Kiosk{" "}
-        <ArrowUpRight
-          className="transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5"
-          size={15}
-        />
+      <p className="mt-5 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-[#625D53]">
+        {business.services || "Contact this business to learn more about its services."}
+      </p>
+      <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-black/10 pt-4 text-[11px] text-[#625D53]">
+        {business.hours && (
+          <span className="inline-flex min-w-0 items-start gap-1.5">
+            <Clock3 size={13} className="mt-0.5 shrink-0 text-[#A94F35]" />
+            <span className="line-clamp-2">{business.hours}</span>
+          </span>
+        )}
+        {business.price && (
+          <span className="inline-flex items-center gap-1.5">
+            <Tag size={13} className="shrink-0 text-[#A94F35]" />
+            <span>{business.price}</span>
+          </span>
+        )}
+      </div>
+      {business.booking === "yes" && (
+        <p className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-[#47745F]">
+          <CalendarCheck size={13} /> Booking requests welcome
+        </p>
+      )}
+      <span className="mt-auto inline-flex items-center gap-2 pt-5 text-xs font-semibold">
+        View business details
+        <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
       </span>
     </Link>
   );
@@ -317,12 +341,16 @@ function BusinessCard({ business }: { business: Business }) {
 export function MarketplacePage() {
   const [search, setSearch] = useState("");
   const [location, setLocation] = useState("");
+  const [activeSearch, setActiveSearch] = useState("");
+  const [activeLocation, setActiveLocation] = useState("");
+  const categories = useCategories();
+  const categoryList = (categories.data ?? []) as Array<{ id: string; name: string }>;
   const params = useMemo(
     () => ({
-      ...(search.trim() ? { search: search.trim() } : {}),
-      ...(location.trim() ? { location: location.trim() } : {}),
+      ...(activeSearch.trim() ? { search: activeSearch.trim() } : {}),
+      ...(activeLocation.trim() ? { location: activeLocation.trim() } : {}),
     }),
-    [search, location],
+    [activeSearch, activeLocation],
   );
   const { data, isLoading, isError, refetch } = useSearchMarketplace(params);
   return (
@@ -345,7 +373,11 @@ export function MarketplacePage() {
           </p>
           <form
             className="mt-10 grid gap-3 border border-black/10 bg-[#F2EDE4] p-3 sm:grid-cols-[1.3fr_1fr_auto]"
-            onSubmit={(event) => event.preventDefault()}
+            onSubmit={(event) => {
+              event.preventDefault();
+              setActiveSearch(search);
+              setActiveLocation(location);
+            }}
             aria-label="Search the marketplace"
           >
             <label className="relative">
@@ -384,6 +416,27 @@ export function MarketplacePage() {
               Explore <ArrowRight size={16} />
             </button>
           </form>
+          {categoryList.length > 0 && (
+            <div className="mt-6">
+              <p className="eyebrow mb-3 text-[#777064]">Explore by category</p>
+              <div className="flex flex-wrap gap-2">
+                {categoryList.slice(0, 10).map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    onClick={() => {
+                      setSearch(category.name);
+                      setActiveSearch(category.name);
+                      setActiveLocation(location);
+                    }}
+                    className={`min-h-9 border px-3 text-[11px] font-medium transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#D96845] ${activeSearch === category.name ? "border-[#D96845] bg-[#D96845] text-white" : "border-black/15 bg-transparent text-[#625D53] hover:border-[#D96845] hover:text-[#A94F35]"}`}
+                  >
+                    {category.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
       </section>
       <section className="mx-auto max-w-[1280px] px-5 py-12 md:px-10 md:py-16">
