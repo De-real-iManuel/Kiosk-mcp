@@ -571,7 +571,7 @@ export function LandingPage() {
       <section className="border-b border-white/10 bg-[#1C1A16]">
         <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-20 md:grid-cols-[.8fr_1.2fr] md:gap-20 md:px-12 md:py-28">
           <motion.div {...reveal}>
-            <p className="eyebrow mb-5 text-[#C8873A]">The problem</p>
+            <p className="eyebrow mb-5 text-[#D96845]">The problem</p>
             <h2 className="max-w-[400px] text-[clamp(2.7rem,5.3vw,5rem)] font-semibold leading-[.94] tracking-[-.075em]">
               Missing out
               <br />
@@ -611,7 +611,7 @@ export function LandingPage() {
       <section className="relative overflow-hidden border-b border-white/10">
         <div className="mx-auto grid max-w-[1440px] items-center gap-16 px-6 py-24 md:grid-cols-[1fr_1fr] md:px-12 md:py-32">
           <motion.div {...reveal}>
-            <p className="eyebrow mb-6 text-[#C8873A]">What Kiosk does</p>
+            <p className="eyebrow mb-6 text-[#D96845]">What Kiosk does</p>
             <h2 className="max-w-[600px] text-[clamp(2.8rem,6vw,5.7rem)] font-semibold leading-[.9] tracking-[-.08em]">
               Be visible
               <br />
