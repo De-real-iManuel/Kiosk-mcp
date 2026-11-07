@@ -198,6 +198,32 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     slug: business.slug,
     businessName: business.businessName,
     description: business.description ?? null,
+    servicesSummary: business.services || null,
+    audience: business.audience || null,
+    booking: business.booking === "yes" || business.booking === "no" ? business.booking : null,
+    agentFacts: {
+      offers: {
+        summary: business.services || null,
+        services: services.map((item) => ({ name: item.name, available: item.available })),
+        products: products.map((item) => ({ name: item.name, available: item.available })),
+      },
+      serves: business.audience || null,
+      operatesIn: {
+        location: business.location || null,
+        city: business.city ?? null,
+        country: business.country ?? null,
+      },
+      // Null means the business has not supplied exclusions; it does not mean "offers everything".
+      doesNotOffer: null,
+      booking:
+        business.booking === "yes"
+          ? "accepted"
+          : business.booking === "no"
+            ? "not_accepted"
+            : "unknown",
+      // No verification workflow exists yet. Never present owner-submitted data as verified.
+      verification: { status: "unverified", verifiedFields: [] },
+    },
     categoryId: business.categoryId ?? null,
     city: business.city ?? null,
     country: business.country ?? null,
