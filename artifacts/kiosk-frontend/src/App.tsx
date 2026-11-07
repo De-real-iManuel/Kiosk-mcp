@@ -655,7 +655,7 @@ export function LandingPage() {
             <p className="mt-6 text-xs leading-5 text-[#8A8478]">Kiosk helps with discovery. The business confirms bookings, orders, prices and fulfilment directly. Customer checkout is not currently processed by Kiosk.</p>
           </motion.div>
           <motion.div {...reveal} className="relative min-h-[360px] overflow-hidden border border-white/10 bg-[#1C1A16]">
-            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=85" alt="Customer and shop owner completing an in-person transaction" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-75"/>
+            <img src="https://images.unsplash.com/photo-1753351052277-a7ff634f0bd5?auto=format&fit=crop&w=1200&q=85" alt="Customer and shop owner completing an in-person transaction" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-75"/>
             <div className="absolute inset-0 bg-gradient-to-t from-[#12110F]/90 via-transparent to-transparent"/>
             <div className="absolute bottom-6 left-6 right-6 border border-white/15 bg-[#12110F]/85 p-5 backdrop-blur-sm">
               <p className="eyebrow text-[#D96845]">Discovery to connection</p>
