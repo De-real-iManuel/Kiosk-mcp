@@ -288,6 +288,7 @@ export const MarketplaceBusinessProfileResponse = z.object({
     }),
   }),
   categoryId: z.string().uuid().nullable(),
+  categoryName: z.string().nullable(),
   city: z.string().nullable(),
   country: z.string().nullable(),
   location: z.string().nullable(),
