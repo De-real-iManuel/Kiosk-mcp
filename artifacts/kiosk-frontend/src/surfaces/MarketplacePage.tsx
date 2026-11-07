@@ -556,6 +556,60 @@ function contactHref(contact: string | null | undefined) {
   return /^https?:\/\//i.test(value) ? value : `https://${value}`;
 }
 
+type WindowCatalogueEntry = {
+  id: string;
+  name: string;
+  description: string | null;
+  price: string | null;
+  available: boolean;
+  category?: string | null;
+};
+
+type MarketplaceWindowData = {
+  id: string;
+  slug: string;
+  businessName: string;
+  description: string | null;
+  servicesSummary: string | null;
+  audience: string | null;
+  booking: "yes" | "no" | null;
+  categoryName: string | null;
+  location: string | null;
+  city: string | null;
+  country: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  website: string | null;
+  openingHours: Record<string, { open: string; close: string; closed: boolean } | null> | null;
+  timezone: string | null;
+  products: WindowCatalogueEntry[];
+  services: WindowCatalogueEntry[];
+  agentFacts: {
+    serves: string | null;
+    doesNotOffer: string[] | null;
+    booking: "accepted" | "not_accepted" | "unknown";
+    verification: {
+      status: "unverified" | "partially_verified" | "verified";
+      verifiedFields: string[];
+    };
+  };
+};
+
+function formatBusinessHours(
+  openingHours: MarketplaceWindowData["openingHours"],
+  timezone: string | null,
+): string {
+  if (!openingHours) return "";
+  const rows = Object.entries(openingHours).flatMap(([day, hours]) => {
+    if (!hours) return [];
+    const label = day.charAt(0).toUpperCase() + day.slice(1);
+    return [label + ": " + (hours.closed ? "Closed" : hours.open + "–" + hours.close)];
+  });
+  return rows.length
+    ? rows.join("\n") + (timezone ? "\nTimezone: " + timezone : "")
+    : "";
+}
+
 export function BusinessDetailPage({ slug }: { slug: string }) {
   const query = useGetMarketplaceBusiness(slug);
   const event = useCreateMarketplaceEvent();
@@ -607,9 +661,39 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
     );
   }
 
-  const business = query.data;
-  const contact = contactHref(business.contact);
+  // The public profile endpoint returns the enriched Marketplace shape. The
+  // generated legacy client type still describes the older, smaller response.
+  const business = query.data as unknown as MarketplaceWindowData;
+  const products = business.products ?? [];
+  const services = business.services ?? [];
+  const locationText = business.location || [business.city, business.country].filter(Boolean).join(", ");
+  const hoursText = formatBusinessHours(business.openingHours, business.timezone);
+  const rawWhatsapp = (business.whatsapp || "").trim();
+  const whatsappDigits = rawWhatsapp.replace(/\D/g, "");
+  const whatsappUrl = /^https?:\/\//i.test(rawWhatsapp)
+    ? rawWhatsapp
+    : whatsappDigits.length >= 7
+      ? "https://wa.me/" + whatsappDigits
+      : "";
+  const contact = whatsappUrl ||
+    (business.phone ? contactHref(business.phone) : "") ||
+    (business.website ? contactHref(business.website) : "");
   const externalContact = /^https?:/i.test(contact);
+  const contactLabel = whatsappUrl
+    ? "Message on WhatsApp"
+    : business.phone
+      ? "Call the business"
+      : "Visit business website";
+  const bookingText = business.agentFacts.booking === "accepted"
+    ? "This business accepts booking requests."
+    : business.agentFacts.booking === "not_accepted"
+      ? "This business has stated that it does not accept booking requests."
+      : "Booking availability has not been confirmed by this business.";
+  const verificationText = business.agentFacts.verification.status === "verified"
+    ? "Verified"
+    : business.agentFacts.verification.status === "partially_verified"
+      ? "Partially verified"
+      : "Not yet verified";
 
   return (
     <SiteFrame>
@@ -622,50 +706,118 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
           <div className="flex flex-wrap items-center gap-2 text-[11px] font-medium uppercase tracking-[.13em] text-[#777064]">
             <span className="h-2 w-2 rounded-full bg-[#C45A3A]" />
             Kiosk Business Window
-            <span className="text-black/25">/</span>
-            <span>{business.location}</span>
+            {business.categoryName && (
+              <>
+                <span className="text-black/25">/</span>
+                <span>{business.categoryName}</span>
+              </>
+            )}
+            {locationText && (
+              <>
+                <span className="text-black/25">/</span>
+                <span>{locationText}</span>
+              </>
+            )}
           </div>
           <div className="mt-6 grid items-start gap-7 md:grid-cols-[1fr_230px] md:items-center">
             <div className="flex min-w-0 items-start gap-4 sm:gap-6">
-              <BusinessGlyph business={business} large />
+              <BusinessGlyph business={business as unknown as Business} large />
               <div className="min-w-0">
                 <h1 className="text-[clamp(2.7rem,7vw,6rem)] font-semibold leading-[.88] tracking-[-.09em]" data-testid="business-name">
                   {business.businessName}
                 </h1>
                 <p className="mt-4 max-w-[620px] text-sm leading-6 text-[#625D53]">
-                  {business.services || "Contact this business to learn more about what it offers."}
+                  {business.description || business.servicesSummary || "Contact this business to learn more about what it offers."}
                 </p>
               </div>
             </div>
-            <div className="flex flex-col gap-2">
-              {business.price && (
-                <div className="border-l-2 border-[#C45A3A] bg-[#C45A3A]/[.07] px-4 py-3">
-                  <p className="eyebrow text-[#777064]">Price guide</p>
-                  <p className="mt-1 text-xl font-semibold tracking-[-.04em]">{business.price}</p>
-                </div>
-              )}
-              <button onClick={copyLink} className="inline-flex min-h-11 items-center justify-center gap-2 border border-black/15 px-4 text-xs font-semibold transition-colors hover:border-[#C45A3A] hover:text-[#A94F35]" data-testid="copy-business-link">
-                {copied ? <><Check size={14} /> Link copied</> : <><Copy size={14} /> Share this window</>}
-              </button>
-            </div>
+            <button onClick={copyLink} className="inline-flex min-h-11 items-center justify-center gap-2 border border-black/15 px-4 text-xs font-semibold transition-colors hover:border-[#C45A3A] hover:text-[#A94F35]" data-testid="copy-business-link">
+              {copied ? <><Check size={14} /> Link copied</> : <><Copy size={14} /> Share this window</>}
+            </button>
           </div>
         </div>
 
         <div className="grid gap-10 py-9 md:grid-cols-[1fr_300px] md:gap-16 md:py-12">
           <div className="space-y-10">
-            <section aria-labelledby="business-offering">
-              <p className="eyebrow text-[#C45A3A]">What they offer</p>
-              <h2 id="business-offering" className="mt-2 text-2xl font-semibold tracking-[-.05em]">A little more about this business</h2>
-              <p className="serif mt-5 max-w-[720px] whitespace-pre-line text-xl leading-8 text-[#49453D]">
-                {business.services || "Contact the business directly for details about its services and products."}
-              </p>
-              {business.audience && (
-                <div className="mt-7 border-l-2 border-[#C45A3A]/60 pl-4">
-                  <p className="eyebrow text-[#777064]">A good fit for</p>
-                  <p className="mt-2 text-sm leading-6 text-[#49453D]">{business.audience}</p>
-                </div>
-              )}
-            </section>
+            {(business.description || business.servicesSummary || business.audience || business.agentFacts.serves) && (
+              <section aria-labelledby="business-about">
+                <p className="eyebrow text-[#C45A3A]">The business</p>
+                <h2 id="business-about" className="mt-2 text-2xl font-semibold tracking-[-.05em]">About this business</h2>
+                {business.description && (
+                  <p className="serif mt-5 max-w-[720px] whitespace-pre-line text-xl leading-8 text-[#49453D]">
+                    {business.description}
+                  </p>
+                )}
+                {business.servicesSummary && (
+                  <div className="mt-5">
+                    <p className="eyebrow text-[#777064]">What they offer</p>
+                    <p className="mt-2 max-w-[720px] whitespace-pre-line text-sm leading-7 text-[#49453D]">
+                      {business.servicesSummary}
+                    </p>
+                  </div>
+                )}
+                {(business.agentFacts.serves || business.audience) && (
+                  <div className="mt-7 border-l-2 border-[#C45A3A]/60 pl-4">
+                    <p className="eyebrow text-[#777064]">A good fit for</p>
+                    <p className="mt-2 text-sm leading-6 text-[#49453D]">{business.agentFacts.serves || business.audience}</p>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {(services.length > 0 || products.length > 0) && (
+              <section className="border-t border-black/10 pt-7" aria-labelledby="business-catalogue">
+                <p className="eyebrow text-[#C45A3A]">Catalogue</p>
+                <h2 id="business-catalogue" className="mt-2 text-2xl font-semibold tracking-[-.05em]">Products and services</h2>
+                {services.length > 0 && (
+                  <div className="mt-6">
+                    <h3 className="text-sm font-semibold">Services</h3>
+                    <div className="mt-3 divide-y divide-black/10 border-y border-black/10">
+                      {services.map((service) => (
+                        <div key={service.id} className="flex items-start justify-between gap-4 py-4">
+                          <div className="min-w-0">
+                            <p className="text-sm font-semibold">{service.name}</p>
+                            {service.description && <p className="mt-1 text-xs leading-5 text-[#625D53]">{service.description}</p>}
+                            {!service.available && <p className="mt-2 text-[10px] font-semibold uppercase tracking-[.1em] text-[#9C493F]">Currently unavailable</p>}
+                          </div>
+                          {service.price && <p className="shrink-0 text-sm font-semibold">{service.price}</p>}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {products.length > 0 && (
+                  <div className="mt-8">
+                    <h3 className="text-sm font-semibold">Products</h3>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      {products.map((product) => (
+                        <div key={product.id} className="border border-black/10 bg-[#F2EDE4] p-4">
+                          {product.category && <p className="eyebrow text-[#777064]">{product.category}</p>}
+                          <p className="mt-1 text-sm font-semibold">{product.name}</p>
+                          {product.description && <p className="mt-2 text-xs leading-5 text-[#625D53]">{product.description}</p>}
+                          <div className="mt-4 flex items-center justify-between gap-3">
+                            <p className="text-sm font-semibold">{product.price || "Price on request"}</p>
+                            <span className={product.available ? "text-[10px] font-semibold uppercase tracking-[.1em] text-[#47745F]" : "text-[10px] font-semibold uppercase tracking-[.1em] text-[#9C493F]"}>
+                              {product.available ? "Available" : "Unavailable"}
+                            </span>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </section>
+            )}
+
+            {business.agentFacts.doesNotOffer && business.agentFacts.doesNotOffer.length > 0 && (
+              <section className="border-t border-black/10 pt-7" aria-labelledby="business-exclusions">
+                <p className="eyebrow text-[#777064]">Service boundaries</p>
+                <h2 id="business-exclusions" className="mt-2 text-xl font-semibold tracking-[-.04em]">What they don’t offer</h2>
+                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-[#625D53]">
+                  {business.agentFacts.doesNotOffer.map((item) => <li key={item}>{item}</li>)}
+                </ul>
+              </section>
+            )}
 
             <section className="border-t border-black/10 pt-7" aria-labelledby="business-practical">
               <p className="eyebrow text-[#C45A3A]">Plan your visit</p>
@@ -675,28 +827,31 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                   <MapPin size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
                   <div>
                     <p className="text-xs font-semibold">Location</p>
-                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{business.location || "Contact for location details"}</p>
+                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{locationText || "Contact for location details"}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Clock3 size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
                   <div>
                     <p className="text-xs font-semibold">Opening hours</p>
-                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{business.hours || "Contact the business to confirm opening hours."}</p>
+                    <p className="mt-1 whitespace-pre-line text-sm leading-6 text-[#625D53]">{hoursText || "Contact the business to confirm opening hours."}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <CalendarCheck size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
                   <div>
                     <p className="text-xs font-semibold">Booking</p>
-                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{business.booking === "yes" ? "Booking requests are welcome." : business.booking ? "Booking is not currently available." : "Contact the business to ask about booking."}</p>
+                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{bookingText}</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
-                  <Tag size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
+                  <Check size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
                   <div>
-                    <p className="text-xs font-semibold">Pricing</p>
-                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{business.price || "Ask the business for current pricing."}</p>
+                    <p className="text-xs font-semibold">Business verification</p>
+                    <p className="mt-1 text-sm leading-6 text-[#625D53]">{verificationText}</p>
+                    {business.agentFacts.verification.verifiedFields.length > 0 && (
+                      <p className="mt-1 text-xs text-[#777064]">Verified: {business.agentFacts.verification.verifiedFields.join(", ")}</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -707,7 +862,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
             <p className="eyebrow text-[#777064]">Get in touch</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-.05em]">Talk to the business</h2>
             <p className="mt-2 text-xs leading-5 text-[#625D53]">Ask a question, confirm availability or discuss what you need directly with the business.</p>
-            {business.contact ? (
+            {contact ? (
               <a
                 href={contact}
                 target={externalContact ? "_blank" : undefined}
@@ -716,15 +871,12 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                 className="surface-button mt-5 w-full !bg-[#C45A3A] hover:!bg-[#A9482D]"
                 data-testid="contact-business"
               >
-                Contact / enquire <ArrowUpRight size={15} />
+                {contactLabel} <ArrowUpRight size={15} />
               </a>
             ) : (
-              <button type="button" disabled className="surface-button mt-5 w-full cursor-not-allowed opacity-50" data-testid="contact-business">
-                Contact unavailable
-              </button>
-            )}
-            {business.booking && (
-              <p className="mt-3 text-xs text-[#625D53]">Booking requests {business.booking === "yes" ? "welcome" : "not available"}.</p>
+              <p className="mt-5 border border-black/10 px-3 py-3 text-xs text-[#777064]" data-testid="contact-business">
+                This business hasn’t added public contact details yet.
+              </p>
             )}
             <div className="mt-5 border-t border-black/10 pt-4">
               <p className="eyebrow text-[#777064]">Kiosk</p>
