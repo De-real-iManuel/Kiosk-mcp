@@ -1,0 +1,7 @@
+"use client";
+
+import { motion, useReducedMotion } from "framer-motion";
+
+function KioskMark(){return <svg viewBox="0 0 100 100" className="h-12 w-12 text-[#EDE7DC]" fill="currentColor" aria-hidden="true"><path fillRule="evenodd" d="M7 11h86v11H83v52c0 10.5-6.5 17-17 17H34c-10.5 0-17-6.5-17-17V22H7V11Zm28 34h30v19H35V45Z"/></svg>}
+
+export default function Loading(){const reduceMotion=useReducedMotion();return <main className="fixed inset-0 z-[100] grid place-items-center bg-[#12110F] text-[#EDE7DC]" role="status" aria-label="Loading Kiosk"><div className="flex flex-col items-center gap-7"><div className="relative grid h-24 w-24 place-items-center"><motion.div className="absolute inset-0 rounded-full border border-[#D96845]/20 border-t-[#D96845]" animate={reduceMotion?undefined:{rotate:360}} transition={{duration:1.5,repeat:Infinity,ease:"linear"}}/><motion.div className="absolute inset-2 rounded-full border border-white/10 border-b-[#8A8478]" animate={reduceMotion?undefined:{rotate:-360}} transition={{duration:2.4,repeat:Infinity,ease:"linear"}}/><KioskMark/></div><div className="text-center"><p className="kiosk-wordmark text-2xl">Kiosk</p><p className="eyebrow mt-3 text-[#8A8478]">Opening the window</p></div><div className="h-px w-36 overflow-hidden bg-white/10"><motion.div className="h-full w-1/3 bg-[#D96845]" animate={reduceMotion?undefined:{x:["-100%","300%"]}} transition={{duration:1.4,repeat:Infinity,ease:"easeInOut"}}/></div></div></main>}
