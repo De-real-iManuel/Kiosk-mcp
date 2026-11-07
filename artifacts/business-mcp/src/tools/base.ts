@@ -1,6 +1,6 @@
 import type { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { eq, and } from "drizzle-orm";
-import { db, businessServicesTable } from "@workspace/db";
+import { db, businessServicesTable, businessProductsTable } from "@workspace/db";
 import type { BusinessSession } from "../businessSession.js";
 import { recordToolEvent } from "../lib/recordEvent.js";
 
@@ -30,6 +30,35 @@ export function registerBaseTools(
               timezone: business.timezone,
               openingHours: business.openingHours,
               status: business.status,
+              agentFacts: {
+                offers: {
+                  summary: business.services || null,
+                  services: await db
+                    .select({ name: businessServicesTable.name, available: businessServicesTable.available })
+                    .from(businessServicesTable)
+                    .where(eq(businessServicesTable.businessId, bid)),
+                  products: await db
+                    .select({ name: businessProductsTable.name, available: businessProductsTable.available })
+                    .from(businessProductsTable)
+                    .where(eq(businessProductsTable.businessId, bid)),
+                },
+                serves: business.audience || null,
+                operatesIn: {
+                  location: business.location || null,
+                  city: business.city ?? null,
+                  country: business.country ?? null,
+                },
+                // Null means exclusions have not been provided, not that there are none.
+                doesNotOffer: null,
+                booking:
+                  business.booking === "yes"
+                    ? "accepted"
+                    : business.booking === "no"
+                      ? "not_accepted"
+                      : "unknown",
+                // Kiosk does not yet have a verification workflow.
+                verification: { status: "unverified", verifiedFields: [] },
+              },
             }),
           },
         ],
