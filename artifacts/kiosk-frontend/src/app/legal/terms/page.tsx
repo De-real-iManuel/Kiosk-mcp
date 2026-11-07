@@ -4,222 +4,36 @@ import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
   title: "Terms of Service — Kiosk",
+  description: "Terms governing use of the Kiosk platform by businesses and customers.",
 };
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="border-t border-white/10 pt-8 mt-8 first:mt-0 first:border-0 first:pt-0">
-      <h2 className="text-[18px] font-semibold tracking-[-.04em] text-[#EDE7DC] mb-4">
-        {title}
-      </h2>
-      <div className="space-y-3 text-[14px] leading-7 text-[#A49D90]">
-        {children}
-      </div>
-    </section>
-  );
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="mt-8 border-t border-white/10 pt-8 first:mt-0 first:border-0 first:pt-0"><h2 className="mb-4 text-[18px] font-semibold tracking-[-.04em] text-[#EDE7DC]">{title}</h2><div className="space-y-3 text-[14px] leading-7 text-[#A49D90]">{children}</div></section>;
 }
 
 export default function TermsPage() {
   return (
     <main className="grain min-h-[100dvh] bg-[#12110F] text-[#EDE7DC]">
-      <header className="border-b border-white/10 bg-[#12110F]">
-        <div className="mx-auto flex h-[74px] max-w-[1440px] items-center px-6 md:px-12">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs text-[#8A8478] transition-colors hover:text-[#EDE7DC]"
-          >
-            <ArrowLeft size={14} /> Back to Kiosk
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[760px] px-6 py-16 md:px-12 md:py-24">
-        <p className="eyebrow text-[#8A8478] mb-5">Legal</p>
-        <h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-semibold leading-[.92] tracking-[-.07em] text-[#EDE7DC]">
-          Terms of Service
-        </h1>
-        <p className="mono text-[11px] text-[#8A8478] mt-4 mb-12">
-          Effective date: October 2026 · Version 1.0
-        </p>
-
-        <div className="p-4 border border-[#8A8478]/30 bg-[#1C1A16] mb-10">
-          <p className="text-[12px] leading-6 text-[#A49D90]">
-            <strong className="text-[#EDE7DC]">Notice:</strong> These are
-            initial product terms prepared for the Kiosk platform. They have not
-            been reviewed by a qualified legal professional. Before commercial
-            use, these terms should be reviewed and updated by appropriate legal
-            counsel.
-          </p>
-        </div>
-
-        <Section title="1. About Kiosk">
-          <p>
-            Kiosk is a platform that allows business owners to create a
-            structured business profile and make that profile accessible to AI
-            agents through the Model Context Protocol (MCP). Kiosk provides the
-            infrastructure; it does not operate the businesses listed on it.
-          </p>
-          <p>
-            By using Kiosk, you agree to these terms. If you do not agree, do
-            not use the platform.
-          </p>
-        </Section>
-
-        <Section title="2. Account responsibility">
-          <p>
-            You are responsible for maintaining the security of your account
-            credentials. You must not share your account with others or use
-            another person&apos;s account without their permission.
-          </p>
-          <p>
-            You are responsible for all activity that occurs under your account.
-            If you believe your account has been compromised, you should take
-            steps to secure it immediately.
-          </p>
-          <p>
-            Kiosk uses Clerk for authentication. Your account credentials are
-            managed by Clerk subject to their own terms and privacy policy.
-          </p>
-        </Section>
-
-        <Section title="3. Business information">
-          <p>
-            When you create a business profile, you are responsible for the
-            accuracy of the information you provide. You must not submit false,
-            misleading, or fraudulent business information.
-          </p>
-          <p>
-            You represent that you have the right to publish the business
-            information you submit — including business name, description,
-            services, contact details, and opening hours.
-          </p>
-          <p>
-            Kiosk stores the information you provide in its database.
-            Information is processed in accordance with the Privacy Policy.
-          </p>
-        </Section>
-
-        <Section title="4. Publishing and discovery">
-          <p>
-            When you publish a business profile, that profile becomes
-            discoverable by AI agents and other users of the Kiosk platform.
-            Published profiles are publicly accessible through the Kiosk
-            marketplace and through the MCP endpoints provisioned by the
-            platform.
-          </p>
-          <p>
-            You can unpublish a business profile at any time. Unpublishing
-            removes the profile from public discovery. Published information may
-            have been accessed, cached, or indexed by third-party AI agents
-            before unpublishing.
-          </p>
-          <p>
-            Kiosk does not guarantee that published information will appear in
-            any particular search result or that AI agents will discover your
-            business.
-          </p>
-        </Section>
-
-        <Section title="5. AI agents and MCP integrations">
-          <p>
-            Kiosk provides MCP endpoints that allow compatible AI agents to
-            discover and retrieve information about published businesses. These
-            integrations are provided as-is.
-          </p>
-          <p>
-            Kiosk does not control the behaviour of third-party AI agents that
-            connect to the platform. The platform is not responsible for how
-            external AI systems interpret, use, or act on business information.
-          </p>
-          <p>
-            Order requests and booking requests recorded through Kiosk are
-            intents only. They do not constitute confirmed orders, guaranteed
-            bookings, or payment obligations. Businesses are responsible for
-            confirming and fulfilling any requests independently.
-          </p>
-          <p>
-            Kiosk does not process payments. Any financial transactions between
-            customers and businesses occur outside the platform.
-          </p>
-        </Section>
-
-        <Section title="6. Prohibited use">
-          <p>You must not use Kiosk to:</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li>
-              Submit false, misleading, or fraudulent business information
-            </li>
-            <li>Impersonate another business or person</li>
-            <li>
-              Publish content that is unlawful, defamatory, or infringes the
-              rights of others
-            </li>
-            <li>
-              Attempt to disrupt, damage, or gain unauthorised access to the
-              platform or its infrastructure
-            </li>
-            <li>
-              Use the platform in a way that violates applicable laws or
-              regulations in your jurisdiction
-            </li>
-            <li>
-              Scrape, extract, or systematically copy platform data without
-              authorisation
-            </li>
-          </ul>
-        </Section>
-
-        <Section title="7. Service availability and changes">
-          <p>
-            Kiosk is provided on a best-efforts basis. We do not guarantee
-            uninterrupted availability of the platform or its MCP endpoints.
-          </p>
-          <p>
-            We may modify, suspend, or discontinue any part of the platform at
-            any time. We will try to provide reasonable notice where possible,
-            but are not obligated to do so.
-          </p>
-          <p>
-            These terms may be updated from time to time. Continued use of the
-            platform after changes are published constitutes acceptance of the
-            updated terms.
-          </p>
-        </Section>
-
-        <Section title="8. Limitation of liability">
-          <p>
-            Kiosk is provided &quot;as is&quot; without warranties of any kind.
-            To the maximum extent permitted by applicable law, Kiosk and its
-            creators are not liable for any indirect, incidental, or
-            consequential damages arising from your use of the platform.
-          </p>
-        </Section>
-
-        <Section title="9. Contact">
-          <p>
-            This platform was built by Emmanuel Okechukwu Nwajari as part of the
-            Amazon Builders Challenge 2026. For questions about these terms,
-            open an issue on the{" "}
-            <a
-              href="https://github.com/De-real-iManuel/Kiosk-mcp"
-              className="text-[#EDE7DC] underline underline-offset-4"
-              target="_blank"
-              rel="noreferrer"
-            >
-              project repository
-            </a>
-            .
-          </p>
-        </Section>
-      </div>
-
-      <Footer variant="dark" />
+      <header className="border-b border-white/10"><div className="mx-auto flex h-[74px] max-w-[1440px] items-center px-6 md:px-12"><Link href="/" className="inline-flex items-center gap-2 text-xs text-[#8A8478] hover:text-[#D96845]"><ArrowLeft size={14}/> Back to Kiosk</Link></div></header>
+      <article className="mx-auto max-w-[760px] px-6 py-16 md:px-12 md:py-24">
+        <p className="eyebrow mb-5 text-[#8A8478]">Legal / Platform terms</p>
+        <h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-semibold leading-[.92] tracking-[-.07em]">Terms of Service</h1>
+        <p className="mono mt-4 mb-10 text-[11px] text-[#8A8478]">Effective date: 7 November 2026 · Draft for legal review</p>
+        <div className="mb-10 border border-[#D96845]/35 bg-[#1C1A16] p-4"><p className="text-[12px] leading-6 text-[#C5BFB2]"><strong className="text-[#EDE7DC]">Before launch:</strong> These working terms describe the current Kiosk product and operating model. They require review by qualified counsel before being treated as final legal terms. The operator's formal legal name, contact details, governing law and dispute process must be confirmed before commercial publication.</p></div>
+        <Section title="1. Who operates Kiosk and what these terms cover"><p>Kiosk is a platform that helps independent businesses publish structured information so that people and compatible AI assistants can discover and understand what those businesses offer. Kiosk currently operates through its founders as individuals and is not yet an incorporated company. In these terms, “Kiosk”, “we”, “us” and “our” refer to the founders operating the platform.</p><p>These terms apply to people who visit Kiosk, business owners who create or manage listings, and anyone using Kiosk's marketplace or integrations. By using the platform, you agree to these terms. If you do not agree, do not use the relevant service.</p></Section>
+        <Section title="2. Eligibility and accounts"><p>You must have the legal capacity required in your jurisdiction to use the service and create an account. You agree to provide accurate information, keep your sign-in credentials secure and notify us promptly if you suspect unauthorised access.</p><p>You are responsible for activity carried out through your account. Authentication is currently provided through Clerk and is also subject to the provider's terms and privacy practices.</p></Section>
+        <Section title="3. Business listings and your responsibilities"><p>Business owners are responsible for ensuring that they are authorised to represent the business and publish its name, descriptions, products, services, prices, location, opening hours, contact details, images and other submitted material.</p><p>You must keep listing information accurate and reasonably up to date. You must not misrepresent your identity, ownership, location, qualifications, availability, prices or ability to supply a product or service. You are responsible for the goods and services you offer, applicable licences, taxes, consumer obligations and communications with customers.</p><p>Publishing a listing does not mean Kiosk has independently audited, endorsed, licensed or guaranteed the business. Any verification indicator will have the meaning described in the Business Listing and Verification Policy.</p></Section>
+        <Section title="4. Public information and AI discovery"><p>When a business publishes a listing, the information designated as public may be displayed in the Kiosk marketplace and made available through Kiosk's discovery and business-specific MCP interfaces. This can include business name, description, category, services, products, location, opening hours and business contact channels.</p><p>Do not submit private, confidential or sensitive personal information in fields intended for public display. Compatible AI assistants and other third parties may retrieve, process, summarise or cache public listing information under their own terms. Kiosk cannot guarantee how third-party systems store or refresh information.</p><p>A business may request changes or unpublishing through the available account controls or by contacting us. Removal from Kiosk does not guarantee immediate deletion from third-party caches, search indexes, AI systems, screenshots or copies already made by others.</p></Section>
+        <Section title="5. AI assistants, enquiries and bookings"><p>Kiosk provides structured business information and technical interfaces that compatible AI assistants may use to discover businesses and help people contact them. AI-generated summaries or recommendations may be incomplete or inaccurate. Users should confirm important details, availability and prices directly with the business.</p><p>An enquiry, booking request or order request is not confirmed unless the business separately accepts it through an agreed channel. Kiosk does not currently provide customer checkout or collect payment from customers on behalf of listed businesses. Unless a specific Kiosk feature clearly states otherwise, customers pay businesses directly using methods arranged with those businesses.</p><p>Kiosk does not guarantee that an AI assistant will discover, recommend or correctly represent a listing, or that a business will respond, accept a request or fulfil a transaction.</p></Section>
+        <Section title="6. Business subscriptions and fees"><p>Kiosk may offer paid subscriptions or other paid business features. The applicable plan, price, billing period, included features, payment method, renewal terms and cancellation process will be presented to the business before it purchases or renews a paid service.</p><p>Business subscription fees paid to Kiosk are separate from payments customers make to businesses for goods or services. Unless expressly stated at checkout or in a written agreement, Kiosk does not collect, hold, settle or refund customer-to-business transaction funds.</p><p>Any taxes, payment processing charges, refunds, credits or cancellation rights will be handled as disclosed at the point of purchase and in accordance with applicable law. Do not rely on a draft pricing page as a payment offer until the relevant plan and payment flow are active.</p></Section>
+        <Section title="7. Acceptable use and enforcement"><p>You must not use Kiosk to publish unlawful, fraudulent, deceptive, defamatory or infringing content; impersonate another person or business; harass or harm others; upload malicious code; probe or disrupt platform systems; bypass access controls; scrape or harvest data in ways that violate these terms or applicable law; or use the platform to facilitate illegal activity.</p><p>We may investigate suspected misuse, restrict access, remove content, suspend or terminate accounts, or preserve relevant records where reasonably necessary to protect users, businesses, the platform or comply with law. Our Acceptable Use Policy provides additional detail.</p></Section>
+        <Section title="8. Third-party services and availability"><p>Kiosk relies on third-party infrastructure and providers, which may change over time. Their services are governed by their own terms. We do not control third-party AI assistants, messaging services, hosting providers or external business websites.</p><p>We work to keep Kiosk available and secure, but do not promise uninterrupted or error-free operation. Features may change, be temporarily unavailable or be discontinued. Where reasonably practicable, we will communicate material changes that affect paid services.</p></Section>
+        <Section title="9. Intellectual property and feedback"><p>You retain rights you hold in content you submit. You give Kiosk permission to host, store, format, display and make that content available as needed to operate the services you choose, including providing public listing information to compatible discovery interfaces. You must have the rights needed to grant this permission.</p><p>Kiosk's software, branding, interface and original materials are protected by applicable intellectual property laws. You may not copy or commercially exploit them except as permitted by law or with our written permission. If you send suggestions, you allow us to use them to improve the service without obligation to you.</p></Section>
+        <Section title="10. Suspension, termination and data"><p>You may stop using Kiosk and request account or listing deletion using the available account controls or by contacting us. Some records may need to be retained for security, fraud prevention, accounting, legal compliance or the establishment or defence of legal claims. Our Privacy Policy explains data handling and retention in more detail.</p><p>We may suspend or end access where these terms are breached, use creates a security or legal risk, or we discontinue a service. Where appropriate and lawful, we will provide notice and an opportunity to resolve the issue.</p></Section>
+        <Section title="11. Disclaimers and liability"><p>Kiosk is a discovery and business-information platform, not the seller or provider of goods and services offered by listed businesses. We are not a party to customer-business transactions and do not guarantee business quality, availability, safety, licensing, accuracy of third-party AI output or fulfilment.</p><p>To the extent permitted by applicable law, the platform is provided on an “as available” basis and implied warranties are limited or excluded where legally permitted. Nothing in these terms excludes liability that cannot lawfully be excluded, including liability for fraud or deliberate misconduct where exclusion is prohibited. Any additional limitation of liability must be reviewed and completed by counsel before commercial launch.</p></Section>
+        <Section title="12. Changes and contact"><p>We may update these terms as Kiosk's features and operating arrangements develop. We will update the effective date and, where required, give notice of material changes. Continued use after an updated version takes effect means you accept the revised terms, subject to applicable law.</p><p>For questions, complaints or legal notices, contact the Kiosk team at the temporary contact address to be published here. The official privacy and support email will be added once the Kiosk domain email is established.</p></Section>
+      </article>
+      <Footer variant="dark"/>
     </main>
   );
 }
