@@ -56,7 +56,7 @@ function Header({ paper = false }: { paper?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
   const base = paper ? "text-[#12110F]" : "text-[#EDE7DC]";
-  const muted = paper ? "text-[#777064]" : "text-[#A49D90]";
+  const muted = paper ? "text-[#12110F]" : "text-[#EDE7DC]";
   const dropdown = paper ? "border-black/10 bg-[#EDE7DC]" : "border-white/10 bg-[#1C1A16]";
   const item = "block rounded-sm px-4 py-3 text-[13px] transition-colors hover:bg-[#D96845]/10 hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845]";
   return (
@@ -65,7 +65,7 @@ function Header({ paper = false }: { paper?: boolean }) {
         <Wordmark dark={paper}/>
         <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
           <div className="group relative">
-            <button type="button" className={`inline-flex items-center gap-2 py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>For Businesses <span aria-hidden="true">⌄</span></button>
+            <button type="button" className={`inline-flex cursor-pointer items-center gap-2 cursor-pointer py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>For Businesses <span aria-hidden="true">⌄</span></button>
             <div className={`invisible absolute left-0 top-full w-60 translate-y-2 border p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 ${dropdown}`}>
               <Link className={item} href="/create">Create a Kiosk</Link>
               <Link className={item} href="/#how-it-works">How it works</Link>
