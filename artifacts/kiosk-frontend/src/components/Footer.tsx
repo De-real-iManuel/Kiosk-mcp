@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Github, ArrowUpRight } from "lucide-react";
+
 
 function FooterMark() {
   return (
@@ -67,8 +67,7 @@ export function Footer({ variant = "dark" }: FooterProps) {
           <div>
             <p className={`eyebrow mb-4 ${muted}`}>Connect</p>
             <p className={`text-[13px] leading-6 ${muted}`}>Our social channels are coming soon. Follow along as we build.</p>
-            <p className={`mt-3 inline-flex items-center gap-2 text-[12px] ${muted}`}><Github size={13}/> Open-source work</p>
-            <Link href="https://github.com/De-real-iManuel/Kiosk-mcp" target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[12px] text-[#D96845] hover:underline">View repository <ArrowUpRight size={12}/></Link>
+            <p className={`mt-3 text-[12px] leading-6 ${muted}`}>Follow Kiosk on X, LinkedIn, Instagram and YouTube. Our official channels will be added here soon.</p>
           </div>
         </div>
         <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
