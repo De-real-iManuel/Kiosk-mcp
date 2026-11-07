@@ -707,18 +707,22 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
             <p className="eyebrow text-[#777064]">Get in touch</p>
             <h2 className="mt-2 text-xl font-semibold tracking-[-.05em]">Talk to the business</h2>
             <p className="mt-2 text-xs leading-5 text-[#625D53]">Ask a question, confirm availability or discuss what you need directly with the business.</p>
-            <a
-              href={contact}
-              target={externalContact ? "_blank" : undefined}
-              rel={externalContact ? "noreferrer" : undefined}
-              onClick={() => event.mutate({ slug, data: { eventType: "contact_click" } })}
-              className="surface-button mt-5 w-full !bg-[#C45A3A] hover:!bg-[#A9482D]"
-              data-testid="contact-business"
-              aria-disabled={!business.contact}
-            >
-              Contact / enquire <ArrowUpRight size={15} />
-            </a>
-            {!business.contact && <p className="mt-2 text-[11px] text-[#9C493F]">Contact details have not been added yet.</p>}
+            {business.contact ? (
+              <a
+                href={contact}
+                target={externalContact ? "_blank" : undefined}
+                rel={externalContact ? "noreferrer" : undefined}
+                onClick={() => event.mutate({ slug, data: { eventType: "contact_click" } })}
+                className="surface-button mt-5 w-full !bg-[#C45A3A] hover:!bg-[#A9482D]"
+                data-testid="contact-business"
+              >
+                Contact / enquire <ArrowUpRight size={15} />
+              </a>
+            ) : (
+              <button type="button" disabled className="surface-button mt-5 w-full cursor-not-allowed opacity-50" data-testid="contact-business">
+                Contact unavailable
+              </button>
+            )}
             {business.booking && (
               <p className="mt-3 text-xs text-[#625D53]">Booking requests {business.booking === "yes" ? "welcome" : "not available"}.</p>
             )}
