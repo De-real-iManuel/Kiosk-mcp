@@ -54,98 +54,62 @@ function Wordmark({ dark = false }: { dark?: boolean }) {
 function Header({ paper = false }: { paper?: boolean }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const { isLoaded, isSignedIn } = useAuth();
+  const base = paper ? "text-[#12110F]" : "text-[#EDE7DC]";
+  const muted = paper ? "text-[#777064]" : "text-[#A49D90]";
+  const dropdown = paper ? "border-black/10 bg-[#EDE7DC]" : "border-white/10 bg-[#1C1A16]";
+  const item = "block rounded-sm px-4 py-3 text-[13px] transition-colors hover:bg-[#D96845]/10 hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845]";
   return (
-    <header
-      className={`relative z-10 border-b ${paper ? "border-black/10 bg-[#EDE7DC] text-[#12110F]" : "border-white/10 bg-[#12110F] text-[#EDE7DC]"}`}
-    >
-      <div className="mx-auto flex h-[74px] max-w-[1440px] items-center justify-between px-6 md:px-12">
-        <Wordmark dark={paper} />
-        <div className="hidden items-center gap-10 md:flex">
-          <span
-            className={`eyebrow ${paper ? "text-[#777064]" : "text-[#8A8478]"}`}
-          >
-            Your business, found by everyone
-          </span>
-          <Link
-            href="/marketplace"
-            className={`eyebrow transition-colors ${paper ? "text-[#777064] hover:text-[#12110F]" : "text-[#8A8478] hover:text-[#EDE7DC]"}`}
-            data-testid="nav-marketplace"
-          >
-            Marketplace
-          </Link>
-          {isLoaded &&
-            (isSignedIn ? (
-              <Link
-                href="/dashboard"
-                className={`eyebrow transition-colors ${paper ? "text-[#777064] hover:text-[#12110F]" : "text-[#8A8478] hover:text-[#EDE7DC]"}`}
-                data-testid="nav-dashboard"
-              >
-                Your Kiosks
-              </Link>
-            ) : (
-              <Link
-                href="/sign-in"
-                className={`eyebrow transition-colors ${paper ? "text-[#777064] hover:text-[#12110F]" : "text-[#8A8478] hover:text-[#EDE7DC]"}`}
-                data-testid="nav-sign-in"
-              >
-                Sign in
-              </Link>
-            ))}
-          <Link
-            href="/create"
-            className={`group inline-flex items-center gap-2 border px-4 py-[11px] text-[12px] font-semibold transition-colors ${paper ? "border-[#12110F] hover:bg-[#12110F] hover:text-[#EDE7DC]" : "border-[#EDE7DC]/45 hover:bg-[#EDE7DC] hover:text-[#12110F]"}`}
-          >
-            Create your Kiosk <ArrowUpRight size={14} strokeWidth={1.7} />
-          </Link>
-        </div>
-        <button
-          className="flex h-10 w-10 items-center justify-center md:hidden"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? "Close menu" : "Open menu"}
-        >
-          {menuOpen ? <X size={20} /> : <Menu size={20} />}
-        </button>
+    <header className={`relative z-30 border-b ${paper ? "border-black/10 bg-[#EDE7DC]" : "border-white/10 bg-[#12110F]"} ${base}`}>
+      <div className="mx-auto flex min-h-[72px] max-w-[1440px] items-center justify-between gap-5 px-5 sm:px-6 md:px-12">
+        <Wordmark dark={paper}/>
+        <nav aria-label="Main navigation" className="hidden items-center gap-7 lg:flex">
+          <div className="group relative">
+            <button type="button" className={`inline-flex items-center gap-2 py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>For Businesses <span aria-hidden="true">⌄</span></button>
+            <div className={`invisible absolute left-0 top-full w-60 translate-y-2 border p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 ${dropdown}`}>
+              <Link className={item} href="/create">Create a Kiosk</Link>
+              <Link className={item} href="/#how-it-works">How it works</Link>
+              {isLoaded && isSignedIn && <Link className={item} href="/dashboard">Business dashboard</Link>}
+            </div>
+          </div>
+          <div className="group relative">
+            <button type="button" className={`inline-flex items-center gap-2 py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>For Customers <span aria-hidden="true">⌄</span></button>
+            <div className={`invisible absolute left-0 top-full w-60 translate-y-2 border p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 ${dropdown}`}>
+              <Link className={item} href="/marketplace">Explore the marketplace</Link>
+              <Link className={item} href="/#for-customers">Discover with AI</Link>
+              <Link className={item} href="/#customer-questions">Common questions</Link>
+            </div>
+          </div>
+          <div className="group relative">
+            <button type="button" className={`inline-flex items-center gap-2 py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>Resources <span aria-hidden="true">⌄</span></button>
+            <div className={`invisible absolute left-0 top-full w-60 translate-y-2 border p-2 opacity-0 shadow-2xl transition-all duration-200 group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100 ${dropdown}`}>
+              <Link className={item} href="/journal">Kiosk Journal</Link>
+              <Link className={item} href="/about">About Kiosk</Link>
+              <Link className={item} href="/legal/terms">Terms and policies</Link>
+            </div>
+          </div>
+          <Link href="/pricing" className={`py-5 text-[12px] font-medium transition-colors hover:text-[#D96845] focus-visible:outline focus-visible:outline-2 focus-visible:outline-[#D96845] ${muted}`}>Pricing</Link>
+        </nav>
+        <button className="flex h-10 w-10 items-center justify-center lg:hidden" onClick={() => setMenuOpen(!menuOpen)} aria-label={menuOpen ? "Close navigation" : "Open navigation"} aria-expanded={menuOpen}>{menuOpen ? <X size={20}/> : <Menu size={20}/>}</button>
       </div>
-      {menuOpen && (
-        <div
-          className={`absolute left-0 right-0 top-full border-b px-6 py-5 md:hidden ${paper ? "border-black/10 bg-[#EDE7DC]" : "border-white/10 bg-[#12110F]"}`}
-        >
-          <Link
-            onClick={() => setMenuOpen(false)}
-            href="/marketplace"
-            className="flex items-center justify-between py-2 text-sm"
-          >
-            Marketplace <ArrowUpRight size={15} />
-          </Link>
-          {isLoaded &&
-            (isSignedIn ? (
-              <Link
-                onClick={() => setMenuOpen(false)}
-                href="/dashboard"
-                className="flex items-center justify-between py-2 text-sm"
-              >
-                Your Kiosks <ArrowUpRight size={15} />
-              </Link>
-            ) : (
-              <Link
-                onClick={() => setMenuOpen(false)}
-                href="/sign-in"
-                className="flex items-center justify-between py-2 text-sm"
-              >
-                Sign in <ArrowUpRight size={15} />
-              </Link>
-            ))}
-          <Link
-            onClick={() => setMenuOpen(false)}
-            href="/create"
-            className="flex items-center justify-between py-2 text-sm"
-          >
-            Create your Kiosk <ArrowUpRight size={15} />
-          </Link>
-        </div>
-      )}
+      {menuOpen && <nav aria-label="Mobile navigation" className={`border-t px-5 py-4 lg:hidden ${dropdown}`}>
+        <details className="border-b border-white/10"><summary className="cursor-pointer list-none py-3 text-sm font-medium">For Businesses <span className="float-right">＋</span></summary><Link onClick={()=>setMenuOpen(false)} className={item} href="/create">Create a Kiosk</Link><Link onClick={()=>setMenuOpen(false)} className={item} href="/#how-it-works">How it works</Link>{isLoaded&&isSignedIn&&<Link onClick={()=>setMenuOpen(false)} className={item} href="/dashboard">Business dashboard</Link>}</details>
+        <details className="border-b border-white/10"><summary className="cursor-pointer list-none py-3 text-sm font-medium">For Customers <span className="float-right">＋</span></summary><Link onClick={()=>setMenuOpen(false)} className={item} href="/marketplace">Explore marketplace</Link><Link onClick={()=>setMenuOpen(false)} className={item} href="/#for-customers">Discover with AI</Link><Link onClick={()=>setMenuOpen(false)} className={item} href="/#customer-questions">Common questions</Link></details>
+        <details className="border-b border-white/10"><summary className="cursor-pointer list-none py-3 text-sm font-medium">Resources <span className="float-right">＋</span></summary><Link onClick={()=>setMenuOpen(false)} className={item} href="/journal">Kiosk Journal</Link><Link onClick={()=>setMenuOpen(false)} className={item} href="/about">About Kiosk</Link><Link onClick={()=>setMenuOpen(false)} className={item} href="/legal/terms">Terms and policies</Link></details>
+        <Link onClick={()=>setMenuOpen(false)} href="/pricing" className="block py-4 text-sm font-medium hover:text-[#D96845]">Pricing</Link>
+      </nav>}
     </header>
   );
+}
+
+function ThreeDimensionalMark({ reduceMotion }: { reduceMotion: boolean }) {
+  return <div className="relative mx-auto aspect-square w-full max-w-[350px]" style={{perspective:"1000px"}}>
+    <div className="absolute inset-[8%] rounded-full border border-[#D96845]/25"/>
+    <div className="absolute right-[9%] top-[16%] h-2 w-2 rounded-full bg-[#D96845] shadow-[0_0_22px_#D9684580]"/>
+    <motion.div className="absolute inset-0" style={{transformStyle:"preserve-3d"}} animate={reduceMotion?undefined:{rotateY:[0,360]}} transition={reduceMotion?undefined:{duration:9,repeat:Infinity,ease:"linear"}}>
+      {[...Array(7)].map((_,i)=><Mark key={i} className="absolute inset-0 h-full w-full text-[#D96845]" style={{transform:`translateZ(${-i*1.5}px)`}}/>)}
+      <Mark className="absolute inset-0 h-full w-full text-[#EDE7DC]" style={{transform:"translateZ(1px)",filter:"drop-shadow(12px 18px 20px rgba(0,0,0,.28))"}}/>
+    </motion.div>
+  </div>;
 }
 
 const appear: Variants = {
@@ -241,7 +205,7 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
       <div className="mx-auto max-w-[1440px] px-6 py-24 md:px-12 md:py-32">
         {/* Header */}
         <motion.div {...reveal} className="max-w-[640px]">
-          <p className="eyebrow mb-5 text-[#C8873A]">How it works</p>
+          <p className="eyebrow mb-5 text-[#D96845]">How it works</p>
           <h2 className="text-[clamp(2.4rem,5.5vw,4.6rem)] font-semibold leading-[.92] tracking-[-.075em] text-[#EDE7DC]">
             Your business,
             <br />
@@ -554,22 +518,7 @@ export function LandingPage() {
                 })}
             className="relative mx-auto w-[min(62vw,310px)] md:mx-0 md:w-[min(29vw,350px)]"
           >
-            {reduceMotion ? (
-              <Mark className="block w-full" />
-            ) : (
-              <motion.div
-                animate={{ rotate: [0, 15, 0, -15, 0] }}
-                transition={{
-                  duration: 6,
-                  repeat: Infinity,
-                  ease: "easeInOut",
-                }}
-                className="block w-full"
-                style={{ transformOrigin: "center center" }}
-              >
-                <Mark className="block w-full" />
-              </motion.div>
-            )}
+            <ThreeDimensionalMark reduceMotion={!!reduceMotion} />
             <span className="eyebrow absolute -bottom-9 left-0 text-[#8A8478]">
               The window
             </span>
@@ -693,8 +642,39 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section id="for-customers" className="border-b border-white/10 bg-[#171613]">
+        <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-20 md:grid-cols-2 md:items-center md:px-12 md:py-28">
+          <motion.div {...reveal}>
+            <p className="eyebrow mb-5 text-[#D96845]">For customers</p>
+            <h2 className="max-w-xl text-[clamp(2.5rem,5vw,4.8rem)] font-semibold leading-[.94] tracking-[-.07em]">Find the business. Then reach the people behind it.</h2>
+            <p className="serif mt-6 max-w-xl text-[clamp(1.35rem,2.4vw,2rem)] leading-[1.3] text-[#C5BFB2]">Ask a compatible AI assistant for a nearby service, a particular product or a business that fits what you need. Kiosk helps the assistant discover structured information from participating businesses.</p>
+            <div className="mt-8 space-y-4">
+              {[["01 / ASK","Describe what you need in your own words."],["02 / DISCOVER","The assistant can search business profiles and compare the information available."],["03 / CONNECT","Review the details and contact the business directly to confirm availability, prices and next steps."]].map(([n,t])=><div key={n} className="flex gap-4 border-t border-white/10 pt-4"><span className="mono min-w-24 text-[10px] text-[#D96845]">{n}</span><p className="text-sm leading-6 text-[#D0C9BC]">{t}</p></div>)}
+            </div>
+            <p className="mt-6 text-xs leading-5 text-[#8A8478]">Kiosk helps with discovery. The business confirms bookings, orders, prices and fulfilment directly. Customer checkout is not currently processed by Kiosk.</p>
+          </motion.div>
+          <motion.div {...reveal} className="relative min-h-[360px] overflow-hidden border border-white/10 bg-[#1C1A16]">
+            <img src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1200&q=85" alt="Customer and shop owner completing an in-person transaction" loading="lazy" className="absolute inset-0 h-full w-full object-cover opacity-75"/>
+            <div className="absolute inset-0 bg-gradient-to-t from-[#12110F]/90 via-transparent to-transparent"/>
+            <div className="absolute bottom-6 left-6 right-6 border border-white/15 bg-[#12110F]/85 p-5 backdrop-blur-sm">
+              <p className="eyebrow text-[#D96845]">Discovery to connection</p>
+              <p className="serif mt-2 text-2xl leading-tight text-[#EDE7DC]">A useful answer should lead to a real local business.</p>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
+      <section id="customer-questions" className="border-b border-white/10 bg-[#12110F]">
+        <div className="mx-auto grid max-w-[1440px] gap-12 px-6 py-20 md:grid-cols-[.8fr_1.2fr] md:px-12 md:py-24">
+          <div><p className="eyebrow mb-5 text-[#D96845]">Questions, answered</p><h2 className="text-4xl font-semibold tracking-[-.06em]">What to know before using Kiosk.</h2></div>
+          <div className="divide-y divide-white/10">
+            {[["Does Kiosk sell the products or services listed?","No. Businesses create and manage their own listings. Customers arrange purchases and services directly with the business."],["Does Kiosk guarantee that an AI assistant will recommend a business?","No. Kiosk makes structured business information available to compatible systems, but each AI assistant decides what to retrieve and show."],["Are bookings automatically confirmed?","No. A request is not a confirmed booking until the business accepts it directly."],["Does Kiosk process customer payments?","Not currently. Customers pay businesses through the payment methods those businesses arrange. Business subscriptions to Kiosk are separate."],["Can a business update its details?","Business owners can manage their listing through the account and dashboard features available to them."]].map(([q,a])=><details key={q} className="group py-5"><summary className="flex cursor-pointer list-none items-center justify-between gap-5 text-base font-medium text-[#EDE7DC] hover:text-[#D96845]">{q}<span className="text-xl text-[#D96845] transition-transform group-open:rotate-45">＋</span></summary><p className="max-w-2xl pt-4 text-sm leading-7 text-[#A49D90]">{a}</p></details>)}
+          </div>
+        </div>
+      </section>
+
       {/* How it works */}
-      <KioskMcpSection reduceMotion={!!reduceMotion} />
+      <div id="how-it-works"><KioskMcpSection reduceMotion={!!reduceMotion} /></div>
 
       <section className="bg-[#EDE7DC] text-[#12110F]">
         <div className="mx-auto flex max-w-7xl flex-col gap-12 px-6 py-20 md:flex-row md:items-end md:justify-between">
