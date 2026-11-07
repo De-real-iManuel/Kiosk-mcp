@@ -136,6 +136,7 @@ export const DashboardBusinessSchema = z.object({
   price: z.string().nullable().optional(),
   booking: z.string().nullable().optional(),
   categoryId: z.string().uuid().nullable(),
+  categoryName: z.string().nullable(),
   description: z.string().nullable(),
   city: z.string().nullable(),
   country: z.string().nullable(),
@@ -263,8 +264,8 @@ export const MarketplaceBusinessProfileResponse = z.object({
   slug: z.string(),
   businessName: z.string(),
   description: z.string().nullable(),
-  // Legacy business facts remain part of the public profile until migrated.
-  services: z.string(),
+  // Legacy written summary is distinct from the structured catalogue below.
+  servicesSummary: z.string().nullable(),
   audience: z.string().nullable(),
   booking: z.enum(["yes", "no"]).nullable(),
   agentFacts: z.object({
