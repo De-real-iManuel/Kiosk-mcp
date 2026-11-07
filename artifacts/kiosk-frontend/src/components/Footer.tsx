@@ -1,165 +1,79 @@
 "use client";
 
 import Link from "next/link";
-import { Github, ExternalLink } from "lucide-react";
+import { Github, ArrowUpRight } from "lucide-react";
 
 function FooterMark() {
   return (
-    <svg
-      className="inline-block w-[15px] shrink-0"
-      viewBox="0 0 100 100"
-      fill="currentColor"
-      aria-hidden="true"
-      focusable="false"
-    >
-      <path
-        fillRule="evenodd"
-        d="M7 11h86v11H83v52c0 10.5-6.5 17-17 17H34c-10.5 0-17-6.5-17-17V22H7V11Zm28 34h30v19H35V45Z"
-      />
+    <svg className="inline-block w-[15px] shrink-0" viewBox="0 0 100 100" fill="currentColor" aria-hidden="true" focusable="false">
+      <path fillRule="evenodd" d="M7 11h86v11H83v52c0 10.5-6.5 17-17 17H34c-10.5 0-17-6.5-17-17V22H7V11Zm28 34h30v19H35V45Z" />
     </svg>
   );
 }
 
-function FooterWordmark({ muted }: { muted: string }) {
-  return (
-    <div className="inline-flex items-center gap-3">
-      <FooterMark />
-      <span className="kiosk-wordmark text-[23px] leading-none">Kiosk</span>
-    </div>
-  );
+function FooterWordmark() {
+  return <div className="inline-flex items-center gap-3"><FooterMark /><span className="kiosk-wordmark text-[23px] leading-none">Kiosk</span></div>;
 }
 
 const PRODUCT_LINKS = [
   { label: "Marketplace", href: "/marketplace" },
-  { label: "Create a Kiosk", href: "/create" },
-  { label: "Dashboard", href: "/dashboard" },
+  { label: "For businesses", href: "/create" },
+  { label: "Pricing", href: "/pricing" },
 ];
-
 const COMPANY_LINKS = [
-  { label: "About", href: "#" },
-  { label: "Blog", href: "#" },
-  { label: "Careers", href: "#" },
+  { label: "About Kiosk", href: "/about" },
+  { label: "Kiosk Journal", href: "/journal" },
 ];
-
 const LEGAL_LINKS = [
   { label: "Terms of Service", href: "/legal/terms" },
   { label: "Privacy Policy", href: "/legal/privacy" },
   { label: "Cookie Policy", href: "/legal/cookies" },
+  { label: "Business Listing Policy", href: "/legal/business-listing" },
+  { label: "Acceptable Use", href: "/legal/acceptable-use" },
 ];
 
-interface FooterProps {
-  variant?: "dark" | "paper";
-}
+interface FooterProps { variant?: "dark" | "paper"; }
 
 export function Footer({ variant = "dark" }: FooterProps) {
   const isDark = variant === "dark";
-
-  const bg = isDark
-    ? "bg-[#12110F] text-[#EDE7DC]"
-    : "bg-[#EDE7DC] text-[#12110F] border-t border-black/10";
+  const bg = isDark ? "bg-[#12110F] text-[#EDE7DC]" : "bg-[#EDE7DC] text-[#12110F] border-t border-black/10";
   const muted = isDark ? "text-[#8A8478]" : "text-[#777064]";
-  const linkHover = isDark ? "hover:opacity-100" : "hover:opacity-100";
   const divider = isDark ? "border-white/10" : "border-black/10";
-
   return (
     <footer className={`${bg} px-6 py-14 md:px-12 md:py-16`}>
       <div className="mx-auto max-w-[1440px]">
-        {/* Top row */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <FooterWordmark muted={muted} />
-          <p className={`eyebrow ${muted}`}>The stall for agent commerce</p>
+        <div className="flex flex-col gap-5 border-b pb-9 sm:flex-row sm:items-end sm:justify-between ${divider}">
+          <div>
+            <FooterWordmark />
+            <p className={`mt-4 max-w-[360px] text-[13px] leading-6 ${muted}`}>Helping independent businesses become easier for AI assistants to find and understand.</p>
+          </div>
+          <p className={`eyebrow ${muted}`}>Local businesses belong in the AI economy.</p>
         </div>
-
-        {/* Link columns */}
-        <div
-          className={`mt-10 grid grid-cols-2 gap-x-6 gap-y-8 border-t pt-10 sm:grid-cols-4 ${divider}`}
-        >
-          {/* Product */}
-          <div>
-            <p className={`eyebrow mb-4 ${muted}`}>Product</p>
-            <ul className="space-y-0">
-              {PRODUCT_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <Link
-                    href={href}
-                    className={`block text-[13px] leading-8 opacity-70 transition-opacity ${linkHover}`}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Company */}
-          <div>
-            <p className={`eyebrow mb-4 ${muted}`}>Company</p>
-            <ul className="space-y-0">
-              {COMPANY_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <Link
-                    href={href}
-                    className={`block text-[13px] leading-8 opacity-70 transition-opacity ${linkHover}`}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Legal */}
-          <div>
-            <p className={`eyebrow mb-4 ${muted}`}>Legal</p>
-            <ul className="space-y-0">
-              {LEGAL_LINKS.map(({ label, href }) => (
-                <li key={label}>
-                  <Link
-                    href={href}
-                    className={`block text-[13px] leading-8 opacity-70 transition-opacity ${linkHover}`}
-                  >
-                    {label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Connect */}
+        <div className={`mt-9 grid grid-cols-2 gap-x-6 gap-y-8 border-b pb-10 sm:grid-cols-4 ${divider}`}>
+          {[
+            { title: "Product", links: PRODUCT_LINKS },
+            { title: "Company", links: COMPANY_LINKS },
+            { title: "Legal", links: LEGAL_LINKS },
+          ].map((group) => (
+            <div key={group.title}>
+              <p className={`eyebrow mb-4 ${muted}`}>{group.title}</p>
+              <ul className="space-y-1">
+                {group.links.map((link) => (
+                  <li key={link.href}><Link href={link.href} className={`inline-flex min-h-8 items-center text-[13px] opacity-75 transition-colors hover:text-[#D96845] hover:opacity-100 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D96845]`}>{link.label}</Link></li>
+                ))}
+              </ul>
+            </div>
+          ))}
           <div>
             <p className={`eyebrow mb-4 ${muted}`}>Connect</p>
-            <ul className="space-y-0">
-              <li>
-                <a
-                  href="#"
-                  className={`inline-flex items-center gap-2 text-[13px] leading-8 opacity-70 transition-opacity ${linkHover}`}
-                >
-                  Twitter / X <ExternalLink size={12} />
-                </a>
-              </li>
-              <li>
-                <a
-                  href="#"
-                  className={`inline-flex items-center gap-2 text-[13px] leading-8 opacity-70 transition-opacity ${linkHover}`}
-                >
-                  GitHub <Github size={12} />
-                </a>
-              </li>
-            </ul>
+            <p className={`text-[13px] leading-6 ${muted}`}>Our social channels are coming soon. Follow along as we build.</p>
+            <p className={`mt-3 inline-flex items-center gap-2 text-[12px] ${muted}`}><Github size={13}/> Open-source work</p>
+            <Link href="https://github.com/De-real-iManuel/Kiosk-mcp" target="_blank" rel="noreferrer" className="mt-2 inline-flex items-center gap-1 text-[12px] text-[#D96845] hover:underline">View repository <ArrowUpRight size={12}/></Link>
           </div>
         </div>
-
-        {/* Bottom bar */}
-        <div
-          className={`mt-10 flex flex-col gap-2 border-t pt-6 sm:flex-row sm:items-center sm:justify-between ${divider}`}
-        >
-          <p className={`text-[11px] ${muted}`}>
-            © {new Date().getFullYear()} Kiosk Technologies Ltd. All rights
-            reserved.
-          </p>
-          <span className={`mono text-[10px] ${muted}`}>
-            A first step, not a deployment.
-          </span>
+        <div className="mt-7 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+          <p className={`text-[11px] ${muted}`}>© {new Date().getFullYear()} Kiosk. All rights reserved.</p>
+          <p className={`max-w-[540px] text-[10px] leading-5 ${muted}`}>Kiosk is currently operated by its founders as individuals and is not yet an incorporated company.</p>
         </div>
       </div>
     </footer>
