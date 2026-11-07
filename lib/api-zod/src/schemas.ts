@@ -263,6 +263,29 @@ export const MarketplaceBusinessProfileResponse = z.object({
   slug: z.string(),
   businessName: z.string(),
   description: z.string().nullable(),
+  // Legacy business facts remain part of the public profile until migrated.
+  servicesSummary: z.string().nullable(),
+  audience: z.string().nullable(),
+  booking: z.enum(["yes", "no"]).nullable(),
+  agentFacts: z.object({
+    offers: z.object({
+      summary: z.string().nullable(),
+      services: z.array(z.object({ name: z.string(), available: z.boolean() })),
+      products: z.array(z.object({ name: z.string(), available: z.boolean() })),
+    }),
+    serves: z.string().nullable(),
+    operatesIn: z.object({
+      location: z.string().nullable(),
+      city: z.string().nullable(),
+      country: z.string().nullable(),
+    }),
+    doesNotOffer: z.array(z.string()).nullable(),
+    booking: z.enum(["accepted", "not_accepted", "unknown"]),
+    verification: z.object({
+      status: z.enum(["unverified", "partially_verified", "verified"]),
+      verifiedFields: z.array(z.string()),
+    }),
+  }),
   categoryId: z.string().uuid().nullable(),
   city: z.string().nullable(),
   country: z.string().nullable(),
