@@ -198,7 +198,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     slug: business.slug,
     businessName: business.businessName,
     description: business.description ?? null,
-    servicesSummary: business.services || null,
+    services: business.services || "",
     audience: business.audience || null,
     booking: business.booking === "yes" || business.booking === "no" ? business.booking : null,
     agentFacts: {
