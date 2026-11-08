@@ -8,6 +8,12 @@ import { createBusinessMcpServer } from "./server.js";
 import { resolveBusinessSession } from "./businessSession.js";
 import { registerBusinessTools } from "./tools/register.js";
 import { mcpRateLimiter } from "./lib/rateLimiter.js";
+import {
+  beginMcpRequest,
+  instrumentMcpServer,
+  runWithMcpRequestContext,
+  setMcpRequestBusinessId,
+} from "@workspace/db";
 
 const logger = pino({ name: "kiosk-business-mcp" });
 
@@ -60,6 +66,7 @@ export function createApp(): express.Express {
   ): Promise<void> => {
     const slug = req.params["slug"] as string;
     const reqId = (req as Request & { id?: string }).id ?? "unknown";
+    const telemetryContext = beginMcpRequest(req, res, "business_mcp");
 
     // For GET requests (client capability probe), resolve session to verify
     // the slug is valid before handing off to the transport.
