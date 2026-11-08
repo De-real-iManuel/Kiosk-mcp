@@ -36,6 +36,20 @@ function headerValue(value: string | string[] | undefined): string | null {
   return Array.isArray(value) ? (value[0] ?? null) : (value ?? null);
 }
 
+function inferClientFromUserAgent(userAgent: string | null): string | null {
+  if (!userAgent) return null;
+  const patterns: Array<[RegExp, string]> = [
+    [/chatgpt|openai/i, "ChatGPT / OpenAI client"],
+    [/claude/i, "Claude client"],
+    [/cursor/i, "Cursor"],
+    [/windsurf/i, "Windsurf"],
+    [/visual studio code|vscode/i, "Visual Studio Code"],
+    [/continue/i, "Continue"],
+    [/zed/i, "Zed"],
+  ];
+  return patterns.find(([pattern]) => pattern.test(userAgent))?.[1] ?? null;
+}
+
 /**
  * Persist one inbound HTTP request. MCP clientInfo and User-Agent are
  * self-asserted metadata, never cryptographic proof of vendor identity.
@@ -51,7 +65,7 @@ export function beginMcpRequest(
   const body = asObject(req.body);
   const params = asObject(body?.params);
   const clientInfo = asObject(params?.clientInfo);
-  const clientName =
+  const reportedClientName =
     typeof clientInfo?.name === "string" ? clientInfo.name.slice(0, 160) : null;
   const clientVersion =
     typeof clientInfo?.version === "string"
@@ -65,6 +79,15 @@ export function beginMcpRequest(
       : null;
   const userAgent = headerValue(req.headers["user-agent"]);
   const protocolVersion = headerValue(req.headers["mcp-protocol-version"]);
+  const clientName =
+    reportedClientName ?? inferClientFromUserAgent(userAgent);
+  const clientIdentitySource = reportedClientName
+    ? "mcp_client_info"
+    : clientName
+      ? "user_agent_pattern"
+      : userAgent
+        ? "user_agent_only"
+        : null;
   const context: McpRequestContext = {
     requestId,
     endpoint,
@@ -88,11 +111,7 @@ export function beginMcpRequest(
       userAgent: userAgent?.slice(0, 512) ?? null,
       protocolVersion: protocolVersion?.slice(0, 80) ?? null,
       clientIdentityStatus: context.clientIdentityStatus,
-      clientIdentitySource: clientName
-        ? "mcp_client_info"
-        : userAgent
-          ? "user_agent_only"
-          : null,
+      clientIdentitySource,
       requestBytes: body ? Buffer.byteLength(JSON.stringify(body)) : null,
       outcome: "started",
     })
