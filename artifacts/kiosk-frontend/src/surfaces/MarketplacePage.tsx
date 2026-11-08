@@ -300,7 +300,8 @@ function getLiveBusinessStatus(
   openingHours: MarketplaceCardData["openingHours"],
   timezone: string | null | undefined,
 ): "open" | "closed" | null {
-  if (!openingHours) return null;
+  // Without the business's timezone, the viewer's local clock could produce a false status.
+  if (!openingHours || !timezone) return null;
 
   const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
   let weekday: string;
