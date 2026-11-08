@@ -1,4 +1,4 @@
-import express, { type Request, type Response } from "express";
+import express, { type Request, type Response, type RequestHandler } from "express";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import pinoHttp from "pino-http";
@@ -13,6 +13,7 @@ import {
   instrumentMcpServer,
   runWithMcpRequestContext,
   setMcpRequestBusinessId,
+  type McpRequestContext,
 } from "@workspace/db";
 
 const logger = pino({ name: "kiosk-business-mcp" });
@@ -60,13 +61,21 @@ export function createApp(): express.Express {
   // POST /mcp/business/:slug  — actual JSON-RPC tool calls
   // DELETE /mcp/business/:slug — session termination
 
+  const beginBusinessTelemetry: RequestHandler = (req, res, next) => {
+    (req as Request & { mcpTelemetryContext?: McpRequestContext }).mcpTelemetryContext =
+      beginMcpRequest(req, res, "business_mcp");
+    next();
+  };
+
   const businessMcpHandler = async (
     req: Request,
     res: Response,
   ): Promise<void> => {
     const slug = req.params["slug"] as string;
     const reqId = (req as Request & { id?: string }).id ?? "unknown";
-    const telemetryContext = beginMcpRequest(req, res, "business_mcp");
+    const telemetryContext =
+      (req as Request & { mcpTelemetryContext?: McpRequestContext }).mcpTelemetryContext ??
+      beginMcpRequest(req, res, "business_mcp");
 
     // For GET requests (client capability probe), resolve session to verify
     // the slug is valid before handing off to the transport.
@@ -116,9 +125,9 @@ export function createApp(): express.Express {
     }
   };
 
-  app.get("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
-  app.post("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
-  app.delete("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
+  app.get("/mcp/business/:slug", beginBusinessTelemetry, mcpRateLimiter, businessMcpHandler);
+  app.post("/mcp/business/:slug", beginBusinessTelemetry, mcpRateLimiter, businessMcpHandler);
+  app.delete("/mcp/business/:slug", beginBusinessTelemetry, mcpRateLimiter, businessMcpHandler);
 
   return app;
 }
