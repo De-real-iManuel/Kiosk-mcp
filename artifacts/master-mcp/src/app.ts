@@ -4,6 +4,7 @@ import pinoHttp from "pino-http";
 import pino from "pino";
 import { createMcpServer } from "./server.js";
 import { beginMcpRequest, runWithMcpRequestContext } from "@workspace/db";
+import { beginMcpRequest, runWithMcpRequestContext } from "@workspace/db";
 
 const logger = pino({ name: "kiosk-master-mcp" });
 
@@ -35,6 +36,7 @@ export function createApp(): express.Express {
   // DELETE /mcp — session termination
 
   app.get("/mcp", async (req: Request, res: Response): Promise<void> => {
+    const context = beginMcpRequest(req, res, "master_mcp");
     const accept = req.headers["accept"] ?? "";
     if (accept.includes("text/event-stream")) {
       // Proper SSE probe — let the transport handle it
@@ -44,7 +46,9 @@ export function createApp(): express.Express {
       });
       try {
         await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
+        await runWithMcpRequestContext(context, () =>
+          transport.handleRequest(req, res, req.body),
+        );
       } catch (err) {
         logger.error({ err }, "Error handling GET /mcp");
         if (!res.headersSent)
@@ -64,13 +68,16 @@ export function createApp(): express.Express {
   });
 
   app.post("/mcp", async (req: Request, res: Response): Promise<void> => {
+    const context = beginMcpRequest(req, res, "master_mcp");
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
     try {
       await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await runWithMcpRequestContext(context, () =>
+        transport.handleRequest(req, res, req.body),
+      );
     } catch (err) {
       logger.error({ err }, "Error handling POST /mcp");
       if (!res.headersSent)
@@ -78,7 +85,8 @@ export function createApp(): express.Express {
     }
   });
 
-  app.delete("/mcp", async (_req: Request, res: Response): Promise<void> => {
+  app.delete("/mcp", async (req: Request, res: Response): Promise<void> => {
+    beginMcpRequest(req, res, "master_mcp");
     res.status(200).json({ ok: true });
   });
 
