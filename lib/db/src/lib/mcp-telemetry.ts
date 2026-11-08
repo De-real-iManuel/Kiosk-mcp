@@ -1,5 +1,6 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
+import { eq } from "drizzle-orm";
 import { db, mcpRequestEventsTable, mcpToolEventsTable } from "../index.js";
 
 type JsonObject = Record<string, unknown>;
@@ -109,7 +110,7 @@ export function beginMcpRequest(
             durationMs: Math.max(0, Date.now() - startedAt),
             completedAt: new Date(),
           })
-          .where((await import("drizzle-orm")).eq(mcpRequestEventsTable.requestId, requestId));
+          .where(eq(mcpRequestEventsTable.requestId, requestId));
       } catch (error) {
         console.error("[mcp-telemetry] Failed to complete request event", error);
       }
@@ -134,7 +135,7 @@ export function setMcpRequestBusinessId(
   void db
     .update(mcpRequestEventsTable)
     .set({ businessId })
-    .where((awaitImportEq()) as never)
+    .where(eq(mcpRequestEventsTable.requestId, contextRequestId(businessId)))
     .catch(() => {});
 }
 
