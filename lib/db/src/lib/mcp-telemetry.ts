@@ -24,6 +24,7 @@ export interface McpRequestContext {
 }
 
 const requestContext = new AsyncLocalStorage<McpRequestContext>();
+const requestInsertPromises = new WeakMap<McpRequestContext, Promise<unknown>>();
 
 function asObject(value: unknown): JsonObject | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -99,6 +100,8 @@ export function beginMcpRequest(
       console.error("[mcp-telemetry] Failed to persist request start", error);
     });
 
+  requestInsertPromises.set(context, insertPromise);
+
   res.once("finish", () => {
     void insertPromise.then(async () => {
       try {
@@ -132,17 +135,16 @@ export function setMcpRequestBusinessId(
   businessId: string,
 ): void {
   context.businessId = businessId;
-  void db
-    .update(mcpRequestEventsTable)
-    .set({ businessId })
-    .where(eq(mcpRequestEventsTable.requestId, contextRequestId(businessId)))
-    .catch(() => {});
-}
-
-// Kept as a static import target to avoid putting request payloads or tool args
-// into telemetry. Only allowlisted execution metadata is persisted.
-function awaitImportEq(): unknown {
-  return undefined;
+  const inserted = requestInsertPromises.get(context) ?? Promise.resolve();
+  void inserted.then(() =>
+    db
+      .update(mcpRequestEventsTable)
+      .set({ businessId })
+      .where(eq(mcpRequestEventsTable.requestId, context.requestId))
+      .catch((error: unknown) => {
+        console.error("[mcp-telemetry] Failed to attach business to request", error);
+      }),
+  );
 }
 
 /**
@@ -168,10 +170,19 @@ export function instrumentMcpServer(
         try {
           const result = await handler(...handlerArgs);
           succeeded = !(asObject(result)?.isError === true);
+          if (!succeeded) errorCode = "TOOL_RETURNED_ERROR";
           const resultObject = asObject(result);
-          resultCount = Array.isArray(resultObject?.content)
-            ? resultObject.content.length
+          const firstText = Array.isArray(resultObject?.content)
+            ? asObject(resultObject.content[0])?.text
             : null;
+          if (typeof firstText === "string") {
+            try {
+              const parsed: unknown = JSON.parse(firstText);
+              resultCount = Array.isArray(parsed) ? parsed.length : null;
+            } catch {
+              resultCount = null;
+            }
+          }
           return result;
         } catch (error) {
           const err = asObject(error);
