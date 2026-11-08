@@ -16,3 +16,5 @@ export const db = drizzle(pool, { schema });
 export * from "./schema/index.js";
 export * from "./lib/slug.js";
 export * from "./lib/hours.js";
+
+export * from "./lib/mcp-telemetry.js";
