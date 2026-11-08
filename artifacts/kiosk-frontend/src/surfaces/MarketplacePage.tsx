@@ -287,30 +287,132 @@ function BusinessGlyph({
   );
 }
 
+type MarketplaceCardData = Business & {
+  mcpEndpoint?: string | null;
+  capabilities?: string[];
+  city?: string | null;
+  country?: string | null;
+  timezone?: string | null;
+  openingHours?: Record<string, { open: string; close: string; closed: boolean } | null> | null;
+};
+
+function getLiveBusinessStatus(
+  openingHours: MarketplaceCardData["openingHours"],
+  timezone: string | null | undefined,
+): "open" | "closed" | null {
+  if (!openingHours) return null;
+
+  const days = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  let weekday: string;
+  let minutes: number;
+
+  try {
+    const parts = new Intl.DateTimeFormat("en-GB", {
+      ...(timezone ? { timeZone: timezone } : {}),
+      weekday: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+      hourCycle: "h23",
+    }).formatToParts(new Date());
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+    weekday = values.weekday.toLowerCase();
+    minutes = Number(values.hour) * 60 + Number(values.minute);
+  } catch {
+    return null;
+  }
+
+  const dayIndex = days.indexOf(weekday);
+  if (dayIndex < 0) return null;
+
+  const today = openingHours[weekday];
+  const previousDay = openingHours[days[(dayIndex + 6) % 7]];
+  const toMinutes = (value: string) => {
+    const [hours, mins] = value.split(":").map(Number);
+    return hours * 60 + mins;
+  };
+
+  // Account for businesses whose opening hours run past midnight.
+  if (previousDay && !previousDay.closed) {
+    const previousOpen = toMinutes(previousDay.open);
+    const previousClose = toMinutes(previousDay.close);
+    if (previousClose <= previousOpen && minutes < previousClose) return "open";
+  }
+
+  if (!today) return null;
+  if (today.closed) return "closed";
+
+  const openAt = toMinutes(today.open);
+  const closeAt = toMinutes(today.close);
+  const isOpen = closeAt <= openAt
+    ? minutes >= openAt || minutes < closeAt
+    : minutes >= openAt && minutes < closeAt;
+
+  return isOpen ? "open" : "closed";
+}
+
 function BusinessCard({ business }: { business: Business }) {
+  const listing = business as MarketplaceCardData;
+  const liveStatus = getLiveBusinessStatus(listing.openingHours, listing.timezone);
+  const agentReady = Boolean(listing.mcpEndpoint);
+  const primaryLocation = listing.city || listing.location || "Local business";
+  const secondaryLocation =
+    listing.location && listing.city && listing.location.toLowerCase() !== listing.city.toLowerCase()
+      ? listing.location
+      : listing.country && listing.city
+        ? listing.country
+        : "";
+
   return (
     <Link
       href={`/marketplace/business?slug=${encodeURIComponent(business.slug)}`}
       data-testid={`business-card-${business.id}`}
-      className="group flex h-full flex-col border border-black/10 bg-[#F2EDE4] p-5 transition-all duration-300 hover:-translate-y-1 hover:border-[#D96845]/50 hover:shadow-[0_16px_40px_rgba(18,17,15,.08)] sm:p-6"
+      className="group flex h-full min-h-[300px] flex-col border border-black/10 bg-[#F2EDE4] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#D96845]/50 hover:shadow-[0_16px_40px_rgba(18,17,15,.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C45A3A] sm:p-7"
     >
-      <div className="flex items-start justify-between gap-4">
-        <div className="flex min-w-0 items-start gap-4">
-          <BusinessGlyph business={business} />
-          <div className="min-w-0">
-            <p className="eyebrow truncate text-[#777064]">{business.location}</p>
-            <h2 className="mt-2 text-xl font-semibold leading-tight tracking-[-.055em] group-hover:text-[#A94F35]">
-              {business.businessName}
-            </h2>
-          </div>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          {agentReady && (
+            <span className="inline-flex items-center gap-1.5 border border-[#47745F]/25 bg-[#47745F]/[.08] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.12em] text-[#47745F]">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#47745F]" />
+              MCP available
+            </span>
+          )}
+          <span className="eyebrow text-[9px] text-[#777064]">Kiosk window</span>
         </div>
-        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full border border-black/10 transition-colors group-hover:border-[#D96845] group-hover:bg-[#D96845] group-hover:text-[#EDE7DC]" aria-hidden="true">
-          <ArrowUpRight size={16} />
-        </span>
+        {liveStatus && (
+          <span
+            className={liveStatus === "open"
+              ? "inline-flex items-center gap-1.5 rounded-full bg-[#47745F]/10 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.1em] text-[#47745F]"
+              : "inline-flex items-center gap-1.5 rounded-full bg-black/[.055] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.1em] text-[#777064]"}
+            aria-label={liveStatus === "open" ? "Currently open" : "Currently closed"}
+          >
+            <span className={liveStatus === "open" ? "h-1.5 w-1.5 rounded-full bg-[#47745F]" : "h-1.5 w-1.5 rounded-full bg-[#8A8478]"} />
+            {liveStatus === "open" ? "Open now" : "Closed"}
+          </span>
+        )}
       </div>
-      <p className="mt-5 line-clamp-3 min-h-[4.5rem] text-sm leading-6 text-[#625D53]">
-        {business.services || "Contact this business to learn more about its services."}
+
+      <div className="mt-6 flex items-start gap-4">
+        <BusinessGlyph business={business} />
+        <div className="min-w-0 flex-1 pt-1">
+          <h2 className="text-[22px] font-semibold leading-[1.05] tracking-[-.06em] transition-colors group-hover:text-[#A94F35] sm:text-2xl">
+            {business.businessName}
+          </h2>
+          <p className="mt-2 flex items-center gap-1.5 text-[11px] font-medium text-[#625D53]">
+            <MapPin size={12} className="shrink-0 text-[#A94F35]" />
+            <span className="truncate">{primaryLocation}</span>
+          </p>
+          {secondaryLocation && (
+            <p className="mt-1 truncate pl-[18px] text-[10px] text-[#8A8478]">
+              {secondaryLocation}
+            </p>
+          )}
+        </div>
+      </div>
+
+      <p className="mt-6 line-clamp-3 min-h-[4.5rem] text-[13px] leading-6 text-[#625D53]">
+        {business.description || business.services || "Open this Kiosk window to explore the business and its offerings."}
       </p>
+
       <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-black/10 pt-4 text-[11px] text-[#625D53]">
         {business.hours && (
           <span className="inline-flex min-w-0 items-start gap-1.5">
@@ -325,14 +427,18 @@ function BusinessCard({ business }: { business: Business }) {
           </span>
         )}
       </div>
+
       {business.booking === "yes" && (
         <p className="mt-4 inline-flex items-center gap-1.5 text-[10px] font-semibold uppercase tracking-[.12em] text-[#47745F]">
           <CalendarCheck size={13} /> Booking requests welcome
         </p>
       )}
-      <span className="mt-auto inline-flex items-center gap-2 pt-5 text-xs font-semibold">
-        View business details
-        <ArrowRight size={14} className="transition-transform group-hover:translate-x-1" />
+
+      <span className="mt-auto flex items-center justify-between gap-3 border-t border-black/10 pt-5 text-xs font-semibold">
+        <span>Open in Kiosk</span>
+        <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#C45A3A] text-[#F7F3EC] transition-transform duration-300 group-hover:translate-x-1">
+          <ArrowUpRight size={16} />
+        </span>
       </span>
     </Link>
   );
@@ -499,7 +605,7 @@ export function MarketplacePage() {
             <button className="surface-link ml-1" onClick={() => refetch()}>Try again</button>
           </div>
         ) : data?.length ? (
-          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3" data-testid="marketplace-results">
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3" data-testid="marketplace-results">
             {data.map((business) => <BusinessCard key={business.id} business={business} />)}
           </div>
         ) : (
