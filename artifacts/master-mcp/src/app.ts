@@ -4,7 +4,6 @@ import pinoHttp from "pino-http";
 import pino from "pino";
 import { createMcpServer } from "./server.js";
 import { beginMcpRequest, runWithMcpRequestContext } from "@workspace/db";
-import { beginMcpRequest, runWithMcpRequestContext } from "@workspace/db";
 
 const logger = pino({ name: "kiosk-master-mcp" });
 
