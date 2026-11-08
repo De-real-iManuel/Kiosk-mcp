@@ -6,6 +6,7 @@ import {
   text,
   timestamp,
   uuid,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { z } from "zod/v4";
 import { businessesTable } from "./businesses.js";
@@ -26,7 +27,7 @@ export const adminUsersTable = pgTable(
     lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   },
   (table) => [
-    index("admin_users_identity_idx").on(table.identityProvider, table.identitySubject),
+    uniqueIndex("admin_users_identity_unique").on(table.identityProvider, table.identitySubject),
     index("admin_users_status_role_idx").on(table.status, table.role),
   ],
 );
