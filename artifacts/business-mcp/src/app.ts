@@ -14,6 +14,12 @@ import {
   runWithMcpRequestContext,
   setMcpRequestBusinessId,
 } from "@workspace/db";
+import {
+  beginMcpRequest,
+  instrumentMcpServer,
+  runWithMcpRequestContext,
+  setMcpRequestBusinessId,
+} from "@workspace/db";
 
 const logger = pino({ name: "kiosk-business-mcp" });
 
@@ -67,6 +73,7 @@ export function createApp(): express.Express {
     const slug = req.params["slug"] as string;
     const reqId = (req as Request & { id?: string }).id ?? "unknown";
     const telemetryContext = beginMcpRequest(req, res, "business_mcp");
+    const telemetryContext = beginMcpRequest(req, res, "business_mcp");
 
     // For GET requests (client capability probe), resolve session to verify
     // the slug is valid before handing off to the transport.
@@ -81,8 +88,10 @@ export function createApp(): express.Express {
       return;
     }
 
-    // Fire-and-forget session_start event on POST only (not on GET probe)
-    if (req.method === "POST") {
+    setMcpRequestBusinessId(telemetryContext, session.business.id);
+
+    // A session_start is recorded only for MCP initialization, not every stateless POST.
+    if (req.method === "POST" && (req.body as { method?: string } | undefined)?.method === "initialize") {
       db.insert(agentEventsTable)
         .values({
           businessId: session.business.id,
@@ -94,6 +103,7 @@ export function createApp(): express.Express {
     }
 
     const server = createBusinessMcpServer(slug);
+    instrumentMcpServer(server, "business_mcp", session.business.id);
     registerBusinessTools(server, session);
 
     const transport = new StreamableHTTPServerTransport({
@@ -102,7 +112,9 @@ export function createApp(): express.Express {
 
     try {
       await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await runWithMcpRequestContext(telemetryContext, () =>
+        transport.handleRequest(req, res, req.body),
+      );
     } catch (err) {
       logger.error({ err, slug, reqId }, "Error handling MCP request");
       if (!res.headersSent) {
