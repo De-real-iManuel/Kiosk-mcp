@@ -179,7 +179,7 @@ Capabilities map directly to available tools on the business MCP.`,
 initiate a direct MCP session. Use this as the last step in the discovery flow when
 you are ready to interact with a specific business.`,
     {
-      slug: z.string().describe("Business slug identifier"),
+      slug: z.string().min(1).max(120).describe("Business slug identifier"),
     },
     async ({ slug }) => {
       const business = await findPublishedBusiness(slug);
