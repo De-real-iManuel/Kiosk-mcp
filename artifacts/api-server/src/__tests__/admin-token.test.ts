@@ -87,10 +87,10 @@ describe("Cognito admin access-token verification", () => {
     const calls = vi.fn();
     vi.stubGlobal("fetch", vi.fn(async () => {
       calls();
-      return new Response(JSON.stringify({ keys: [jwk] }), { status: 200 });
+      return new Response(JSON.stringify({ keys: calls.mock.calls.length === 1 ? [] : [jwk] }), { status: 200 });
     }));
     const { token } = makeToken();
     await expect(verifyAdminAccessToken(token)).resolves.toMatchObject({ sub: "admin-subject-123" });
-    expect(calls).toHaveBeenCalled();
+    expect(calls).toHaveBeenCalledTimes(2);
   });
 });
