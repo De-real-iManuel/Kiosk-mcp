@@ -59,3 +59,38 @@ Do not run schema push against production without a reviewed backup, a staging v
 3. Add audited business state-change services; no direct unlogged writes from UI.
 4. Build admin screens only after API permissions and telemetry semantics are tested.
 5. Add retention/partitioning/aggregation based on observed traffic volume.
+
+## Implemented admin API and console scaffold
+
+The API server now mounts a separate `/api/admin` router. It does not use Clerk's merchant identity as an authorization grant. Admin requests require a Cognito User Pool access token in the Authorization Bearer header, validated against the configured issuer's JWKS and the configured app-client ID. The token must have `token_use=access`; the immutable `sub` and issuer must match an active row in `admin_users`. There is no self-registration or email-domain fallback.
+
+Required API environment:
+- `ADMIN_OIDC_ISSUER`: exact Cognito User Pool issuer, e.g. `https://cognito-idp.<region>.amazonaws.com/<user-pool-id>`.
+- `ADMIN_OIDC_AUDIENCE`: Cognito app client ID. Cognito access tokens carry this as `client_id`.
+
+Required frontend environment:
+- `NEXT_PUBLIC_ADMIN_OIDC_DOMAIN`: Cognito hosted UI domain, e.g. `https://<prefix>.auth.<region>.amazoncognito.com`.
+- `NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID`: same public app client ID.
+- `NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI`: exact registered callback, e.g. `https://<kiosk-host>/internal-admin`.
+- `NEXT_PUBLIC_API_URL`: existing API origin.
+
+Configure the Cognito app client as a public client with no client secret, authorization-code grant, PKCE S256, and only the `openid email profile` scopes. Register the exact redirect URI. Disable public self-signup and require MFA in the user pool. Provision each operator out-of-band and add their `sub`, exact issuer, email, role, and active status to `admin_users`. Do not activate a user by email alone.
+
+The browser obtains a short-lived access token through the hosted UI authorization-code + PKCE flow and keeps it in memory only. Reloading the page requires signing in again; no refresh token or long-lived browser storage is used. The frontend console lives at `/internal-admin`; the page itself contains no admin data until the API validates the token and resolves the provisioned admin record.
+
+Initial read APIs:
+- `GET /api/admin/me`: current provisioned admin and effective permissions.
+- `GET /api/admin/overview`: 24-hour/7-day MCP request and tool counts, published business count, top observed clients/tools, recent tool errors.
+- `GET /api/admin/telemetry/requests` and `/api/admin/telemetry/tools`: request and tool-event views.
+- `GET /api/admin/businesses`, `/api/admin/tickets`, `/api/admin/incidents`, and `/api/admin/audit`: role-gated operational views.
+
+These are read-only foundations. Business suspension, publish overrides, verification decisions, ticket mutations, incident updates, and admin provisioning are intentionally not exposed until their service-layer validation and mandatory audit writes are implemented. The dashboard hides sections the current role cannot access, while the API independently enforces every permission. The current browser token exchange and API authorization have not yet been integration-tested against a real Cognito pool.
+
+## Remaining implementation gates
+
+1. Configure a dedicated Cognito user pool/app client and provision the first operator out of band.
+2. Add tests for JWT signature, issuer, app-client ID, expiry, token type, key rotation, inactive users, and role permissions.
+3. Run workspace typecheck/build and resolve any compile issues.
+4. Add write services that atomically persist business/support/incident state changes and audit events.
+5. Apply the schema in staging only, then verify dashboard data against real MCP traffic.
+6. Add retention/aggregation and operational alerts before high-volume production use.
