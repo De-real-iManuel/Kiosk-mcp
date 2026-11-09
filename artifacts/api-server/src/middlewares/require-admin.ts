@@ -11,7 +11,7 @@ const ROLE_PERMISSIONS: Record<AdminRole, readonly AdminPermission[]> = {
   support_agent: ["business.read", "support.manage"],
   verification_reviewer: ["business.read", "verification.decide"],
 };
-interface JwtClaims { iss?: string; sub?: string; exp?: number; token_use?: string; client_id?: string }
+interface JwtClaims { iss?: string; sub?: string; exp?: number; nbf?: number; token_use?: string; client_id?: string }
 interface JwkSet { keys: Array<JsonWebKey & { kid?: string; use?: string }> }
 let cachedKeys: JwkSet | undefined;
 let keysFetchedAt = 0;
@@ -32,7 +32,7 @@ async function getSigningKey(kid: string, issuer: string, forceRefresh = false):
   return createPublicKey({ key: jwk, format: "jwk" });
 }
 
-async function verifyAdminAccessToken(token: string): Promise<JwtClaims> {
+export async function verifyAdminAccessToken(token: string): Promise<JwtClaims> {
   const issuer = process.env.ADMIN_OIDC_ISSUER;
   const audience = process.env.ADMIN_OIDC_AUDIENCE;
   if (!issuer || !audience) throw new Error("Admin identity provider is not configured");
@@ -42,7 +42,7 @@ async function verifyAdminAccessToken(token: string): Promise<JwtClaims> {
   if (header.alg !== "RS256" || !header.kid) throw new Error("Unsupported access token");
   const claims = decodePart<JwtClaims>(parts[1]!);
   if (claims.iss !== issuer || claims.token_use !== "access") throw new Error("Invalid access token issuer or type");
-  if (!claims.sub || !claims.exp || claims.exp <= Math.floor(Date.now() / 1000)) throw new Error("Expired or incomplete access token");
+  const now = Math.floor(Date.now() / 1000);\n  if (!claims.sub || !claims.exp || claims.exp <= now) throw new Error("Expired or incomplete access token");\n  if (claims.nbf !== undefined && claims.nbf > now) throw new Error("Access token is not active yet");
   if (claims.client_id !== audience) throw new Error("Access token was issued to another client");
   const key = await getSigningKey(header.kid, issuer);
   const valid = verifySignature("RSA-SHA256", Buffer.from(`${parts[0]}.${parts[1]}`), key, Buffer.from(parts[2]!, "base64url"));
