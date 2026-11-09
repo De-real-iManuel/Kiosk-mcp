@@ -111,3 +111,5 @@ This is PostgreSQL JSONB data, not browser-only state or a separate survey provi
 The CI test job now starts an ephemeral PostgreSQL 16 service, sets a test-only `DATABASE_URL`, applies the Drizzle schema with `pnpm --filter @workspace/db push`, and runs the database package tests against the created tables. Integration tests write/read/update/delete test MCP request/tool events, verify the unique admin issuer+subject constraint, and verify that onboarding feedback answers persist in `agent_events.metadata`. This database is ephemeral CI infrastructure; it does not connect to staging or production.
 
 Formatting checks compare TypeScript files changed against the PR base branch rather than failing on unrelated pre-existing formatting in untouched legacy files.
+
+The merchant publish flow intentionally continues if the feedback request fails, so publication is not blocked by an optional survey. The dashboard now displays an explicit error toast in that case. Only successful `POST /businesses/:id/feedback` requests create a row; failed submissions will not appear in the internal Feedback view.
