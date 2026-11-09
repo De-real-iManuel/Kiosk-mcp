@@ -310,7 +310,7 @@ jobs:
             echo "No changed TypeScript files to format-check."
             exit 0
           fi
-          printf '%s\\0' "${files[@]}" | xargs -0 pnpm prettier --check --ignore-path .prettierignore
+          printf '%s\0' "${files[@]}" | xargs -0 pnpm prettier --check --ignore-path .prettierignore
 
   # ── 7. Docker Build Verify (no AWS needed) ──────────────────────────────────
   # Builds all four Docker images locally to verify the Dockerfiles are valid.
