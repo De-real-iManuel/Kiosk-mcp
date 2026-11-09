@@ -49,7 +49,7 @@ Use for service-based businesses before suggesting a booking or inquiry.
 Returns an empty array if the business has no available services.
 Returns null if the business is not found or is not published.`,
     {
-      slug: z.string().describe("The unique slug of the business"),
+      slug: z.string().min(1).max(120).describe("The unique slug of the business"),
     },
     async ({ slug }) => {
       const business = await findPublishedBusiness(slug);
@@ -98,6 +98,8 @@ Returns null if the business is not found or is not published.`,
       slug: z.string().describe("The unique slug of the business"),
       category: z
         .string()
+        .trim()
+        .max(100)
         .optional()
         .describe("Filter by product sub-category"),
     },
@@ -155,6 +157,7 @@ Returns is_open, current_day_hours, and next_open_at (ISO-8601) when closed.`,
       slug: z.string().describe("The unique slug of the business"),
       iso_time: z
         .string()
+        .max(40)
         .describe(
           'Current UTC time in ISO-8601 format (e.g. "2024-06-01T14:30:00Z")',
         ),
@@ -173,10 +176,17 @@ Returns is_open, current_day_hours, and next_open_at (ISO-8601) when closed.`,
         };
       }
 
+      const referenceTime = new Date(iso_time);
+      if (Number.isNaN(referenceTime.getTime())) {
+        return {
+          content: [{ type: "text", text: JSON.stringify({ error: "Invalid ISO-8601 time" }) }],
+          isError: true,
+        };
+      }
       const result = isBusinessOpen(
         business.openingHours,
         business.timezone,
-        new Date(iso_time),
+        referenceTime,
       );
 
       return { content: [{ type: "text", text: JSON.stringify(result) }] };
