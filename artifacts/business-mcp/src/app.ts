@@ -25,8 +25,12 @@ const logger = pino({ name: "kiosk-business-mcp" });
 export function createApp(): express.Express {
   const app = express();
 
+  // Business MCP is reachable through one AWS Application Load Balancer.
+  // The ECS task security group must not permit direct public ingress.
+  app.set("trust proxy", 1);
+
   // Parse JSON bodies before MCP transport handles requests
-  app.use(express.json());
+  app.use(express.json({ limit: "64kb" }));
 
   // Attach a unique request ID to every request for structured log correlation
   app.use((req: Request, _res: Response, next) => {
