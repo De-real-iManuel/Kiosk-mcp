@@ -11,8 +11,13 @@ export interface BusinessSession {
 export async function resolveBusinessSession(
   slug: string,
 ): Promise<BusinessSession> {
-  if (!slug)
+  if (
+    !slug ||
+    slug.length > 120 ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
+  ) {
     throw Object.assign(new Error("Business not found"), { status: 404 });
+  }
 
   const [business] = await db
     .select()
