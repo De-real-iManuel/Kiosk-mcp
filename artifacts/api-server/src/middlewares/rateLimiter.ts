@@ -84,3 +84,14 @@ export const writeLimiter = createLimiter({
   limit: 30,
   message: { error: "Too many requests. Please slow down." },
 });
+
+
+/**
+ * Admin endpoints include signature verification and database lookups. Keep
+ * unauthenticated probing bounded separately from normal marketplace traffic.
+ */
+export const adminLimiter = createLimiter({
+  windowMs: 60_000,
+  limit: 30,
+  message: { error: "Too many admin requests. Please slow down." },
+});
