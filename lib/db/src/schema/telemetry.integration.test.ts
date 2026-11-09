@@ -4,12 +4,14 @@ import { afterAll, describe, expect, it } from "vitest";
 import { db } from "../index.js";
 import {
   adminUsersTable,
+  agentEventsTable,
   mcpRequestEventsTable,
   mcpToolEventsTable,
 } from "./index.js";
 
 const requestIds: string[] = [];
-const adminIds: string[] = [];\nconst feedbackIds: string[] = [];
+const adminIds: string[] = [];
+const feedbackIds: string[] = [];
 
 afterAll(async () => {
   if (requestIds.length) {
@@ -32,12 +34,20 @@ afterAll(async () => {
         ),
       );
   }
-  if (feedbackIds.length) {\n    await db.delete(agentEventsTable).where(\n      and(...feedbackIds.map((id) => eq(agentEventsTable.id, id))),\n    );\n  }\n  if (adminIds.length) {
+
+  if (feedbackIds.length) {
+    await db
+      .delete(agentEventsTable)
+      .where(
+        and(...feedbackIds.map((id) => eq(agentEventsTable.id, id))),
+      );
+  }
+
+  if (adminIds.length) {
     await db
       .delete(adminUsersTable)
       .where(and(...adminIds.map((id) => eq(adminUsersTable.id, id))));
   }
-  await pool.end();
 });
 
 describe("PostgreSQL telemetry and admin schema integration", () => {
@@ -108,28 +118,34 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
     });
   });
 
-
   it("stores onboarding feedback answers as agent-event JSON metadata", async () => {
-    const [event] = await db.insert(agentEventsTable).values({
-      businessId: null,
-      eventType: "onboarding_feedback",
-      toolName: "feedback_form",
-      metadata: {
-        howCustomersFindYou: "Instagram and referrals",
-        wouldPay: "Yes",
-        wouldPayPriority: "Maybe",
-        monthlyAdSpend: "Under ₦5,000",
-        wouldRefer: "Yes",
-        oneThing: "More customer enquiries",
-      },
-    }).returning({ id: agentEventsTable.id });
+    const [event] = await db
+      .insert(agentEventsTable)
+      .values({
+        businessId: null,
+        eventType: "onboarding_feedback",
+        toolName: "feedback_form",
+        metadata: {
+          howCustomersFindYou: "Instagram and referrals",
+          wouldPay: "Yes",
+          wouldPayPriority: "Maybe",
+          monthlyAdSpend: "Under ₦5,000",
+          wouldRefer: "Yes",
+          oneThing: "More customer enquiries",
+        },
+      })
+      .returning({ id: agentEventsTable.id });
     feedbackIds.push(event!.id);
 
-    const [stored] = await db.select({
-      eventType: agentEventsTable.eventType,
-      toolName: agentEventsTable.toolName,
-      metadata: agentEventsTable.metadata,
-    }).from(agentEventsTable).where(eq(agentEventsTable.id, event!.id)).limit(1);
+    const [stored] = await db
+      .select({
+        eventType: agentEventsTable.eventType,
+        toolName: agentEventsTable.toolName,
+        metadata: agentEventsTable.metadata,
+      })
+      .from(agentEventsTable)
+      .where(eq(agentEventsTable.id, event!.id))
+      .limit(1);
 
     expect(stored).toMatchObject({
       eventType: "onboarding_feedback",
@@ -144,7 +160,8 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
       },
     });
   });
-\n  it("enforces the unique issuer and subject mapping for admin identities", async () => {
+
+  it("enforces the unique issuer and subject mapping for admin identities", async () => {
     const identityProvider = `https://admin-test.example/${randomUUID()}`;
     const identitySubject = randomUUID();
     const [admin] = await db
