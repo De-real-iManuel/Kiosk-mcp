@@ -14,6 +14,10 @@ import { errorHandler } from "./middlewares/error-handler";
 
 const app: Express = express();
 
+// The API is deployed behind one AWS Application Load Balancer. Keep this in
+// sync with the service security group: tasks must not be publicly reachable.
+app.set("trust proxy", 1);
+
 app.use(
   pinoHttp({
     logger,
