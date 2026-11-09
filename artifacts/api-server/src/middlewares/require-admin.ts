@@ -17,15 +17,18 @@ let cachedKeys: JwkSet | undefined;
 let keysFetchedAt = 0;
 function decodePart<T>(part: string): T { return JSON.parse(Buffer.from(part, "base64url").toString("utf8")) as T; }
 
-async function getSigningKey(kid: string, issuer: string) {
-  if (!cachedKeys || Date.now() - keysFetchedAt > 60 * 60 * 1000) {
+async function getSigningKey(kid: string, issuer: string, forceRefresh = false): Promise<ReturnType<typeof createPublicKey>> {
+  if (forceRefresh || !cachedKeys || Date.now() - keysFetchedAt > 60 * 60 * 1000) {
     const response = await fetch(`${issuer.replace(/\/$/, "")}/.well-known/jwks.json`, { headers: { accept: "application/json" }, signal: AbortSignal.timeout(5000) });
     if (!response.ok) throw new Error("Unable to load admin identity signing keys");
     cachedKeys = (await response.json()) as JwkSet;
     keysFetchedAt = Date.now();
   }
   const jwk = cachedKeys.keys.find((key) => key.kid === kid && key.use !== "enc");
-  if (!jwk) { cachedKeys = undefined; return getSigningKey(kid, issuer); }
+  if (!jwk) {
+    if (!forceRefresh) return getSigningKey(kid, issuer, true);
+    throw new Error("Signing key ID was not found in the identity provider key set");
+  }
   return createPublicKey({ key: jwk, format: "jwk" });
 }
 
