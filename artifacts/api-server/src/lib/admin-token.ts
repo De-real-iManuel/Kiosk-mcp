@@ -1,7 +1,6 @@
 import {
   createPublicKey,
   verify as verifySignature,
-  type JsonWebKey,
 } from "node:crypto";
 
 export interface AdminJwtClaims {
@@ -12,8 +11,17 @@ export interface AdminJwtClaims {
   token_use?: string;
   client_id?: string;
 }
+interface JsonWebKeyLike {
+  kty: string;
+  kid?: string;
+  use?: string;
+  alg?: string;
+  n?: string;
+  e?: string;
+  [key: string]: unknown;
+}
 interface JwkSet {
-  keys: Array<JsonWebKey & { kid?: string; use?: string }>;
+  keys: JsonWebKeyLike[];
 }
 const jwksCache = new Map<string, { keys: JwkSet; fetchedAt: number }>();
 const JWKS_TTL_MS = 60 * 60 * 1000;
