@@ -142,7 +142,7 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
-function DataTable({ rows }: { rows: Row[] }) {
+function FeedbackList({ rows }: { rows: Row[] }) {\n  const fields = [\n    ["howCustomersFindYou", "How customers find the business"],\n    ["wouldPay", "Willingness to pay"],\n    ["wouldPayPriority", "Payment priority"],\n    ["monthlyAdSpend", "Monthly advertising spend"],\n    ["wouldRefer", "Referral intent"],\n    ["oneThing", "One thing to improve"],\n  ] as const;\n\n  if (!rows.length) return <div className="p-8 text-sm text-[#817D74]">No feedback submissions yet.</div>;\n\n  return (\n    <div className="grid gap-3 p-4 sm:grid-cols-2">\n      {rows.map((row) => {\n        const answers = row.answers && typeof row.answers === "object"\n          ? (row.answers as Record<string, unknown>)\n          : {};\n        return (\n          <article key={String(row.id)} className="border border-white/[.08] bg-[#1B1A16] p-5">\n            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-white/[.07] pb-4">\n              <div>\n                <h3 className="text-sm font-semibold">{formatValue(row.businessName)}</h3>\n                <p className="mt-1 text-[10px] text-[#77736B]">Business ID: {formatValue(row.businessId)}</p>\n              </div>\n              <time className="text-[10px] text-[#8E897F]">{formatValue(row.submittedAt)}</time>\n            </div>\n            <dl className="mt-4 grid gap-4">\n              {fields.map(([key, label]) => (\n                <div key={key}>\n                  <dt className="text-[9px] uppercase tracking-[.13em] text-[#77736B]">{label}</dt>\n                  <dd className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#D8D3C9]">{formatValue(answers[key])}</dd>\n                </div>\n              ))}\n            </dl>\n          </article>\n        );\n      })}\n    </div>\n  );\n}\n\nfunction DataTable({ rows }: { rows: Row[] }) {
   const columns = useMemo(
     () => (rows.length ? Object.keys(rows[0]!).slice(0, 8) : []),
     [rows],
@@ -333,7 +333,7 @@ export function InternalAdminDashboard() {
           return;
         }
         const paths: Record<Exclude<Section, "overview">, string> = {
-          "ai-usage": "/admin/telemetry/tools",
+          "ai-usage": "/admin/telemetry/tools",\n        requests: "/admin/telemetry/requests",
           businesses: "/admin/businesses",
           feedback: "/admin/feedback",
           support: "/admin/tickets",
