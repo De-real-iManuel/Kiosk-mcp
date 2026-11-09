@@ -271,7 +271,7 @@ router.get(
       })
       .from(businessesTable)
       .where(
-        search ? ilike(businessesTable.businessName, `%${search}%`) : undefined,
+        search ? ilike(businessesTable.businessName, `%${search}%`) : sql`true`,
       )
       .orderBy(desc(businessesTable.updatedAt))
       .limit(100);
