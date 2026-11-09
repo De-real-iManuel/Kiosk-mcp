@@ -18,8 +18,24 @@ export function createApp(): express.Express {
   // Parse JSON bodies before MCP transport handles requests
   app.use(express.json({ limit: "64kb" }));
 
-  // HTTP request logging
-  app.use(pinoHttp({ logger }));
+  // Keep auth headers, cookies, query strings and request bodies out of logs.
+  app.use(
+    pinoHttp({
+      logger,
+      serializers: {
+        req(req) {
+          return {
+            id: req.id,
+            method: req.method,
+            url: req.url?.split("?")[0],
+          };
+        },
+        res(res) {
+          return { statusCode: res.statusCode };
+        },
+      },
+    }),
+  );
 
   // Health check endpoint
   app.get("/health", (_req: Request, res: Response) => {
