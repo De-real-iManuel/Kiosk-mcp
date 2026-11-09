@@ -66,6 +66,8 @@ Does NOT return the business owner's private information.`,
     {
       slug: z
         .string()
+        .min(1)
+        .max(120)
         .describe("Business slug identifier (e.g. mamas-kitchen)"),
     },
     async ({ slug }) => {
@@ -131,7 +133,7 @@ Does NOT return the business owner's private information.`,
 Use to understand what actions you can perform via the business's own MCP endpoint.
 Capabilities map directly to available tools on the business MCP.`,
     {
-      slug: z.string().describe("Business slug identifier"),
+      slug: z.string().min(1).max(120).describe("Business slug identifier"),
     },
     async ({ slug }) => {
       const business = await findPublishedBusiness(slug);
