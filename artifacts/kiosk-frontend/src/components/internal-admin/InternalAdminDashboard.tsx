@@ -11,7 +11,8 @@ type Section = "overview" | "ai-usage" | "businesses" | "support" | "incidents" 
 type AdminUser = { id: string; email: string; displayName: string | null; role: string; permissions: string[] };
 type Overview = {
   generatedAt: string;
-  metrics: { requests24h: number; requests7d: number; toolCalls24h: number; toolCalls7d: number; failedTools24h: number; publishedBusinesses: number };
+  metrics: { requests24h: number; requests7d: number; toolCalls24h: number; toolCalls7d: number; failedTools24h: number; publishedBusinesses: number; sessionStarts7d: number };
+  requestsByEndpoint: Array<{ endpoint: string; requests: number }>;
   topClients: Array<{ clientName: string | null; requests: number; lastSeen: string; identityStatus: string }>;
   topTools: Array<{ endpoint: string; toolName: string; calls: number; failures: number }>;
   recentErrors: Array<{ endpoint: string; toolName: string; errorCode: string | null; createdAt: string }>;
@@ -262,10 +263,10 @@ export function InternalAdminDashboard() {
                   ["Tool failures · 24h", overview.metrics.failedTools24h, "Last 24 hours"],
                   ["MCP requests · 7d", overview.metrics.requests7d, "Last 7 days"],
                   ["Tool executions · 7d", overview.metrics.toolCalls7d, "Last 7 days"],
-                  ["Published businesses", overview.metrics.publishedBusinesses, "Currently active"],
+                  ["Business MCP sessions · 7d", overview.metrics.sessionStarts7d, "Initialize events recorded"],\n                  ["Published businesses", overview.metrics.publishedBusinesses, "Currently active"],
                 ].map(([label, value, note]) => <div key={String(label)} className="border border-white/[.08] bg-[#171612] p-5"><p className="text-[10px] uppercase tracking-[.14em] text-[#8E897F]">{label}</p><p className="mt-4 text-3xl font-semibold tracking-[-.05em] tabular-nums">{Number(value).toLocaleString()}</p><p className="mt-2 text-[10px] text-[#77736B]">{note}</p></div>)}
               </div>
-              <div className="mt-8 grid gap-5 xl:grid-cols-2">
+              <div className="mt-8 grid gap-5 xl:grid-cols-2">\n                <section className="border border-white/[.08] bg-[#171612]"><div className="flex items-center justify-between border-b border-white/[.07] px-5 py-4"><h2 className="text-xs font-semibold">Requests by MCP endpoint</h2><span className="text-[9px] uppercase tracking-[.15em] text-[#77736B]">7 days</span></div><DataTable rows={overview.requestsByEndpoint}/></section>
                 <section className="border border-white/[.08] bg-[#171612]"><div className="flex items-center justify-between border-b border-white/[.07] px-5 py-4"><h2 className="text-xs font-semibold">Observed AI clients</h2><span className="text-[9px] uppercase tracking-[.15em] text-[#77736B]">7 days</span></div><DataTable rows={overview.topClients}/></section>
                 <section className="border border-white/[.08] bg-[#171612]"><div className="flex items-center justify-between border-b border-white/[.07] px-5 py-4"><h2 className="text-xs font-semibold">Most used MCP tools</h2><span className="text-[9px] uppercase tracking-[.15em] text-[#77736B]">7 days</span></div><DataTable rows={overview.topTools}/></section>
               </div>
