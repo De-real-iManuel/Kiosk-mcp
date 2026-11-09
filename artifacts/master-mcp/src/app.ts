@@ -3,6 +3,7 @@ import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/
 import pinoHttp from "pino-http";
 import pino from "pino";
 import { createMcpServer } from "./server.js";
+import { mcpRateLimiter } from "./lib/rateLimiter.js";
 import { beginMcpRequest, runWithMcpRequestContext } from "@workspace/db";
 
 const logger = pino({ name: "kiosk-master-mcp" });
@@ -10,8 +11,12 @@ const logger = pino({ name: "kiosk-master-mcp" });
 export function createApp(): express.Express {
   const app = express();
 
+  // Master MCP is exposed through one AWS Application Load Balancer.
+  // The ECS task security group must not permit direct public ingress.
+  app.set("trust proxy", 1);
+
   // Parse JSON bodies before MCP transport handles requests
-  app.use(express.json());
+  app.use(express.json({ limit: "64kb" }));
 
   // HTTP request logging
   app.use(pinoHttp({ logger }));
@@ -34,7 +39,7 @@ export function createApp(): express.Express {
   //
   // DELETE /mcp — session termination
 
-  app.get("/mcp", async (req: Request, res: Response): Promise<void> => {
+  app.get("/mcp", mcpRateLimiter, async (req: Request, res: Response): Promise<void> => {
     const context = beginMcpRequest(req, res, "master_mcp");
     const accept = req.headers["accept"] ?? "";
     if (accept.includes("text/event-stream")) {
@@ -66,7 +71,7 @@ export function createApp(): express.Express {
     }
   });
 
-  app.post("/mcp", async (req: Request, res: Response): Promise<void> => {
+  app.post("/mcp", mcpRateLimiter, async (req: Request, res: Response): Promise<void> => {
     const context = beginMcpRequest(req, res, "master_mcp");
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
@@ -84,7 +89,7 @@ export function createApp(): express.Express {
     }
   });
 
-  app.delete("/mcp", async (req: Request, res: Response): Promise<void> => {
+  app.delete("/mcp", mcpRateLimiter, async (req: Request, res: Response): Promise<void> => {
     beginMcpRequest(req, res, "master_mcp");
     res.status(200).json({ ok: true });
   });
