@@ -25,6 +25,11 @@ Code-level review of the internal admin dashboard, Master MCP, Business MCP, API
 - Added a separate 30-request/minute limit to admin API routes before Cognito verification and database lookup.
 - Added a 10-second per-issuer cooldown for unknown JWT key-ID JWKS refreshes to prevent arbitrary `kid` values from causing a fetch on every request.
 - Added bounded validation for merchant onboarding feedback: known fields only, string values only, and per-field character limits.
+- Added a dedicated 30-request/minute admin API limit and no-store response headers for privileged admin routes.
+- Throttled unknown-kid JWKS refreshes per issuer to reduce key-lookup amplification.
+- Bounded Master MCP search, slug, category and time inputs; invalid open-now timestamps are rejected.
+- Bounded Business MCP order/booking payloads (items, quantities, names, phone numbers, notes and addresses); booking times are checked against a 24-hour clock.
+- Added baseline frontend response headers: nosniff, strict-origin referrer policy and a restrictive Permissions-Policy.
 
 ### Internal dashboard
 - Applied Kiosk burnt orange (`#D96845`, with `#E8A18D` as the lighter accent) to the primary sign-in action, selected navigation states and refresh/sign-out focus and hover states.
@@ -41,6 +46,7 @@ Code-level review of the internal admin dashboard, Master MCP, Business MCP, API
 - Admin businesses and telemetry endpoints select limited fields. Support, incident, feedback and audit records are behind their respective admin permissions.
 - No file-upload input, upload route, S3 upload client or presigned-upload flow was found in the reviewed repository search. There is currently no upload surface to harden.
 - The shared chart component contains a `dangerouslySetInnerHTML` use to emit generated CSS. No call sites were found in the code search. Keep its configuration trusted; validate CSS variable keys and color values before using data that can be influenced by merchants or other users.
+- Admin API responses now explicitly use `Cache-Control: no-store, private` and `Pragma: no-cache`.
 - API and Business MCP request log serializers omit headers. Master MCP now does the same.
 
 ## Remaining risks and rollout requirements
@@ -49,9 +55,9 @@ Code-level review of the internal admin dashboard, Master MCP, Business MCP, API
 2. **Rate limits are process-local.** They protect each running process and have bounded memory, but are not shared across ECS tasks or restarts. Add AWS WAF/edge throttling or a shared Redis-backed limiter before relying on a global quota or scaling out.
 3. **CORS configuration must match deployment.** Set `CORS_ALLOWED_ORIGINS` to every exact production frontend origin (scheme + hostname, no path). If the frontend moves from the current CloudFront hostname to a custom domain, update this environment variable.
 4. **Admin identity is not provisioned by this code change.** Cognito User Pool/app-client configuration, exact callback URLs, disabled public self-signup, MFA enforcement, and out-of-band admin subject provisioning still need to be completed and tested in staging.
-5. **Frontend response headers/CSP need deployment review.** The Next.js config currently has no explicit security-header policy. Add a tested CSP and headers at the frontend/CloudFront layer without breaking Clerk's required scripts, connections and frames.
+5. **Content Security Policy remains open.** Baseline browser headers are now set by Next.js, but a tested CSP and HSTS policy still need deployment review at the frontend/CloudFront layer without breaking Clerk's required scripts, connections and frames.
 6. **No production rollout was performed.** No production database schema push, Cognito changes, ECS deployment or infrastructure security-group change was made.
-7. **Validation status:** CI was triggered by the branch updates. Record final typecheck, tests, builds, MCP health and Docker build outcomes after the latest commit completes; do not treat an earlier/cancelled run as evidence for the final head.
+7. **Validation status:** CI is triggered on branch updates. Record final typecheck, tests, builds, MCP health and Docker build outcomes after the latest commit completes; do not treat earlier/cancelled runs as evidence for the final head.
 
 ## Operational note
 
