@@ -58,7 +58,8 @@ router.get("/feedback", requireAdminPermission("telemetry.read"), async (req, re
     .limit(limit);
   res.json(rows);
 });
-\nrouter.get("/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
+
+router.get("/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
   const rows = await db.select({
     requestId: mcpRequestEventsTable.requestId, endpoint: mcpRequestEventsTable.endpoint, rpcMethod: mcpRequestEventsTable.rpcMethod,
