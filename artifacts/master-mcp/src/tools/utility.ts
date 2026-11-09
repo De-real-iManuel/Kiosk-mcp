@@ -95,7 +95,7 @@ Supports optional filtering by product sub-category.
 Returns an empty array if the business has no available products.
 Returns null if the business is not found or is not published.`,
     {
-      slug: z.string().describe("The unique slug of the business"),
+      slug: z.string().min(1).max(120).describe("The unique slug of the business"),
       category: z
         .string()
         .trim()
@@ -154,7 +154,7 @@ Note: reflects stated hours only — does not account for unexpected closures, h
 special events. Always inform the user if you are relying on stated hours.
 Returns is_open, current_day_hours, and next_open_at (ISO-8601) when closed.`,
     {
-      slug: z.string().describe("The unique slug of the business"),
+      slug: z.string().min(1).max(120).describe("The unique slug of the business"),
       iso_time: z
         .string()
         .max(40)
@@ -202,7 +202,7 @@ Does NOT expose owner email or Clerk user ID.
 Use when fallback to human contact is needed (e.g. complex enquiry, complaint, booking via phone).
 Returns null values for fields that have not been configured by the business.`,
     {
-      slug: z.string().describe("The unique slug of the business"),
+      slug: z.string().min(1).max(120).describe("The unique slug of the business"),
     },
     async ({ slug }) => {
       const business = await findPublishedBusiness(slug);
@@ -239,7 +239,7 @@ Returns null values for fields that have not been configured by the business.`,
 Returns { enabled: false, configuration: null } if delivery is not configured.
 Use before directing a user to checkout to confirm whether delivery is actually available.`,
     {
-      slug: z.string().describe("The unique slug of the business"),
+      slug: z.string().min(1).max(120).describe("The unique slug of the business"),
     },
     async ({ slug }) => {
       const business = await findPublishedBusiness(slug);
