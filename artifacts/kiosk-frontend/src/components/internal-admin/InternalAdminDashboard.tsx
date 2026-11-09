@@ -4,7 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowUpRight, Building2, ChartNoAxesCombined,
   Clock3, Command, FileText, Headset, KeyRound, LoaderCircle, LogOut,
-  RefreshCw, ShieldCheck, Users,
+  RefreshCw, ShieldCheck,
 } from "lucide-react";
 
 type Section = "overview" | "ai-usage" | "businesses" | "support" | "incidents" | "audit";
@@ -193,7 +193,7 @@ export function InternalAdminDashboard() {
     api<AdminUser>("/admin/me", token).then((profile) => {
       if (cancelled) return;
       setAdmin(profile);
-      return loadSection(token, section);
+      setSection(profile.permissions.includes("telemetry.read") ? "overview" : profile.permissions.includes("business.read") ? "businesses" : "support");
     }).catch((cause: unknown) => {
       if (!cancelled) {
         setToken(null);
