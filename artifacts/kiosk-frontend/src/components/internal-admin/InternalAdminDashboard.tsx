@@ -127,7 +127,9 @@ const NAV: Array<{
 function randomString(length = 64) {
   const bytes = new Uint8Array(length);
   window.crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
+    "",
+  );
 }
 
 async function sha256(value: string) {
@@ -144,10 +146,7 @@ async function sha256(value: string) {
 function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (
-    typeof value === "string" &&
-    /^\d{4}-\d\d-\d\dT/.test(value)
-  ) {
+  if (typeof value === "string" && /^\d{4}-\d\d-\d\dT/.test(value)) {
     return new Date(value).toLocaleString();
   }
   if (typeof value === "object") return JSON.stringify(value);
@@ -162,9 +161,7 @@ function DataTable({ rows }: { rows: Row[] }) {
 
   if (!rows.length) {
     return (
-      <div className="p-8 text-sm text-[#817D74]">
-        No records to show yet.
-      </div>
+      <div className="p-8 text-sm text-[#817D74]">No records to show yet.</div>
     );
   }
 
@@ -339,8 +336,7 @@ export function InternalAdminDashboard() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const returnedState = params.get("state");
-    const oauthError =
-      params.get("error_description") ?? params.get("error");
+    const oauthError = params.get("error_description") ?? params.get("error");
 
     if (oauthError) {
       setAuthMessage(oauthError);
@@ -678,7 +674,8 @@ export function InternalAdminDashboard() {
                     </p>
                   </div>
                   <span className="text-[10px] text-[#77736B]">
-                    Updated {new Date(overview.generatedAt).toLocaleTimeString()}
+                    Updated{" "}
+                    {new Date(overview.generatedAt).toLocaleTimeString()}
                   </span>
                 </div>
 
@@ -730,9 +727,7 @@ export function InternalAdminDashboard() {
                       <p className="mt-4 text-3xl font-semibold tracking-[-.05em] tabular-nums">
                         {Number(value).toLocaleString()}
                       </p>
-                      <p className="mt-2 text-[10px] text-[#77736B]">
-                        {note}
-                      </p>
+                      <p className="mt-2 text-[10px] text-[#77736B]">{note}</p>
                     </div>
                   ))}
                 </div>
