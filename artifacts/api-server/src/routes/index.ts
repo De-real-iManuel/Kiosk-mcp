@@ -16,6 +16,6 @@ router.use(businessesRouter);
 router.use(capabilitiesRouter);
 router.use(servicesRouter);
 // Separate workforce identity and role checks; never reuse merchant Clerk authorization.
-router.use(adminRouter);
+router.use("/admin", adminRouter);
 
 export default router;
