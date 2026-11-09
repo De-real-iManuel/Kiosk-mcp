@@ -121,7 +121,7 @@ describe("MCP telemetry", () => {
     expect(toolEvent).toMatchObject({
       requestId: context.requestId,
       endpoint: "master_mcp",
-      clientName: "Claude",
+      clientName: "Claude client",
       clientIdentityStatus: "inferred",
       succeeded: true,
       resultCount: 2,
