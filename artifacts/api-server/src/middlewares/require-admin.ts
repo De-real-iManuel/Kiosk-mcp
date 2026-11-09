@@ -62,11 +62,9 @@ export const requireAdmin: RequestHandler = async (req, res, next) => {
       )
       .limit(1);
     if (!admin || !Object.hasOwn(ROLE_PERMISSIONS, admin.role)) {
-      res
-        .status(403)
-        .json({
-          error: "This identity is not provisioned for Kiosk administration",
-        });
+      res.status(403).json({
+        error: "This identity is not provisioned for Kiosk administration",
+      });
       return;
     }
     res.locals.adminUser = admin;
