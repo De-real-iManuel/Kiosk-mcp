@@ -34,6 +34,7 @@ Code-level review of the internal admin dashboard, Master MCP, Business MCP, API
 ### Internal dashboard
 - Applied Kiosk burnt orange (`#D96845`, with `#E8A18D` as the lighter accent) to the primary sign-in action, selected navigation states and refresh/sign-out focus and hover states.
 - The dashboard renders server data through React text nodes; no raw HTML rendering was found in this component.
+- Admin sign-out now redirects through the Cognito Hosted UI logout endpoint instead of only clearing React state; a sign-out control is also available in the mobile header.
 
 ### CI
 - Corrected the changed-file Prettier invocation to pass the filename array directly, rather than piping a potentially non-NUL-delimited list to `xargs -0`.
@@ -54,7 +55,7 @@ Code-level review of the internal admin dashboard, Master MCP, Business MCP, API
 1. **Proxy trust is an infrastructure assumption.** `trust proxy = 1` is safe only when the service can be reached through the intended single ALB hop. Verify the ECS task security group accepts ingress only from the ALB security group; direct public task ingress would let clients spoof forwarded headers and bypass IP-based controls.
 2. **Rate limits are process-local.** They protect each running process and have bounded memory, but are not shared across ECS tasks or restarts. Add AWS WAF/edge throttling or a shared Redis-backed limiter before relying on a global quota or scaling out.
 3. **CORS configuration must match deployment.** Set `CORS_ALLOWED_ORIGINS` to every exact production frontend origin (scheme + hostname, no path). If the frontend moves from the current CloudFront hostname to a custom domain, update this environment variable.
-4. **Admin identity is not provisioned by this code change.** Cognito User Pool/app-client configuration, exact callback URLs, disabled public self-signup, MFA enforcement, and out-of-band admin subject provisioning still need to be completed and tested in staging.
+4. **Admin identity is not provisioned by this code change.** Cognito User Pool/app-client configuration, exact callback and logout URLs, disabled public self-signup, MFA enforcement, and out-of-band admin subject provisioning still need to be completed and tested in staging. The frontend OIDC domain, client ID and callback URI must be supplied as build-time public environment variables; no client secret belongs in the browser bundle.
 5. **Content Security Policy remains open.** Baseline browser headers are now set by Next.js, but a tested CSP and HSTS policy still need deployment review at the frontend/CloudFront layer without breaking Clerk's required scripts, connections and frames.
 6. **No production rollout was performed.** No production database schema push, Cognito changes, ECS deployment or infrastructure security-group change was made.
 7. **Validation status:** CI is triggered on branch updates. Record final typecheck, tests, builds, MCP health and Docker build outcomes after the latest commit completes; do not treat earlier/cancelled runs as evidence for the final head.
