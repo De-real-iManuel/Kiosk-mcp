@@ -821,7 +821,7 @@ export function InternalAdminDashboard() {
               <span>Kiosk internal operations</span>
               <span className="inline-flex items-center gap-2">
                 <ArrowUpRight size={11} />
-                Not visible to merchants
+                Admin data is server-protected
               </span>
             </footer>
           </div>
