@@ -1,4 +1,4 @@
-import { generateKeyPairSync, sign, type JsonWebKey } from "node:crypto";
+import { generateKeyPairSync, sign } from "node:crypto";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { verifyAdminAccessToken } from "../lib/admin-token.js";
 
@@ -9,7 +9,7 @@ const jwk = {
   ...publicKey.export({ format: "jwk" }),
   kid: "kiosk-admin-test-key",
   use: "sig",
-} as JsonWebKey & { kid: string; use: string };
+};
 let issuerSequence = 0;
 
 function encode(value: unknown) {
