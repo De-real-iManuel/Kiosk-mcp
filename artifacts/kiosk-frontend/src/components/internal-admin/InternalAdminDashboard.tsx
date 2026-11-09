@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   Activity, AlertTriangle, ArrowUpRight, Building2, ChartNoAxesCombined,
   Clock3, Command, FileText, Headset, KeyRound, LoaderCircle, LogOut,
@@ -71,6 +71,7 @@ function DataTable({ rows }: { rows: Row[] }) {
 }
 
 export function InternalAdminDashboard() {
+  const oauthExchangeRef = useRef<Promise<string> | null>(null);
   const [token, setToken] = useState<string | null>(null);
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [section, setSection] = useState<Section>("overview");
@@ -278,4 +279,55 @@ export function InternalAdminDashboard() {
       </div>
     </main>
   );
-}
+}  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const code = params.get("code");
+    const returnedState = params.get("state");
+    const oauthError = params.get("error_description") ?? params.get("error");
+    if (oauthError) {
+      setAuthMessage(oauthError);
+      window.history.replaceState({}, "", window.location.pathname);
+      return;
+    }
+    if (!code) return;
+
+    if (!oauthExchangeRef.current) {
+      const expectedState = sessionStorage.getItem("kiosk_admin_oauth_state");
+      const verifier = sessionStorage.getItem("kiosk_admin_pkce_verifier");
+      if (!expectedState && !verifier) return; // Handles React Strict Mode's second effect pass.
+      sessionStorage.removeItem("kiosk_admin_oauth_state");
+      sessionStorage.removeItem("kiosk_admin_pkce_verifier");
+      if (!returnedState || returnedState !== expectedState || !verifier || !OIDC_DOMAIN || !OIDC_CLIENT_ID || !OIDC_REDIRECT_URI) {
+        setAuthMessage("The sign-in response could not be validated. Please try again.");
+        window.history.replaceState({}, "", window.location.pathname);
+        return;
+      }
+      const body = new URLSearchParams({
+        grant_type: "authorization_code",
+        client_id: OIDC_CLIENT_ID,
+        code,
+        redirect_uri: OIDC_REDIRECT_URI,
+        code_verifier: verifier,
+      });
+      oauthExchangeRef.current = fetch(`${OIDC_DOMAIN}/oauth2/token`, {
+        method: "POST",
+        headers: { "content-type": "application/x-www-form-urlencoded" },
+        body,
+      }).then(async (response) => {
+        if (!response.ok) throw new Error("Could not exchange the sign-in code.");
+        const result = await response.json() as { access_token?: string };
+        if (!result.access_token) throw new Error("The identity provider returned no access token.");
+        return result.access_token;
+      });
+    }
+
+    setAuthBusy(true);
+    oauthExchangeRef.current.then((accessToken) => {
+      setToken(accessToken);
+      setAuthMessage("");
+      window.history.replaceState({}, "", window.location.pathname);
+    }).catch((cause: unknown) => {
+      setAuthMessage(cause instanceof Error ? cause.message : "Sign-in failed.");
+      window.history.replaceState({}, "", window.location.pathname);
+    }).finally(() => setAuthBusy(false));
+  }, []);
