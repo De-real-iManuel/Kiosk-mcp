@@ -1,4 +1,5 @@
 import { Router, type IRouter } from "express";
+import { adminLimiter } from "../middlewares/rateLimiter";
 import { desc, eq, gte, ilike, and, sql } from "drizzle-orm";
 import {
   db,
@@ -18,7 +19,7 @@ import {
 } from "../middlewares/require-admin";
 
 const router: IRouter = Router();
-router.use(requireAdmin);
+router.use(adminLimiter, requireAdmin);
 
 router.get("/me", (_req, res) => {
   const admin = getAdminActor(res);
