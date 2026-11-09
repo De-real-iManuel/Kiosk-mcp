@@ -6,12 +6,12 @@ import { getAdminActor, requireAdmin, requireAdminPermission } from "../middlewa
 const router: IRouter = Router();
 router.use(requireAdmin);
 
-router.get("/admin/me", (_req, res) => {
+router.get("/me", (_req, res) => {
   const admin = getAdminActor(res);
   res.json({ id: admin.id, email: admin.email, displayName: admin.displayName, role: admin.role, permissions: res.locals.adminPermissions ?? [] });
 });
 
-router.get("/admin/overview", requireAdminPermission("telemetry.read"), async (_req, res): Promise<void> => {
+router.get("/overview", requireAdminPermission("telemetry.read"), async (_req, res): Promise<void> => {
   const now = new Date(), dayAgo = new Date(now.getTime() - 86400000), weekAgo = new Date(now.getTime() - 7 * 86400000);
   const [requests24h, requests7d, toolCalls24h, toolCalls7d, failedTools24h, activeBusinesses] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(mcpRequestEventsTable).where(gte(mcpRequestEventsTable.createdAt, dayAgo)),
@@ -34,7 +34,7 @@ router.get("/admin/overview", requireAdminPermission("telemetry.read"), async (_
   });
 });
 
-router.get("/admin/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
+router.get("/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
   const rows = await db.select({
     requestId: mcpRequestEventsTable.requestId, endpoint: mcpRequestEventsTable.endpoint, rpcMethod: mcpRequestEventsTable.rpcMethod,
@@ -45,7 +45,7 @@ router.get("/admin/telemetry/requests", requireAdminPermission("telemetry.read")
   res.json(rows);
 });
 
-router.get("/admin/telemetry/tools", requireAdminPermission("telemetry.read"), async (_req, res): Promise<void> => {
+router.get("/telemetry/tools", requireAdminPermission("telemetry.read"), async (_req, res): Promise<void> => {
   const since = new Date(Date.now() - 30 * 86400000);
   const rows = await db.select({
     endpoint: mcpToolEventsTable.endpoint, toolName: mcpToolEventsTable.toolName, calls: sql<number>`count(*)::int`,
@@ -56,7 +56,7 @@ router.get("/admin/telemetry/tools", requireAdminPermission("telemetry.read"), a
   res.json(rows);
 });
 
-router.get("/admin/businesses", requireAdminPermission("business.read"), async (req, res): Promise<void> => {
+router.get("/businesses", requireAdminPermission("business.read"), async (req, res): Promise<void> => {
   const search = typeof req.query.search === "string" ? req.query.search.trim().slice(0, 100) : "";
   const rows = await db.select({
     id: businessesTable.id, businessName: businessesTable.businessName, slug: businessesTable.slug, city: businessesTable.city,
@@ -66,16 +66,16 @@ router.get("/admin/businesses", requireAdminPermission("business.read"), async (
   res.json(rows);
 });
 
-router.get("/admin/tickets", requireAdminPermission("support.manage"), async (_req, res): Promise<void> => {
+router.get("/tickets", requireAdminPermission("support.manage"), async (_req, res): Promise<void> => {
   res.json(await db.select().from(supportTicketsTable).orderBy(desc(supportTicketsTable.updatedAt)).limit(100));
 });
-router.get("/admin/tickets/:id/notes", requireAdminPermission("support.manage"), async (req, res): Promise<void> => {
+router.get("/tickets/:id/notes", requireAdminPermission("support.manage"), async (req, res): Promise<void> => {
   res.json(await db.select().from(supportNotesTable).where(eq(supportNotesTable.ticketId, req.params.id)).orderBy(desc(supportNotesTable.createdAt)));
 });
-router.get("/admin/incidents", requireAdminPermission("incident.manage"), async (_req, res): Promise<void> => {
+router.get("/incidents", requireAdminPermission("incident.manage"), async (_req, res): Promise<void> => {
   res.json(await db.select().from(incidentsTable).orderBy(desc(incidentsTable.startedAt)).limit(100));
 });
-router.get("/admin/audit", requireAdminPermission("admin.manage"), async (_req, res): Promise<void> => {
+router.get("/audit", requireAdminPermission("admin.manage"), async (_req, res): Promise<void> => {
   res.json(await db.select().from(adminAuditLogsTable).orderBy(desc(adminAuditLogsTable.createdAt)).limit(100));
 });
 
