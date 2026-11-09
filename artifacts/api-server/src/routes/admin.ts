@@ -296,11 +296,17 @@ router.get(
   "/tickets/:id/notes",
   requireAdminPermission("support.manage"),
   async (req, res): Promise<void> => {
+    const ticketId =
+      typeof req.params.id === "string" ? req.params.id : req.params.id?.[0];
+    if (!ticketId) {
+      res.status(400).json({ error: "Invalid support ticket ID" });
+      return;
+    }
     res.json(
       await db
         .select()
         .from(supportNotesTable)
-        .where(eq(supportNotesTable.ticketId, req.params.id))
+        .where(eq(supportNotesTable.ticketId, ticketId))
         .orderBy(desc(supportNotesTable.createdAt)),
     );
   },
