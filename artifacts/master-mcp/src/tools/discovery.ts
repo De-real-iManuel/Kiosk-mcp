@@ -67,18 +67,21 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
     {
       query: z
         .string()
+        .trim()
+        .max(200)
         .optional()
         .describe("Free-text search (business name, service, product)"),
-      city: z.string().optional().describe("City name to filter by"),
+      city: z.string().trim().max(100).optional().describe("City name to filter by"),
       country: z
         .string()
-        .min(2)
-        .max(2)
+        .regex(/^[A-Z]{2}$/, "Use an uppercase ISO 3166-1 alpha-2 country code")
         .describe(
           "ISO 3166-1 alpha-2 country code — REQUIRED. Always pass this. e.g. 'NG' for Nigeria, 'GB' for UK, 'US' for United States.",
         ),
       category_slug: z
         .string()
+        .trim()
+        .max(100)
         .optional()
         .describe("Category slug from discover_categories"),
       open_now: z
@@ -87,11 +90,12 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
         .describe("If true, only return businesses currently open"),
       local_time: z
         .string()
+        .max(40)
         .optional()
         .describe(
           "Caller local time in ISO-8601 (required when open_now=true)",
         ),
-      limit: z.number().min(1).max(50).default(20).optional(),
+      limit: z.number().int().min(1).max(50).default(20).optional(),
     },
     async ({
       query,
@@ -102,6 +106,19 @@ Does NOT execute any business action — use the mcpEndpoint for that.`,
       local_time,
       limit = 20,
     }) => {
+      if (open_now && !local_time) {
+        return {
+          content: [{ type: "text", text: "local_time is required when open_now is true" }],
+          isError: true,
+        };
+      }
+      if (open_now && local_time && Number.isNaN(new Date(local_time).getTime())) {
+        return {
+          content: [{ type: "text", text: "local_time must be a valid date/time" }],
+          isError: true,
+        };
+      }
+
       // ── Build WHERE conditions ───────────────────────────────────────────────
       const conditions = [
         eq(businessesTable.status, "published"),
