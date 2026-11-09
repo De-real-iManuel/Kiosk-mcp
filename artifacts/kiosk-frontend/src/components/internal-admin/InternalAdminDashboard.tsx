@@ -411,6 +411,22 @@ export function InternalAdminDashboard() {
       });
   }, []);
 
+  const signOut = useCallback(() => {
+    setToken(null);
+    setAdmin(null);
+    setError("");
+    setOverview(null);
+    setRows([]);
+
+    if (OIDC_DOMAIN && OIDC_CLIENT_ID && OIDC_REDIRECT_URI) {
+      const params = new URLSearchParams({
+        client_id: OIDC_CLIENT_ID,
+        logout_uri: OIDC_REDIRECT_URI,
+      });
+      window.location.assign(`${OIDC_DOMAIN}/logout?${params.toString()}`);
+    }
+  }, []);
+
   const loadSection = useCallback(
     async (accessToken: string, activeSection: Section) => {
       setBusy(true);
@@ -583,13 +599,7 @@ export function InternalAdminDashboard() {
               {admin.role.replaceAll("_", " ")}
             </div>
             <button
-              onClick={() => {
-                setToken(null);
-                setAdmin(null);
-                setError("");
-                setOverview(null);
-                setRows([]);
-              }}
+              onClick={signOut}
               className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] transition hover:text-[#E8A18D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96845]"
             >
               <LogOut size={13} />
@@ -619,6 +629,13 @@ export function InternalAdminDashboard() {
                 aria-label="Refresh"
               >
                 <RefreshCw size={14} />
+              </button>
+              <button
+                onClick={signOut}
+                className="grid h-9 w-9 place-items-center border border-white/10 text-[#A49D90] transition hover:border-[#D96845]/60 hover:text-[#E8A18D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96845] lg:hidden"
+                aria-label="Sign out"
+              >
+                <LogOut size={14} />
               </button>
             </div>
           </header>
