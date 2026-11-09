@@ -495,34 +495,51 @@ router.post("/businesses/:id/feedback", async (req, res): Promise<void> => {
 
   await assertOwnership(params.id, getOwnerId(res));
 
-  const {
-    howCustomersFindYou,
-    wouldPay,
-    wouldPayPriority,
-    monthlyAdSpend,
-    wouldRefer,
-    oneThing,
-  } = req.body as {
-    howCustomersFindYou?: string;
-    wouldPay?: string;
-    wouldPayPriority?: string;
-    monthlyAdSpend?: string;
-    wouldRefer?: string;
-    oneThing?: string;
-  };
+  if (
+    !req.body ||
+    typeof req.body !== "object" ||
+    Array.isArray(req.body)
+  ) {
+    res.status(400).json({ error: "Feedback must be a JSON object" });
+    return;
+  }
+
+  const limits = {
+    howCustomersFindYou: 200,
+    wouldPay: 200,
+    wouldPayPriority: 200,
+    monthlyAdSpend: 200,
+    wouldRefer: 200,
+    oneThing: 2_000,
+  } as const;
+  const body = req.body as Record<string, unknown>;
+  const allowedFields = Object.keys(limits);
+  if (Object.keys(body).some((key) => !allowedFields.includes(key))) {
+    res.status(400).json({ error: "Feedback contains an unsupported field" });
+    return;
+  }
+
+  const answers: Record<string, string> = {};
+  for (const [field, maxLength] of Object.entries(limits)) {
+    const value = body[field];
+    if (value !== undefined && typeof value !== "string") {
+      res.status(400).json({ error: `Feedback field ${field} must be text` });
+      return;
+    }
+    if (typeof value === "string" && value.length > maxLength) {
+      res.status(400).json({
+        error: `Feedback field ${field} exceeds ${maxLength} characters`,
+      });
+      return;
+    }
+    answers[field] = typeof value === "string" ? value.trim() : "";
+  }
 
   await db.insert(agentEventsTable).values({
     businessId: params.id,
     eventType: "onboarding_feedback",
     toolName: "feedback_form",
-    metadata: {
-      howCustomersFindYou: howCustomersFindYou ?? "",
-      wouldPay: wouldPay ?? "",
-      wouldPayPriority: wouldPayPriority ?? "",
-      monthlyAdSpend: monthlyAdSpend ?? "",
-      wouldRefer: wouldRefer ?? "",
-      oneThing: oneThing ?? "",
-    },
+    metadata: answers,
   });
 
   res.status(201).json({ ok: true });
