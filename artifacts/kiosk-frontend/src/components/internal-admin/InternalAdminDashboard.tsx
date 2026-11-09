@@ -22,11 +22,13 @@ import {
 type Section =
   | "overview"
   | "ai-usage"
+  | "requests"
   | "businesses"
   | "feedback"
   | "support"
   | "incidents"
   | "audit";
+
 type AdminUser = {
   id: string;
   email: string;
@@ -34,7 +36,9 @@ type AdminUser = {
   role: string;
   permissions: string[];
 };
+
 type Row = Record<string, unknown>;
+
 type Overview = {
   generatedAt: string;
   metrics: {
@@ -46,10 +50,10 @@ type Overview = {
     publishedBusinesses: number;
     sessionStarts7d: number;
   };
-  requestsByEndpoint: Array<Row>;
-  topClients: Array<Row>;
-  topTools: Array<Row>;
-  recentErrors: Array<Row>;
+  requestsByEndpoint: Row[];
+  topClients: Row[];
+  topTools: Row[];
+  recentErrors: Row[];
   measurementNote: string;
 };
 
@@ -79,6 +83,12 @@ const NAV: Array<{
   {
     id: "ai-usage",
     label: "AI usage",
+    icon: Activity,
+    permission: "telemetry.read",
+  },
+  {
+    id: "requests",
+    label: "Request logs",
     icon: Activity,
     permission: "telemetry.read",
   },
@@ -117,9 +127,7 @@ const NAV: Array<{
 function randomString(length = 64) {
   const bytes = new Uint8Array(length);
   window.crypto.getRandomValues(bytes);
-  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join(
-    "",
-  );
+  return Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
 }
 
 async function sha256(value: string) {
@@ -136,21 +144,30 @@ async function sha256(value: string) {
 function formatValue(value: unknown): string {
   if (value === null || value === undefined || value === "") return "—";
   if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "string" && /^\d{4}-\d\d-\d\dT/.test(value))
+  if (
+    typeof value === "string" &&
+    /^\d{4}-\d\d-\d\dT/.test(value)
+  ) {
     return new Date(value).toLocaleString();
+  }
   if (typeof value === "object") return JSON.stringify(value);
   return String(value);
 }
 
-function FeedbackList({ rows }: { rows: Row[] }) {\n  const fields = [\n    ["howCustomersFindYou", "How customers find the business"],\n    ["wouldPay", "Willingness to pay"],\n    ["wouldPayPriority", "Payment priority"],\n    ["monthlyAdSpend", "Monthly advertising spend"],\n    ["wouldRefer", "Referral intent"],\n    ["oneThing", "One thing to improve"],\n  ] as const;\n\n  if (!rows.length) return <div className="p-8 text-sm text-[#817D74]">No feedback submissions yet.</div>;\n\n  return (\n    <div className="grid gap-3 p-4 sm:grid-cols-2">\n      {rows.map((row) => {\n        const answers = row.answers && typeof row.answers === "object"\n          ? (row.answers as Record<string, unknown>)\n          : {};\n        return (\n          <article key={String(row.id)} className="border border-white/[.08] bg-[#1B1A16] p-5">\n            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-white/[.07] pb-4">\n              <div>\n                <h3 className="text-sm font-semibold">{formatValue(row.businessName)}</h3>\n                <p className="mt-1 text-[10px] text-[#77736B]">Business ID: {formatValue(row.businessId)}</p>\n              </div>\n              <time className="text-[10px] text-[#8E897F]">{formatValue(row.submittedAt)}</time>\n            </div>\n            <dl className="mt-4 grid gap-4">\n              {fields.map(([key, label]) => (\n                <div key={key}>\n                  <dt className="text-[9px] uppercase tracking-[.13em] text-[#77736B]">{label}</dt>\n                  <dd className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#D8D3C9]">{formatValue(answers[key])}</dd>\n                </div>\n              ))}\n            </dl>\n          </article>\n        );\n      })}\n    </div>\n  );\n}\n\nfunction DataTable({ rows }: { rows: Row[] }) {
+function DataTable({ rows }: { rows: Row[] }) {
   const columns = useMemo(
     () => (rows.length ? Object.keys(rows[0]!).slice(0, 8) : []),
     [rows],
   );
-  if (!rows.length)
+
+  if (!rows.length) {
     return (
-      <div className="p-8 text-sm text-[#817D74]">No records to show yet.</div>
+      <div className="p-8 text-sm text-[#817D74]">
+        No records to show yet.
+      </div>
     );
+  }
+
   return (
     <div className="overflow-x-auto">
       <table className="w-full min-w-[680px] border-collapse text-left text-xs">
@@ -186,6 +203,69 @@ function FeedbackList({ rows }: { rows: Row[] }) {\n  const fields = [\n    ["ho
   );
 }
 
+function FeedbackList({ rows }: { rows: Row[] }) {
+  const fields = [
+    ["howCustomersFindYou", "How customers find the business"],
+    ["wouldPay", "Willingness to pay"],
+    ["wouldPayPriority", "Payment priority"],
+    ["monthlyAdSpend", "Monthly advertising spend"],
+    ["wouldRefer", "Referral intent"],
+    ["oneThing", "One thing to improve"],
+  ] as const;
+
+  if (!rows.length) {
+    return (
+      <div className="p-8 text-sm text-[#817D74]">
+        No feedback submissions yet.
+      </div>
+    );
+  }
+
+  return (
+    <div className="grid gap-3 p-4 sm:grid-cols-2">
+      {rows.map((row) => {
+        const answers =
+          row.answers && typeof row.answers === "object"
+            ? (row.answers as Record<string, unknown>)
+            : {};
+
+        return (
+          <article
+            key={String(row.id)}
+            className="border border-white/[.08] bg-[#1B1A16] p-5"
+          >
+            <div className="flex flex-wrap items-start justify-between gap-2 border-b border-white/[.07] pb-4">
+              <div>
+                <h3 className="text-sm font-semibold">
+                  {formatValue(row.businessName)}
+                </h3>
+                <p className="mt-1 text-[10px] text-[#77736B]">
+                  Business ID: {formatValue(row.businessId)}
+                </p>
+              </div>
+              <time className="text-[10px] text-[#8E897F]">
+                {formatValue(row.submittedAt)}
+              </time>
+            </div>
+            <dl className="mt-4 grid gap-4">
+              {fields.map(([key, label]) => (
+                <div key={key}>
+                  <dt className="text-[9px] uppercase tracking-[.13em] text-[#77736B]">
+                    {label}
+                  </dt>
+                  <dd className="mt-1 whitespace-pre-wrap break-words text-xs leading-5 text-[#D8D3C9]">
+                    {formatValue(answers[key])}
+                  </dd>
+                </div>
+              ))}
+            </dl>
+          </article>
+        );
+      })}
+    </div>
+  );
+}
+
 export function InternalAdminDashboard() {
   const oauthExchangeRef = useRef<Promise<string> | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -207,6 +287,7 @@ export function InternalAdminDashboard() {
         },
         cache: "no-store",
       });
+
       if (!response.ok) {
         const payload = (await response.json().catch(() => ({}))) as {
           error?: string;
@@ -215,6 +296,7 @@ export function InternalAdminDashboard() {
           payload.error ?? `Admin API request failed (${response.status})`,
         );
       }
+
       return response.json() as Promise<T>;
     },
     [],
@@ -227,6 +309,7 @@ export function InternalAdminDashboard() {
       );
       return;
     }
+
     setAuthBusy(true);
     try {
       const state = randomString(24);
@@ -256,12 +339,15 @@ export function InternalAdminDashboard() {
     const params = new URLSearchParams(window.location.search);
     const code = params.get("code");
     const returnedState = params.get("state");
-    const oauthError = params.get("error_description") ?? params.get("error");
+    const oauthError =
+      params.get("error_description") ?? params.get("error");
+
     if (oauthError) {
       setAuthMessage(oauthError);
       window.history.replaceState({}, "", window.location.pathname);
       return;
     }
+
     if (!code) return;
 
     if (!oauthExchangeRef.current) {
@@ -269,6 +355,7 @@ export function InternalAdminDashboard() {
       const verifier = sessionStorage.getItem("kiosk_admin_pkce_verifier");
       sessionStorage.removeItem("kiosk_admin_oauth_state");
       sessionStorage.removeItem("kiosk_admin_pkce_verifier");
+
       if (
         !returnedState ||
         returnedState !== expectedState ||
@@ -283,6 +370,7 @@ export function InternalAdminDashboard() {
         window.history.replaceState({}, "", window.location.pathname);
         return;
       }
+
       const body = new URLSearchParams({
         grant_type: "authorization_code",
         client_id: OIDC_CLIENT_ID,
@@ -290,16 +378,21 @@ export function InternalAdminDashboard() {
         redirect_uri: OIDC_REDIRECT_URI,
         code_verifier: verifier,
       });
+
       oauthExchangeRef.current = fetch(`${OIDC_DOMAIN}/oauth2/token`, {
         method: "POST",
         headers: { "content-type": "application/x-www-form-urlencoded" },
         body,
       }).then(async (response) => {
-        if (!response.ok)
+        if (!response.ok) {
           throw new Error("Could not exchange the sign-in code.");
-        const result = (await response.json()) as { access_token?: string };
-        if (!result.access_token)
+        }
+        const result = (await response.json()) as {
+          access_token?: string;
+        };
+        if (!result.access_token) {
           throw new Error("The identity provider returned no access token.");
+        }
         return result.access_token;
       });
     }
@@ -332,8 +425,10 @@ export function InternalAdminDashboard() {
           setRows([]);
           return;
         }
+
         const paths: Record<Exclude<Section, "overview">, string> = {
-          "ai-usage": "/admin/telemetry/tools",\n        requests: "/admin/telemetry/requests",
+          "ai-usage": "/admin/telemetry/tools",
+          requests: "/admin/telemetry/requests",
           businesses: "/admin/businesses",
           feedback: "/admin/feedback",
           support: "/admin/tickets",
@@ -357,6 +452,7 @@ export function InternalAdminDashboard() {
     if (!token) return;
     let cancelled = false;
     setAuthBusy(true);
+
     api<AdminUser>("/admin/me", token)
       .then((profile) => {
         if (cancelled) return;
@@ -378,6 +474,7 @@ export function InternalAdminDashboard() {
       .finally(() => {
         if (!cancelled) setAuthBusy(false);
       });
+
     return () => {
       cancelled = true;
     };
@@ -470,7 +567,11 @@ export function InternalAdminDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setSection(item.id)}
-                  className={`flex w-full items-center gap-3 px-3 py-3 text-left text-xs transition ${section === item.id ? "bg-[#D96845]/10 text-[#E8A18D]" : "text-[#9B968C] hover:bg-white/[.04] hover:text-[#EDE7DC]"}`}
+                  className={`flex w-full items-center gap-3 px-3 py-3 text-left text-xs transition ${
+                    section === item.id
+                      ? "bg-[#D96845]/10 text-[#E8A18D]"
+                      : "text-[#9B968C] hover:bg-white/[.04] hover:text-[#EDE7DC]"
+                  }`}
                 >
                   <Icon size={15} />
                   {item.label}
@@ -495,7 +596,8 @@ export function InternalAdminDashboard() {
               }}
               className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] hover:text-white"
             >
-              <LogOut size={13} /> Sign out
+              <LogOut size={13} />
+              Sign out
             </button>
           </div>
         </aside>
@@ -512,8 +614,8 @@ export function InternalAdminDashboard() {
             </div>
             <div className="flex items-center gap-3">
               <span className="hidden items-center gap-2 text-[10px] text-[#8E897F] sm:flex">
-                <span className="h-1.5 w-1.5 rounded-full bg-[#80A88A]" /> Admin
-                session active
+                <span className="h-1.5 w-1.5 rounded-full bg-[#80A88A]" />
+                Admin session active
               </span>
               <button
                 onClick={() => token && void loadSection(token, section)}
@@ -531,7 +633,11 @@ export function InternalAdminDashboard() {
                 <button
                   key={item.id}
                   onClick={() => setSection(item.id)}
-                  className={`shrink-0 px-3 py-2 text-[11px] ${section === item.id ? "bg-[#D96845]/15 text-[#E8A18D]" : "text-[#9B968C]"}`}
+                  className={`shrink-0 px-3 py-2 text-[11px] ${
+                    section === item.id
+                      ? "bg-[#D96845]/15 text-[#E8A18D]"
+                      : "text-[#9B968C]"
+                  }`}
                 >
                   {item.label}
                 </button>
@@ -542,8 +648,8 @@ export function InternalAdminDashboard() {
           <div className="mx-auto max-w-[1440px] p-5 sm:p-8">
             {busy && (
               <div className="mb-5 flex items-center gap-2 text-xs text-[#8E897F]">
-                <LoaderCircle className="animate-spin" size={14} /> Loading
-                operational data…
+                <LoaderCircle className="animate-spin" size={14} />
+                Loading operational data…
               </div>
             )}
             {authBusy && (
@@ -572,10 +678,10 @@ export function InternalAdminDashboard() {
                     </p>
                   </div>
                   <span className="text-[10px] text-[#77736B]">
-                    Updated{" "}
-                    {new Date(overview.generatedAt).toLocaleTimeString()}
+                    Updated {new Date(overview.generatedAt).toLocaleTimeString()}
                   </span>
                 </div>
+
                 <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
                   {[
                     [
@@ -624,10 +730,13 @@ export function InternalAdminDashboard() {
                       <p className="mt-4 text-3xl font-semibold tracking-[-.05em] tabular-nums">
                         {Number(value).toLocaleString()}
                       </p>
-                      <p className="mt-2 text-[10px] text-[#77736B]">{note}</p>
+                      <p className="mt-2 text-[10px] text-[#77736B]">
+                        {note}
+                      </p>
                     </div>
                   ))}
                 </div>
+
                 <div className="mt-8 grid gap-5 xl:grid-cols-2">
                   <section className="border border-white/[.08] bg-[#171612]">
                     <div className="flex items-center justify-between border-b border-white/[.07] px-5 py-4">
@@ -674,15 +783,18 @@ export function InternalAdminDashboard() {
                     <DataTable rows={overview.recentErrors} />
                   </section>
                 </div>
+
                 <p className="mt-6 max-w-4xl text-[10px] leading-5 text-[#77736B]">
                   {overview.measurementNote}
                 </p>
                 <div className="mt-5 flex flex-wrap gap-4 text-[10px] text-[#8E897F]">
                   <span className="inline-flex items-center gap-2">
-                    <ShieldCheck size={13} /> Restricted admin data
+                    <ShieldCheck size={13} />
+                    Restricted admin data
                   </span>
                   <span className="inline-flex items-center gap-2">
-                    <Clock3 size={13} /> Counts are event-based
+                    <Clock3 size={13} />
+                    Counts are event-based
                   </span>
                 </div>
               </>
@@ -696,20 +808,25 @@ export function InternalAdminDashboard() {
                     {rows.length} records returned
                   </span>
                 </div>
-                {section === "feedback" && (
-                  <p className="px-5 pt-4 text-[11px] leading-5 text-[#8E897F]">
-                    Private merchant onboarding responses. Stored as metadata on
-                    agent_events with eventType onboarding_feedback.
-                  </p>
+                {section === "feedback" ? (
+                  <>
+                    <p className="px-5 pt-4 text-[11px] leading-5 text-[#8E897F]">
+                      Private merchant onboarding responses. Stored in
+                      PostgreSQL agent_events.metadata.
+                    </p>
+                    <FeedbackList rows={rows} />
+                  </>
+                ) : (
+                  <DataTable rows={rows} />
                 )}
-                <DataTable rows={rows} />
               </section>
             )}
 
             <footer className="mt-10 flex items-center justify-between border-t border-white/[.07] pt-5 text-[9px] uppercase tracking-[.14em] text-[#625F58]">
               <span>Kiosk internal operations</span>
               <span className="inline-flex items-center gap-2">
-                <ArrowUpRight size={11} /> Not visible to merchants
+                <ArrowUpRight size={11} />
+                Not visible to merchants
               </span>
             </footer>
           </div>
