@@ -1,7 +1,8 @@
 import { AsyncLocalStorage } from "node:async_hooks";
 import { randomUUID } from "node:crypto";
 import { eq } from "drizzle-orm";
-import { db, mcpRequestEventsTable, mcpToolEventsTable } from "../index.js";
+import { db } from "../db.js";
+import { mcpRequestEventsTable, mcpToolEventsTable } from "../schema/index.js";
 
 type JsonObject = Record<string, unknown>;
 type RequestLike = {
@@ -11,7 +12,8 @@ type RequestLike = {
 };
 type ResponseLike = {
   statusCode: number;
-  once: (event: "finish", listener: () => void) => unknown;
+  writableFinished?: boolean;
+  once: (event: "finish" | "close", listener: () => void) => unknown;
 };
 
 export interface McpRequestContext {
@@ -121,14 +123,17 @@ export function beginMcpRequest(
 
   requestInsertPromises.set(context, insertPromise);
 
-  res.once("finish", () => {
+  let finalized = false;
+  const finalize = (aborted: boolean): void => {
+    if (finalized) return;
+    finalized = true;
     void insertPromise.then(async () => {
       try {
         await db
           .update(mcpRequestEventsTable)
           .set({
             httpStatus: res.statusCode,
-            outcome: res.statusCode >= 400 ? "error" : "success",
+            outcome: aborted ? "aborted" : res.statusCode >= 400 ? "error" : "success",
             durationMs: Math.max(0, Date.now() - startedAt),
             completedAt: new Date(),
           })
@@ -137,7 +142,9 @@ export function beginMcpRequest(
         console.error("[mcp-telemetry] Failed to complete request event", error);
       }
     });
-  });
+  };
+  res.once("finish", () => finalize(false));
+  res.once("close", () => finalize(!res.writableFinished));
 
   return context;
 }
