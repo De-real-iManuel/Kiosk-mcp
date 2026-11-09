@@ -288,6 +288,7 @@ function BusinessGlyph({
 }
 
 type MarketplaceCardData = Business & {
+  description?: string | null;
   mcpEndpoint?: string | null;
   capabilities?: string[];
   city?: string | null;
@@ -411,7 +412,7 @@ function BusinessCard({ business }: { business: Business }) {
       </div>
 
       <p className="mt-6 line-clamp-3 min-h-[4.5rem] text-[13px] leading-6 text-[#625D53]">
-        {business.description || business.services || "Open this Kiosk window to explore the business and its offerings."}
+        {listing.description || business.services || "Open this Kiosk window to explore the business and its offerings."}
       </p>
 
       <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-black/10 pt-4 text-[11px] text-[#625D53]">
