@@ -24,7 +24,9 @@ interface JwkSet {
   keys: JsonWebKeyLike[];
 }
 const jwksCache = new Map<string, { keys: JwkSet; fetchedAt: number }>();
+const unknownKidRefreshes = new Map<string, number>();
 const JWKS_TTL_MS = 60 * 60 * 1000;
+const UNKNOWN_KID_REFRESH_COOLDOWN_MS = 10_000;
 
 function decodePart<T>(part: string): T {
   return JSON.parse(Buffer.from(part, "base64url").toString("utf8")) as T;
@@ -36,6 +38,16 @@ async function getSigningKey(
   forceRefresh = false,
 ) {
   const cached = jwksCache.get(issuer);
+  if (forceRefresh) {
+    const lastRefresh = unknownKidRefreshes.get(issuer) ?? 0;
+    if (Date.now() - lastRefresh < UNKNOWN_KID_REFRESH_COOLDOWN_MS) {
+      throw new Error("Signing key ID was not found in the cached identity provider key set");
+    }
+    // Set before awaiting fetch so concurrent random-kid requests cannot fan
+    // out into a burst of JWKS network requests.
+    unknownKidRefreshes.set(issuer, Date.now());
+  }
+
   if (forceRefresh || !cached || Date.now() - cached.fetchedAt > JWKS_TTL_MS) {
     const response = await fetch(
       `${issuer.replace(/\/$/, "")}/.well-known/jwks.json`,
