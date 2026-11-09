@@ -1150,7 +1150,9 @@ function OwnerCard({ business }: { business: Business }) {
                 confirmPublish();
               },
               onError: () => {
-                // Even if feedback fails, still publish
+                toast.error(
+                  "Your feedback could not be saved, but your Kiosk will still be published.",
+                );
                 setShowFeedback(false);
                 confirmPublish();
               },
