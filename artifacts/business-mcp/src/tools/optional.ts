@@ -40,6 +40,8 @@ export function registerOptionalTools(
       {
         category: z
           .string()
+          .trim()
+          .max(100)
           .optional()
           .describe("Filter by product sub-category"),
       },
@@ -105,14 +107,14 @@ export function registerOptionalTools(
       {
         items: z.array(
           z.object({
-            product_name: z.string().min(1),
-            quantity: z.number().int().positive(),
-            notes: z.string().optional(),
+            product_name: z.string().trim().min(1).max(120),
+            quantity: z.number().int().positive().max(1_000),
+            notes: z.string().max(500).optional(),
           }),
-        ),
-        contact_name: z.string().min(1),
-        contact_phone: z.string().min(1),
-        delivery_address: z.string().optional(),
+        ).min(1).max(30),
+        contact_name: z.string().trim().min(1).max(120),
+        contact_phone: z.string().trim().min(7).max(30),
+        delivery_address: z.string().max(500).optional(),
       },
       async (input) => {
         const order_ref = "ORD-" + Date.now();
@@ -184,19 +186,20 @@ they confirm.
 Returns a booking_ref, current status ("pending"), and a pre-filled WhatsApp
 link with all booking details ready to send to the business.`,
       {
-        service_name: z.string().min(1).describe("Name of the service to book"),
+        service_name: z.string().trim().min(1).max(120).describe("Name of the service to book"),
         preferred_date: z
           .string()
           .regex(/^\d{4}-\d{2}-\d{2}$/, "Must be YYYY-MM-DD")
           .describe("Requested date in YYYY-MM-DD format"),
         preferred_time: z
           .string()
-          .regex(/^\d{2}:\d{2}$/, "Must be HH:MM")
+          .regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/, "Must be a valid HH:MM time")
           .describe("Requested time in HH:MM (24-hour) format"),
-        contact_name: z.string().min(1).describe("Customer's name"),
-        contact_phone: z.string().min(1).describe("Customer's phone number"),
+        contact_name: z.string().trim().min(1).max(120).describe("Customer's name"),
+        contact_phone: z.string().trim().min(7).max(30).describe("Customer's phone number"),
         notes: z
           .string()
+          .max(1_000)
           .optional()
           .describe("Any additional notes or special requests"),
       },
