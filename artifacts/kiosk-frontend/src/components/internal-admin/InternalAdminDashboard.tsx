@@ -192,6 +192,7 @@ export function InternalAdminDashboard() {
   useEffect(() => {
     if (!token) return;
     let cancelled = false;
+    setAuthBusy(true);
     api<AdminUser>("/admin/me", token).then((profile) => {
       if (cancelled) return;
       setAdmin(profile);
@@ -202,7 +203,7 @@ export function InternalAdminDashboard() {
         setAdmin(null);
         setError(cause instanceof Error ? cause.message : "Admin access denied.");
       }
-    });
+    }).finally(() => { if (!cancelled) setAuthBusy(false); });
     return () => { cancelled = true; };
   }, [token, api]);
 
@@ -243,7 +244,7 @@ export function InternalAdminDashboard() {
             const Icon = item.icon;
             return <button key={item.id} onClick={() => setSection(item.id)} className={`flex w-full items-center gap-3 px-3 py-3 text-left text-xs transition ${section === item.id ? "bg-[#D96845]/10 text-[#E8A18D]" : "text-[#9B968C] hover:bg-white/[.04] hover:text-[#EDE7DC]"}`}><Icon size={15}/>{item.label}</button>;
           })}</nav>
-          <div className="mt-auto border-t border-white/[.08] pt-5"><div className="text-xs font-medium">{admin.displayName || admin.email}</div><div className="mt-1 text-[10px] text-[#77736B]">{admin.role.replaceAll("_", " ")}</div><button onClick={() => { setToken(null); setAdmin(null); }} className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] hover:text-white"><LogOut size={13}/> Sign out</button></div>
+          <div className="mt-auto border-t border-white/[.08] pt-5"><div className="text-xs font-medium">{admin.displayName || admin.email}</div><div className="mt-1 text-[10px] text-[#77736B]">{admin.role.replaceAll("_", " ")}</div><button onClick={() => { setToken(null); setAdmin(null); setError(""); }} className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] hover:text-white"><LogOut size={13}/> Sign out</button></div>
         </aside>
         <section className="min-w-0 flex-1">
           <header className="flex min-h-[72px] items-center justify-between border-b border-white/[.08] px-5 sm:px-8">
