@@ -523,7 +523,7 @@ export function InternalAdminDashboard() {
           <button
             onClick={() => void startLogin()}
             disabled={authBusy}
-            className="mt-8 flex h-12 items-center justify-center gap-3 bg-[#EDE7DC] px-5 text-sm font-semibold text-[#11110F] transition hover:bg-white disabled:opacity-50"
+            className="mt-8 flex h-12 items-center justify-center gap-3 bg-[#D96845] px-5 text-sm font-semibold text-[#11110F] transition hover:bg-[#E8A18D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96845] focus-visible:ring-offset-2 focus-visible:ring-offset-[#11110F] disabled:opacity-50"
           >
             {authBusy ? (
               <LoaderCircle className="animate-spin" size={16} />
@@ -565,7 +565,7 @@ export function InternalAdminDashboard() {
                   onClick={() => setSection(item.id)}
                   className={`flex w-full items-center gap-3 px-3 py-3 text-left text-xs transition ${
                     section === item.id
-                      ? "bg-[#D96845]/10 text-[#E8A18D]"
+                      ? "bg-[#D96845]/15 text-[#F0B3A0] ring-1 ring-inset ring-[#D96845]/30"
                       : "text-[#9B968C] hover:bg-white/[.04] hover:text-[#EDE7DC]"
                   }`}
                 >
@@ -590,7 +590,7 @@ export function InternalAdminDashboard() {
                 setOverview(null);
                 setRows([]);
               }}
-              className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] hover:text-white"
+              className="mt-5 flex items-center gap-2 text-[11px] text-[#9B968C] transition hover:text-[#E8A18D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96845]"
             >
               <LogOut size={13} />
               Sign out
@@ -615,7 +615,7 @@ export function InternalAdminDashboard() {
               </span>
               <button
                 onClick={() => token && void loadSection(token, section)}
-                className="grid h-9 w-9 place-items-center border border-white/10 text-[#A49D90] hover:text-white"
+                className="grid h-9 w-9 place-items-center border border-white/10 text-[#A49D90] transition hover:border-[#D96845]/60 hover:text-[#E8A18D] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#D96845]"
                 aria-label="Refresh"
               >
                 <RefreshCw size={14} />
@@ -631,7 +631,7 @@ export function InternalAdminDashboard() {
                   onClick={() => setSection(item.id)}
                   className={`shrink-0 px-3 py-2 text-[11px] ${
                     section === item.id
-                      ? "bg-[#D96845]/15 text-[#E8A18D]"
+                      ? "bg-[#D96845]/20 text-[#F0B3A0] ring-1 ring-inset ring-[#D96845]/35"
                       : "text-[#9B968C]"
                   }`}
                 >
