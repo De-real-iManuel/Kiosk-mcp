@@ -13,17 +13,29 @@ const adminIds: string[] = [];
 
 afterAll(async () => {
   if (requestIds.length) {
-    await db.delete(mcpToolEventsTable).where(
-      and(...requestIds.map((requestId) => eq(mcpToolEventsTable.requestId, requestId))),
-    );
-    await db.delete(mcpRequestEventsTable).where(
-      and(...requestIds.map((requestId) => eq(mcpRequestEventsTable.requestId, requestId))),
-    );
+    await db
+      .delete(mcpToolEventsTable)
+      .where(
+        and(
+          ...requestIds.map((requestId) =>
+            eq(mcpToolEventsTable.requestId, requestId),
+          ),
+        ),
+      );
+    await db
+      .delete(mcpRequestEventsTable)
+      .where(
+        and(
+          ...requestIds.map((requestId) =>
+            eq(mcpRequestEventsTable.requestId, requestId),
+          ),
+        ),
+      );
   }
   if (adminIds.length) {
-    await db.delete(adminUsersTable).where(
-      and(...adminIds.map((id) => eq(adminUsersTable.id, id))),
-    );
+    await db
+      .delete(adminUsersTable)
+      .where(and(...adminIds.map((id) => eq(adminUsersTable.id, id))));
   }
   await pool.end();
 });
@@ -46,12 +58,15 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
       outcome: "started",
     });
 
-    await db.update(mcpRequestEventsTable).set({
-      httpStatus: 200,
-      outcome: "success",
-      durationMs: 17,
-      completedAt: new Date(),
-    }).where(eq(mcpRequestEventsTable.requestId, requestId));
+    await db
+      .update(mcpRequestEventsTable)
+      .set({
+        httpStatus: 200,
+        outcome: "success",
+        durationMs: 17,
+        completedAt: new Date(),
+      })
+      .where(eq(mcpRequestEventsTable.requestId, requestId));
 
     await db.insert(mcpToolEventsTable).values({
       requestId,
@@ -65,10 +80,16 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
       resultCount: 3,
     });
 
-    const [request] = await db.select().from(mcpRequestEventsTable)
-      .where(eq(mcpRequestEventsTable.requestId, requestId)).limit(1);
-    const [tool] = await db.select().from(mcpToolEventsTable)
-      .where(eq(mcpToolEventsTable.requestId, requestId)).limit(1);
+    const [request] = await db
+      .select()
+      .from(mcpRequestEventsTable)
+      .where(eq(mcpRequestEventsTable.requestId, requestId))
+      .limit(1);
+    const [tool] = await db
+      .select()
+      .from(mcpToolEventsTable)
+      .where(eq(mcpToolEventsTable.requestId, requestId))
+      .limit(1);
 
     expect(request).toMatchObject({
       requestId,
@@ -90,13 +111,16 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
   it("enforces the unique issuer and subject mapping for admin identities", async () => {
     const identityProvider = `https://admin-test.example/${randomUUID()}`;
     const identitySubject = randomUUID();
-    const [admin] = await db.insert(adminUsersTable).values({
-      identityProvider,
-      identitySubject,
-      email: "integration-admin@example.test",
-      role: "technical_admin",
-      status: "active",
-    }).returning({ id: adminUsersTable.id });
+    const [admin] = await db
+      .insert(adminUsersTable)
+      .values({
+        identityProvider,
+        identitySubject,
+        email: "integration-admin@example.test",
+        role: "technical_admin",
+        status: "active",
+      })
+      .returning({ id: adminUsersTable.id });
     adminIds.push(admin!.id);
 
     await expect(
@@ -109,12 +133,15 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
       }),
     ).rejects.toThrow();
 
-    const matches = await db.select({ id: adminUsersTable.id })
+    const matches = await db
+      .select({ id: adminUsersTable.id })
       .from(adminUsersTable)
-      .where(and(
-        eq(adminUsersTable.identityProvider, identityProvider),
-        eq(adminUsersTable.identitySubject, identitySubject),
-      ));
+      .where(
+        and(
+          eq(adminUsersTable.identityProvider, identityProvider),
+          eq(adminUsersTable.identitySubject, identitySubject),
+        ),
+      );
     expect(matches).toHaveLength(1);
   });
 });
