@@ -6,6 +6,21 @@ const nextConfig: NextConfig = {
   outputFileTracingRoot: path.resolve(__dirname, '../..'),
   images: { unoptimized: true },
   devIndicators: false,
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          { key: 'X-Content-Type-Options', value: 'nosniff' },
+          { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
+          },
+        ],
+      },
+    ];
+  },
   webpack(config) {
     // dom-helpers v5 removed addClass/removeClass. react-transition-group 4.x
     // (pulled in by recharts → react-smooth) still imports those old paths.
