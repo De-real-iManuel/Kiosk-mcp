@@ -1,7 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { and, eq } from "drizzle-orm";
 import { afterAll, describe, expect, it } from "vitest";
-import { db, pool } from "../index.js";
+import { db } from "../index.js";
 import {
   adminUsersTable,
   mcpRequestEventsTable,
@@ -9,7 +9,7 @@ import {
 } from "./index.js";
 
 const requestIds: string[] = [];
-const adminIds: string[] = [];
+const adminIds: string[] = [];\nconst feedbackIds: string[] = [];
 
 afterAll(async () => {
   if (requestIds.length) {
@@ -32,7 +32,7 @@ afterAll(async () => {
         ),
       );
   }
-  if (adminIds.length) {
+  if (feedbackIds.length) {\n    await db.delete(agentEventsTable).where(\n      and(...feedbackIds.map((id) => eq(agentEventsTable.id, id))),\n    );\n  }\n  if (adminIds.length) {
     await db
       .delete(adminUsersTable)
       .where(and(...adminIds.map((id) => eq(adminUsersTable.id, id))));
@@ -108,7 +108,43 @@ describe("PostgreSQL telemetry and admin schema integration", () => {
     });
   });
 
-  it("enforces the unique issuer and subject mapping for admin identities", async () => {
+
+  it("stores onboarding feedback answers as agent-event JSON metadata", async () => {
+    const [event] = await db.insert(agentEventsTable).values({
+      businessId: null,
+      eventType: "onboarding_feedback",
+      toolName: "feedback_form",
+      metadata: {
+        howCustomersFindYou: "Instagram and referrals",
+        wouldPay: "Yes",
+        wouldPayPriority: "Maybe",
+        monthlyAdSpend: "Under ₦5,000",
+        wouldRefer: "Yes",
+        oneThing: "More customer enquiries",
+      },
+    }).returning({ id: agentEventsTable.id });
+    feedbackIds.push(event!.id);
+
+    const [stored] = await db.select({
+      eventType: agentEventsTable.eventType,
+      toolName: agentEventsTable.toolName,
+      metadata: agentEventsTable.metadata,
+    }).from(agentEventsTable).where(eq(agentEventsTable.id, event!.id)).limit(1);
+
+    expect(stored).toMatchObject({
+      eventType: "onboarding_feedback",
+      toolName: "feedback_form",
+      metadata: {
+        howCustomersFindYou: "Instagram and referrals",
+        wouldPay: "Yes",
+        wouldPayPriority: "Maybe",
+        monthlyAdSpend: "Under ₦5,000",
+        wouldRefer: "Yes",
+        oneThing: "More customer enquiries",
+      },
+    });
+  });
+\n  it("enforces the unique issuer and subject mapping for admin identities", async () => {
     const identityProvider = `https://admin-test.example/${randomUUID()}`;
     const identitySubject = randomUUID();
     const [admin] = await db
