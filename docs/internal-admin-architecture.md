@@ -94,3 +94,20 @@ These are read-only foundations. Business suspension, publish overrides, verific
 4. Add write services that atomically persist business/support/incident state changes and audit events.
 5. Apply the schema in staging only, then verify dashboard data against real MCP traffic.
 6. Add retention/aggregation and operational alerts before high-volume production use.
+
+## Feedback form storage and admin visibility
+
+The merchant dashboard's pre-publication feedback form calls `POST /api/businesses/:id/feedback`. The API requires the merchant's authenticated Clerk identity, verifies ownership of the business, and inserts one row into `agent_events` with:
+- `event_type = 'onboarding_feedback'`
+- `tool_name = 'feedback_form'`
+- `business_id` set to the merchant's business
+- `metadata` containing the six submitted answers (`howCustomersFindYou`, `wouldPay`, `wouldPayPriority`, `monthlyAdSpend`, `wouldRefer`, and `oneThing`)
+- `created_at` as the submission timestamp
+
+This is PostgreSQL JSONB data, not browser-only state or a separate survey provider. The internal admin API exposes a read-only `GET /api/admin/feedback` endpoint to users with `telemetry.read`, joining the feedback event to its business name. The admin console includes a Feedback section. The endpoint returns only the onboarding feedback event type/tool and caps each response at 100 records.
+
+## Validation in CI
+
+The CI test job now starts an ephemeral PostgreSQL 16 service, sets a test-only `DATABASE_URL`, applies the Drizzle schema with `pnpm --filter @workspace/db push`, and runs the database package tests against the created tables. Integration tests write/read/update/delete test MCP request/tool events, verify the unique admin issuer+subject constraint, and verify that onboarding feedback answers persist in `agent_events.metadata`. This database is ephemeral CI infrastructure; it does not connect to staging or production.
+
+Formatting checks compare TypeScript files changed against the PR base branch rather than failing on unrelated pre-existing formatting in untouched legacy files.
