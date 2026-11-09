@@ -1,14 +1,20 @@
 import { describe, expect, it, vi } from "vitest";
 
 process.env.DATABASE_URL ??= "postgresql://test:test@127.0.0.1:5432/test";
-const { requireAdmin, requireAdminPermission } = await import("../middlewares/require-admin.js");
+const { requireAdmin, requireAdminPermission } =
+  await import("../middlewares/require-admin.js");
 
 function response() {
   const res = {
     locals: {} as Record<string, unknown>,
     statusCode: 200,
-    status(code: number) { this.statusCode = code; return this; },
-    json: vi.fn(function (this: { statusCode: number }, _body: unknown) { return this; }),
+    status(code: number) {
+      this.statusCode = code;
+      return this;
+    },
+    json: vi.fn(function (this: { statusCode: number }, _body: unknown) {
+      return this;
+    }),
   };
   return res;
 }
@@ -17,13 +23,11 @@ describe("internal admin authorization middleware", () => {
   it("rejects requests without an admin bearer token", async () => {
     const res = response();
     const next = vi.fn();
-    await requireAdmin(
-      { headers: {} } as never,
-      res as never,
-      next,
-    );
+    await requireAdmin({ headers: {} } as never, res as never, next);
     expect(res.statusCode).toBe(401);
-    expect(res.json).toHaveBeenCalledWith({ error: "Admin authentication required" });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Admin authentication required",
+    });
     expect(next).not.toHaveBeenCalled();
   });
 
@@ -32,7 +36,9 @@ describe("internal admin authorization middleware", () => {
     const next = vi.fn();
     requireAdminPermission("telemetry.read")({} as never, res as never, next);
     expect(res.statusCode).toBe(403);
-    expect(res.json).toHaveBeenCalledWith({ error: "Insufficient administrative permission" });
+    expect(res.json).toHaveBeenCalledWith({
+      error: "Insufficient administrative permission",
+    });
     expect(next).not.toHaveBeenCalled();
   });
 

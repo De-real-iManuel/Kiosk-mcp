@@ -16,18 +16,44 @@ describe("internal operations database schema", () => {
     expect(getTableName(mcpRequestEventsTable)).toBe("mcp_request_events");
     expect(getTableName(mcpToolEventsTable)).toBe("mcp_tool_events");
 
-    const requestColumns = getTableConfig(mcpRequestEventsTable).columns.map((column) => column.name);
-    expect(requestColumns).toEqual(expect.arrayContaining([
-      "request_id", "endpoint", "business_id", "rpc_method", "requested_tool",
-      "client_name", "client_version", "client_identity_status", "http_status",
-      "outcome", "duration_ms", "created_at", "completed_at",
-    ]));
+    const requestColumns = getTableConfig(mcpRequestEventsTable).columns.map(
+      (column) => column.name,
+    );
+    expect(requestColumns).toEqual(
+      expect.arrayContaining([
+        "request_id",
+        "endpoint",
+        "business_id",
+        "rpc_method",
+        "requested_tool",
+        "client_name",
+        "client_version",
+        "client_identity_status",
+        "http_status",
+        "outcome",
+        "duration_ms",
+        "created_at",
+        "completed_at",
+      ]),
+    );
 
-    const toolColumns = getTableConfig(mcpToolEventsTable).columns.map((column) => column.name);
-    expect(toolColumns).toEqual(expect.arrayContaining([
-      "request_id", "endpoint", "business_id", "tool_name", "client_name",
-      "client_version", "succeeded", "duration_ms", "result_count", "error_code",
-    ]));
+    const toolColumns = getTableConfig(mcpToolEventsTable).columns.map(
+      (column) => column.name,
+    );
+    expect(toolColumns).toEqual(
+      expect.arrayContaining([
+        "request_id",
+        "endpoint",
+        "business_id",
+        "tool_name",
+        "client_name",
+        "client_version",
+        "succeeded",
+        "duration_ms",
+        "result_count",
+        "error_code",
+      ]),
+    );
   });
 
   it("exports the isolated admin, audit, support and incident tables", () => {
@@ -39,8 +65,8 @@ describe("internal operations database schema", () => {
   });
 
   it("keeps a unique identity mapping for provisioned admin subjects", () => {
-    const uniqueIndexes = getTableConfig(adminUsersTable).indexes
-      .filter((index) => index.config.unique)
+    const uniqueIndexes = getTableConfig(adminUsersTable)
+      .indexes.filter((index) => index.config.unique)
       .map((index) => index.config.name);
     expect(uniqueIndexes).toContain("admin_users_identity_unique");
   });

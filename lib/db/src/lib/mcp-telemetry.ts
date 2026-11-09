@@ -26,7 +26,10 @@ export interface McpRequestContext {
 }
 
 const requestContext = new AsyncLocalStorage<McpRequestContext>();
-const requestInsertPromises = new WeakMap<McpRequestContext, Promise<unknown>>();
+const requestInsertPromises = new WeakMap<
+  McpRequestContext,
+  Promise<unknown>
+>();
 
 function asObject(value: unknown): JsonObject | null {
   return value !== null && typeof value === "object" && !Array.isArray(value)
@@ -81,8 +84,7 @@ export function beginMcpRequest(
       : null;
   const userAgent = headerValue(req.headers["user-agent"]);
   const protocolVersion = headerValue(req.headers["mcp-protocol-version"]);
-  const clientName =
-    reportedClientName ?? inferClientFromUserAgent(userAgent);
+  const clientName = reportedClientName ?? inferClientFromUserAgent(userAgent);
   const clientIdentitySource = reportedClientName
     ? "mcp_client_info"
     : clientName
@@ -133,13 +135,20 @@ export function beginMcpRequest(
           .update(mcpRequestEventsTable)
           .set({
             httpStatus: res.statusCode,
-            outcome: aborted ? "aborted" : res.statusCode >= 400 ? "error" : "success",
+            outcome: aborted
+              ? "aborted"
+              : res.statusCode >= 400
+                ? "error"
+                : "success",
             durationMs: Math.max(0, Date.now() - startedAt),
             completedAt: new Date(),
           })
           .where(eq(mcpRequestEventsTable.requestId, requestId));
       } catch (error) {
-        console.error("[mcp-telemetry] Failed to complete request event", error);
+        console.error(
+          "[mcp-telemetry] Failed to complete request event",
+          error,
+        );
       }
     });
   };
@@ -168,7 +177,10 @@ export function setMcpRequestBusinessId(
       .set({ businessId })
       .where(eq(mcpRequestEventsTable.requestId, context.requestId))
       .catch((error: unknown) => {
-        console.error("[mcp-telemetry] Failed to attach business to request", error);
+        console.error(
+          "[mcp-telemetry] Failed to attach business to request",
+          error,
+        );
       }),
   );
 }
@@ -235,7 +247,10 @@ export function instrumentMcpServer(
               errorCode,
             })
             .catch((error: unknown) => {
-              console.error("[mcp-telemetry] Failed to persist tool event", error);
+              console.error(
+                "[mcp-telemetry] Failed to persist tool event",
+                error,
+              );
             });
         }
       };

@@ -53,19 +53,23 @@ beforeEach(() => {
 describe("MCP telemetry", () => {
   it("persists allowlisted request metadata without storing authorization values", async () => {
     const response = new FakeResponse();
-    beginMcpRequest({
-      method: "POST",
-      headers: {
-        authorization: "Bearer must-never-be-stored",
-        "user-agent": "ChatGPT-Connector/1.0",
-        "mcp-protocol-version": "2025-03-26",
+    beginMcpRequest(
+      {
+        method: "POST",
+        headers: {
+          authorization: "Bearer must-never-be-stored",
+          "user-agent": "ChatGPT-Connector/1.0",
+          "mcp-protocol-version": "2025-03-26",
+        },
+        body: {
+          jsonrpc: "2.0",
+          method: "initialize",
+          params: { clientInfo: { name: "ChatGPT", version: "1.2.3" } },
+        },
       },
-      body: {
-        jsonrpc: "2.0",
-        method: "initialize",
-        params: { clientInfo: { name: "ChatGPT", version: "1.2.3" } },
-      },
-    }, response, "master_mcp");
+      response,
+      "master_mcp",
+    );
 
     await vi.waitFor(() => expect(state.inserts).toHaveLength(1));
     const row = state.inserts[0]!;
@@ -84,7 +88,11 @@ describe("MCP telemetry", () => {
 
   it("marks a disconnected request as aborted exactly once", async () => {
     const response = new FakeResponse();
-    beginMcpRequest({ method: "POST", headers: {}, body: { method: "tools/list" } }, response, "master_mcp");
+    beginMcpRequest(
+      { method: "POST", headers: {}, body: { method: "tools/list" } },
+      response,
+      "master_mcp",
+    );
     await vi.waitFor(() => expect(state.inserts).toHaveLength(1));
 
     response.abort();
@@ -95,29 +103,36 @@ describe("MCP telemetry", () => {
 
   it("records each registered tool execution with its request context", async () => {
     const response = new FakeResponse();
-    const context = beginMcpRequest({
-      method: "POST",
-      headers: { "user-agent": "Claude/1.0" },
-      body: { method: "tools/call", params: { name: "search_businesses" } },
-    }, response, "master_mcp");
+    const context = beginMcpRequest(
+      {
+        method: "POST",
+        headers: { "user-agent": "Claude/1.0" },
+        body: { method: "tools/call", params: { name: "search_businesses" } },
+      },
+      response,
+      "master_mcp",
+    );
 
     const registered: Array<(...args: unknown[]) => Promise<unknown>> = [];
     const server = {
       tool: (...args: unknown[]) => {
         const handler = args[args.length - 1];
-        if (typeof handler === "function") registered.push(handler as (...args: unknown[]) => Promise<unknown>);
+        if (typeof handler === "function")
+          registered.push(handler as (...args: unknown[]) => Promise<unknown>);
       },
     };
     instrumentMcpServer(server, "master_mcp");
     server.tool("search_businesses", "Search businesses", async () => ({
-      content: [{ type: "text", text: "[{\"id\":1},{\"id\":2}]" }],
+      content: [{ type: "text", text: '[{"id":1},{"id":2}]' }],
     }));
 
     await runWithMcpRequestContext(context, async () => {
       await registered[0]!();
     });
     await vi.waitFor(() => expect(state.inserts).toHaveLength(2));
-    const toolEvent = state.inserts.find((row) => row.toolName === "search_businesses");
+    const toolEvent = state.inserts.find(
+      (row) => row.toolName === "search_businesses",
+    );
     expect(toolEvent).toMatchObject({
       requestId: context.requestId,
       endpoint: "master_mcp",
@@ -133,11 +148,14 @@ describe("MCP telemetry", () => {
     const server = {
       tool: (...args: unknown[]) => {
         const handler = args[args.length - 1];
-        if (typeof handler === "function") registered.push(handler as (...args: unknown[]) => Promise<unknown>);
+        if (typeof handler === "function")
+          registered.push(handler as (...args: unknown[]) => Promise<unknown>);
       },
     };
     instrumentMcpServer(server, "business_mcp", "business-123");
-    server.tool("get_business", "Get business", async () => { throw new Error("internal detail"); });
+    server.tool("get_business", "Get business", async () => {
+      throw new Error("internal detail");
+    });
 
     await expect(registered[0]!()).rejects.toThrow("internal detail");
     await vi.waitFor(() => expect(state.inserts).toHaveLength(1));
