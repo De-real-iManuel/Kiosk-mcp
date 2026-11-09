@@ -52,7 +52,7 @@ async function getSigningKey(
       "Signing key ID was not found in the identity provider key set",
     );
   }
-  return createPublicKey({ key: jwk, format: "jwk" });
+  return createPublicKey({ key: jwk as never, format: "jwk" });
 }
 
 export async function verifyAdminAccessToken(
