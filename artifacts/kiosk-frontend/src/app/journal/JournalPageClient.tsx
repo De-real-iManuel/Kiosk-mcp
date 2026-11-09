@@ -6,72 +6,180 @@ import { Footer } from "@/components/Footer";
 import { BookOpen, ChevronDown } from "lucide-react";
 
 const articles = [
-{tag:"AI DISCOVERY",title:"Why AI assistants can miss the best local businesses",intro:"A practical look at scattered business information, incomplete listings and why independent businesses can be hard for AI tools to understand.",read:"5 min read",image:"https://images.unsplash.com/photo-1773337208160-4349c10b03cd?auto=format&fit=crop&w=1000&q=85",body:[
-"Imagine asking an AI assistant to find a tailor, a phone repair shop or a salon nearby. The assistant can only make a useful recommendation when it can access information that is clear enough to interpret: what the business does, where it operates, when it is open and how a customer can reach it.",
-"Many independent businesses share information across social profiles, messaging apps, flyers and word of mouth. Those channels are valuable to people, but the details may be incomplete, inconsistent or difficult for another system to retrieve in a reliable structure.",
-"Larger companies often have websites, directories, booking systems and technical teams maintaining their information. A small business may have none of those things. That creates a visibility gap: the business can be excellent at what it does and still be difficult for an AI assistant to understand.",
-"Kiosk is being built to make that information easier to publish in a structured format. A business owner provides the details; Kiosk makes selected information available through its marketplace and compatible discovery interfaces. This can help an assistant find and interpret a listing, but it does not guarantee a recommendation or a sale.",
-"The practical starting point is simple: keep the business name, category, location, opening hours, service descriptions, prices where appropriate and contact methods accurate. Clear information gives both people and software a better chance of understanding the business."
-]},
-{tag:"FOR BUSINESS OWNERS",title:"What does it mean to make a business AI-discoverable?",intro:"A plain-language guide to structured business information, service descriptions, location details and contact channels.",read:"4 min read",image:"https://images.unsplash.com/photo-1753161029492-0644556055cf?auto=format&fit=crop&w=1000&q=85",body:[
-"AI-discoverable does not mean a business is guaranteed to appear in every AI answer. It means the business has made useful, accurate information available in a format that compatible AI systems can retrieve and understand.",
-"Start with identity: use the business's real name and a short description that says what it does. Avoid vague phrases such as 'we offer the best services'. A better description names the service, the customer it helps and the area it serves.",
-"Next, make the details specific. Add the correct address or service area, opening hours, contact channel, products or services, and price information when it is useful and can be kept current. If appointments are required, explain how a customer should request one.",
-"Structured information matters because software needs fields and relationships, not just attractive pages. A category, location, service list and contact method make it easier for an assistant to answer questions such as 'Where can I get this repaired?' or 'Does this salon offer braids?'",
-"Finally, review your listing regularly. If your hours change, a service is discontinued or your phone number changes, update the source profile. AI systems may cache information, so changes may not appear everywhere immediately."
-]},
-{tag:"TECHNOLOGY, EXPLAINED",title:"MCP explained: how AI assistants connect to useful information",intro:"Understand the Model Context Protocol without needing to be a developer—and why it matters for business discovery.",read:"6 min read",image:"https://images.unsplash.com/photo-1753351052277-a7ff634f0bd5?auto=format&fit=crop&w=1000&q=85",body:[
-"The Model Context Protocol, usually shortened to MCP, is a standard way for an AI application to connect to external tools and information sources. Instead of every AI application building a completely different integration for every service, MCP gives clients and servers a common way to describe and call tools.",
-"Think of an MCP server as a well-organised service counter. It can describe the actions it supports and return structured information when a connected AI client asks for it. The AI assistant decides when and how to use those tools within its own product experience.",
-"For business discovery, an MCP server can expose tools that help an assistant search for businesses, browse categories or retrieve details about a particular listing. The result is more structured than asking a model to guess from an unmaintained snippet of text.",
-"Kiosk uses MCP as part of its discovery architecture. The goal is to let compatible AI clients discover participating businesses and retrieve the information those businesses have chosen to publish. A business owner does not need to understand the protocol to maintain a profile.",
-"MCP is a connection mechanism, not a guarantee of trust or correctness. The business remains responsible for its information, the AI client controls its own behaviour, and customers should confirm availability, prices and bookings directly with the business."
-]},
-{tag:"PRACTICAL GUIDE",title:"The business details an AI assistant needs to answer well",intro:"A checklist for writing clear descriptions, accurate hours, service lists, price guidance and ways for customers to reach you.",read:"4 min read",image:"https://images.unsplash.com/photo-1775807174959-b37fd69ad40b?auto=format&fit=crop&w=1000&q=85",body:[
-"Business name: use the name customers recognise. Avoid adding unrelated keywords or promotional claims to the name field.",
-"Description: explain what the business does in plain language. Mention the main products or services, who they are for and what makes the offering distinct. Be specific rather than relying on broad claims.",
-"Location and service area: provide a usable address, neighbourhood, city or delivery/service area. If customers must visit by appointment, say so.",
-"Hours and availability: include days and times, note public-holiday changes and explain when hours vary. Do not imply live availability unless the business actually maintains it.",
-"Products, services and prices: name each offering clearly. Add useful details, variants and price ranges where possible. If a quote is required, say that.",
-"Contact and next steps: provide a current phone number, WhatsApp contact, website or booking channel. Explain whether customers should call, message, visit or request an appointment.",
-"Review the listing often. Accurate information is more useful than a long description that has become outdated."
-]}
+  {
+    tag: "AI DISCOVERY",
+    title: "Why AI assistants can miss the best local businesses",
+    intro:
+      "A practical look at scattered business information, incomplete listings and why independent businesses can be hard for AI tools to understand.",
+    read: "5 min read",
+    image:
+      "https://images.unsplash.com/photo-1773337208160-4349c10b03cd?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "Imagine asking an AI assistant to find a tailor, a phone repair shop or a salon nearby. The assistant can only make a useful recommendation when it can access information that is clear enough to interpret: what the business does, where it operates, when it is open and how a customer can reach it.",
+      "Many independent businesses share information across social profiles, messaging apps, flyers and word of mouth. Those channels are valuable to people, but the details may be incomplete, inconsistent or difficult for another system to retrieve in a reliable structure.",
+      "Larger companies often have websites, directories, booking systems and technical teams maintaining their information. A small business may have none of those things. That creates a visibility gap: the business can be excellent at what it does and still be difficult for an AI assistant to understand.",
+      "Kiosk is being built to make that information easier to publish in a structured format. A business owner provides the details; Kiosk makes selected information available through its marketplace and compatible discovery interfaces. This can help an assistant find and interpret a listing, but it does not guarantee a recommendation or a sale.",
+      "The practical starting point is simple: keep the business name, category, location, opening hours, service descriptions, prices where appropriate and contact methods accurate. Clear information gives both people and software a better chance of understanding the business.",
+    ],
+  },
+  {
+    tag: "FOR BUSINESS OWNERS",
+    title: "What does it mean to make a business AI-discoverable?",
+    intro:
+      "A plain-language guide to structured business information, service descriptions, location details and contact channels.",
+    read: "4 min read",
+    image:
+      "https://images.unsplash.com/photo-1753161029492-0644556055cf?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "AI-discoverable does not mean a business is guaranteed to appear in every AI answer. It means the business has made useful, accurate information available in a format that compatible AI systems can retrieve and understand.",
+      "Start with identity: use the business's real name and a short description that says what it does. Avoid vague phrases such as 'we offer the best services'. A better description names the service, the customer it helps and the area it serves.",
+      "Next, make the details specific. Add the correct address or service area, opening hours, contact channel, products or services, and price information when it is useful and can be kept current. If appointments are required, explain how a customer should request one.",
+      "Structured information matters because software needs fields and relationships, not just attractive pages. A category, location, service list and contact method make it easier for an assistant to answer questions such as 'Where can I get this repaired?' or 'Does this salon offer braids?'",
+      "Finally, review your listing regularly. If your hours change, a service is discontinued or your phone number changes, update the source profile. AI systems may cache information, so changes may not appear everywhere immediately.",
+    ],
+  },
+  {
+    tag: "TECHNOLOGY, EXPLAINED",
+    title: "MCP explained: how AI assistants connect to useful information",
+    intro:
+      "Understand the Model Context Protocol without needing to be a developer—and why it matters for business discovery.",
+    read: "6 min read",
+    image:
+      "https://images.unsplash.com/photo-1753351052277-a7ff634f0bd5?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "The Model Context Protocol, usually shortened to MCP, is a standard way for an AI application to connect to external tools and information sources. Instead of every AI application building a completely different integration for every service, MCP gives clients and servers a common way to describe and call tools.",
+      "Think of an MCP server as a well-organised service counter. It can describe the actions it supports and return structured information when a connected AI client asks for it. The AI assistant decides when and how to use those tools within its own product experience.",
+      "For business discovery, an MCP server can expose tools that help an assistant search for businesses, browse categories or retrieve details about a particular listing. The result is more structured than asking a model to guess from an unmaintained snippet of text.",
+      "Kiosk uses MCP as part of its discovery architecture. The goal is to let compatible AI clients discover participating businesses and retrieve the information those businesses have chosen to publish. A business owner does not need to understand the protocol to maintain a profile.",
+      "MCP is a connection mechanism, not a guarantee of trust or correctness. The business remains responsible for its information, the AI client controls its own behaviour, and customers should confirm availability, prices and bookings directly with the business.",
+    ],
+  },
+  {
+    tag: "PRACTICAL GUIDE",
+    title: "The business details an AI assistant needs to answer well",
+    intro:
+      "A checklist for writing clear descriptions, accurate hours, service lists, price guidance and ways for customers to reach you.",
+    read: "4 min read",
+    image:
+      "https://images.unsplash.com/photo-1775807174959-b37fd69ad40b?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "Business name: use the name customers recognise. Avoid adding unrelated keywords or promotional claims to the name field.",
+      "Description: explain what the business does in plain language. Mention the main products or services, who they are for and what makes the offering distinct. Be specific rather than relying on broad claims.",
+      "Location and service area: provide a usable address, neighbourhood, city or delivery/service area. If customers must visit by appointment, say so.",
+      "Hours and availability: include days and times, note public-holiday changes and explain when hours vary. Do not imply live availability unless the business actually maintains it.",
+      "Products, services and prices: name each offering clearly. Add useful details, variants and price ranges where possible. If a quote is required, say that.",
+      "Contact and next steps: provide a current phone number, WhatsApp contact, website or booking channel. Explain whether customers should call, message, visit or request an appointment.",
+      "Review the listing often. Accurate information is more useful than a long description that has become outdated.",
+    ],
+  },
 ];
 
 export default function JournalPage() {
- const [openGuides, setOpenGuides] = useState<Record<string, boolean>>({});
- return <main className="grain min-h-screen bg-[#12110F] text-[#EDE7DC]"><header className="border-b border-white/10"><div className="mx-auto flex h-[74px] max-w-[1440px] items-center justify-between px-6 md:px-12"><Link href="/" className="kiosk-wordmark text-2xl">Kiosk</Link><Link href="/about" className="text-xs text-[#A49D90] hover:text-[#D96845]">About Kiosk ↗</Link></div></header>
- <section className="mx-auto max-w-[1440px] px-6 py-20 md:px-12 md:py-28"><p className="eyebrow mb-5 text-[#D96845]">The Kiosk Journal</p><div className="grid gap-8 md:grid-cols-[1fr_.7fr] md:items-end"><h1 className="max-w-4xl text-[clamp(3rem,7vw,6.8rem)] font-semibold leading-[.9] tracking-[-.08em]">Make the new internet easier to understand.</h1><p className="serif max-w-xl text-xl leading-8 text-[#C5BFB2]">Notes, explainers and practical guides for independent businesses navigating AI-powered discovery.</p></div>
- <div className="mt-16 grid gap-6 md:grid-cols-2">{articles.map((a,i)=><article key={a.title} className="group overflow-hidden border border-white/10 bg-[#1C1A16]"><div className="relative aspect-[16/9] overflow-hidden"><img src={a.image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"/><span className="absolute left-4 top-4 bg-[#12110F]/85 px-3 py-2 text-[9px] tracking-[.16em] text-[#EDE7DC]">{a.tag}</span></div><div className="p-6 md:p-8"><div className="flex items-center gap-2 text-[10px] text-[#8A8478]"><BookOpen size={12}/><span>{a.read}</span><span>·</span><span>Field guide</span></div><h2 className="mt-5 max-w-xl text-2xl font-semibold leading-tight tracking-[-.04em]">{a.title}</h2><p className="mt-3 max-w-xl text-sm leading-6 text-[#A49D90]">{a.intro}</p><div className="mt-6 border-t border-white/10 pt-4">
-  <button
-    type="button"
-    id={`guide-trigger-${i}`}
-    aria-expanded={Boolean(openGuides[a.title])}
-    aria-controls={`guide-panel-${i}`}
-    onClick={() => setOpenGuides((current) => ({ ...current, [a.title]: !current[a.title] }))}
-    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm text-left text-xs font-semibold text-[#D96845] transition-colors hover:text-[#E98A69] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D96845]"
-  >
-    <span>Read this guide</span>
-    <ChevronDown
-      size={15}
-      aria-hidden="true"
-      className={`shrink-0 transition-transform duration-300 ${openGuides[a.title] ? "rotate-180" : ""}`}
-    />
-  </button>
-  <div
-    id={`guide-panel-${i}`}
-    role="region"
-    aria-labelledby={`guide-trigger-${i}`}
-    aria-hidden={!openGuides[a.title]}
-    className={`grid transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none ${openGuides[a.title] ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
-  >
-    <div className="min-h-0 overflow-hidden">
-      <div className="space-y-4 pt-5 text-sm leading-7 text-[#C5BFB2]">
-        {a.body.map((paragraph,j)=><p key={j}>{paragraph}</p>)}
-      </div>
-    </div>
-  </div>
-</div></div></article>)}</div>
- <p className="mt-10 border-l-2 border-[#D96845] pl-4 text-xs leading-6 text-[#8A8478]">These guides explain general concepts and Kiosk's intended product behaviour. They are not guarantees that every AI client supports every feature or will surface every business listing.</p>
- </section><Footer/></main>;
+  const [openGuides, setOpenGuides] = useState<Record<string, boolean>>({});
+  return (
+    <main className="grain min-h-screen bg-[#12110F] text-[#EDE7DC]">
+      <header className="border-b border-white/10">
+        <div className="mx-auto flex h-[74px] max-w-[1440px] items-center justify-between px-6 md:px-12">
+          <Link href="/" className="kiosk-wordmark text-2xl">
+            Kiosk
+          </Link>
+          <Link
+            href="/about"
+            className="text-xs text-[#A49D90] hover:text-[#D96845]"
+          >
+            About Kiosk ↗
+          </Link>
+        </div>
+      </header>
+      <section className="mx-auto max-w-[1440px] px-6 py-20 md:px-12 md:py-28">
+        <p className="eyebrow mb-5 text-[#D96845]">The Kiosk Journal</p>
+        <div className="grid gap-8 md:grid-cols-[1fr_.7fr] md:items-end">
+          <h1 className="max-w-4xl text-[clamp(3rem,7vw,6.8rem)] font-semibold leading-[.9] tracking-[-.08em]">
+            Make the new internet easier to understand.
+          </h1>
+          <p className="serif max-w-xl text-xl leading-8 text-[#C5BFB2]">
+            Notes, explainers and practical guides for independent businesses
+            navigating AI-powered discovery.
+          </p>
+        </div>
+        <div className="mt-16 grid gap-6 md:grid-cols-2">
+          {articles.map((a, i) => (
+            <article
+              key={a.title}
+              className="group overflow-hidden border border-white/10 bg-[#1C1A16]"
+            >
+              <div className="relative aspect-[16/9] overflow-hidden">
+                <img
+                  src={a.image}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-[1.035]"
+                />
+                <span className="absolute left-4 top-4 bg-[#12110F]/85 px-3 py-2 text-[9px] tracking-[.16em] text-[#EDE7DC]">
+                  {a.tag}
+                </span>
+              </div>
+              <div className="p-6 md:p-8">
+                <div className="flex items-center gap-2 text-[10px] text-[#8A8478]">
+                  <BookOpen size={12} />
+                  <span>{a.read}</span>
+                  <span>·</span>
+                  <span>Field guide</span>
+                </div>
+                <h2 className="mt-5 max-w-xl text-2xl font-semibold leading-tight tracking-[-.04em]">
+                  {a.title}
+                </h2>
+                <p className="mt-3 max-w-xl text-sm leading-6 text-[#A49D90]">
+                  {a.intro}
+                </p>
+                <div className="mt-6 border-t border-white/10 pt-4">
+                  <button
+                    type="button"
+                    id={`guide-trigger-${i}`}
+                    aria-expanded={Boolean(openGuides[a.title])}
+                    aria-controls={`guide-panel-${i}`}
+                    onClick={() =>
+                      setOpenGuides((current) => ({
+                        ...current,
+                        [a.title]: !current[a.title],
+                      }))
+                    }
+                    className="flex w-full cursor-pointer items-center justify-between gap-4 rounded-sm text-left text-xs font-semibold text-[#D96845] transition-colors hover:text-[#E98A69] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#D96845]"
+                  >
+                    <span>Read this guide</span>
+                    <ChevronDown
+                      size={15}
+                      aria-hidden="true"
+                      className={`shrink-0 transition-transform duration-300 ${openGuides[a.title] ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  <div
+                    id={`guide-panel-${i}`}
+                    role="region"
+                    aria-labelledby={`guide-trigger-${i}`}
+                    aria-hidden={!openGuides[a.title]}
+                    className={`grid transition-[grid-template-rows] duration-300 ease-in-out motion-reduce:transition-none ${openGuides[a.title] ? "grid-rows-[1fr]" : "grid-rows-[0fr]"}`}
+                  >
+                    <div className="min-h-0 overflow-hidden">
+                      <div className="space-y-4 pt-5 text-sm leading-7 text-[#C5BFB2]">
+                        {a.body.map((paragraph, j) => (
+                          <p key={j}>{paragraph}</p>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </article>
+          ))}
+        </div>
+        <p className="mt-10 border-l-2 border-[#D96845] pl-4 text-xs leading-6 text-[#8A8478]">
+          These guides explain general concepts and Kiosk's intended product
+          behaviour. They are not guarantees that every AI client supports every
+          feature or will surface every business listing.
+        </p>
+      </section>
+      <Footer />
+    </main>
+  );
 }
