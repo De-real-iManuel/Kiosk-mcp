@@ -1,6 +1,6 @@
 import { Router, type IRouter } from "express";
 import { desc, eq, gte, ilike, and, sql } from "drizzle-orm";
-import { db, adminAuditLogsTable, businessesTable, incidentsTable, mcpRequestEventsTable, mcpToolEventsTable, supportNotesTable, supportTicketsTable } from "@workspace/db";
+import { db, adminAuditLogsTable, agentEventsTable, businessesTable, incidentsTable, mcpRequestEventsTable, mcpToolEventsTable, supportNotesTable, supportTicketsTable } from "@workspace/db";
 import { getAdminActor, requireAdmin, requireAdminPermission } from "../middlewares/require-admin";
 
 const router: IRouter = Router();
@@ -13,7 +13,7 @@ router.get("/me", (_req, res) => {
 
 router.get("/overview", requireAdminPermission("telemetry.read"), async (_req, res): Promise<void> => {
   const now = new Date(), dayAgo = new Date(now.getTime() - 86400000), weekAgo = new Date(now.getTime() - 7 * 86400000);
-  const [requests24h, requests7d, toolCalls24h, toolCalls7d, failedTools24h, activeBusinesses] = await Promise.all([
+  const [requests24h, requests7d, toolCalls24h, toolCalls7d, failedTools24h, activeBusinesses, sessionStarts7d, requestsByEndpoint] = await Promise.all([
     db.select({ count: sql<number>`count(*)::int` }).from(mcpRequestEventsTable).where(gte(mcpRequestEventsTable.createdAt, dayAgo)),
     db.select({ count: sql<number>`count(*)::int` }).from(mcpRequestEventsTable).where(gte(mcpRequestEventsTable.createdAt, weekAgo)),
     db.select({ count: sql<number>`count(*)::int` }).from(mcpToolEventsTable).where(gte(mcpToolEventsTable.createdAt, dayAgo)),
