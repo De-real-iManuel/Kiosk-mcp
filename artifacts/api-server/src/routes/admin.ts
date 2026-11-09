@@ -20,6 +20,8 @@ router.get("/overview", requireAdminPermission("telemetry.read"), async (_req, r
     db.select({ count: sql<number>`count(*)::int` }).from(mcpToolEventsTable).where(gte(mcpToolEventsTable.createdAt, weekAgo)),
     db.select({ count: sql<number>`count(*)::int` }).from(mcpToolEventsTable).where(and(gte(mcpToolEventsTable.createdAt, dayAgo), eq(mcpToolEventsTable.succeeded, false))),
     db.select({ count: sql<number>`count(*)::int` }).from(businessesTable).where(and(eq(businessesTable.status, "published"), eq(businessesTable.isActive, true))),
+    db.select({ count: sql<number>`count(*)::int` }).from(agentEventsTable).where(and(gte(agentEventsTable.createdAt, weekAgo), eq(agentEventsTable.eventType, "session_start"))),
+    db.select({ endpoint: mcpRequestEventsTable.endpoint, requests: sql<number>`count(*)::int` }).from(mcpRequestEventsTable).where(gte(mcpRequestEventsTable.createdAt, weekAgo)).groupBy(mcpRequestEventsTable.endpoint).orderBy(desc(sql`count(*)`)),
   ]);
   const [topClients, topTools, recentErrors] = await Promise.all([
     db.select({ clientName: mcpRequestEventsTable.clientName, clientVersion: mcpRequestEventsTable.clientVersion, requests: sql<number>`count(*)::int`, lastSeen: sql<Date>`max(${mcpRequestEventsTable.createdAt})`, identityStatus: mcpRequestEventsTable.clientIdentityStatus }).from(mcpRequestEventsTable).where(gte(mcpRequestEventsTable.createdAt, weekAgo)).groupBy(mcpRequestEventsTable.clientName, mcpRequestEventsTable.clientVersion, mcpRequestEventsTable.clientIdentityStatus).orderBy(desc(sql`count(*)`)).limit(6),
@@ -28,13 +30,35 @@ router.get("/overview", requireAdminPermission("telemetry.read"), async (_req, r
   ]);
   res.json({
     generatedAt: now.toISOString(),
-    metrics: { requests24h: requests24h[0]?.count ?? 0, requests7d: requests7d[0]?.count ?? 0, toolCalls24h: toolCalls24h[0]?.count ?? 0, toolCalls7d: toolCalls7d[0]?.count ?? 0, failedTools24h: failedTools24h[0]?.count ?? 0, publishedBusinesses: activeBusinesses[0]?.count ?? 0 },
-    topClients, topTools, recentErrors,
+    metrics: { requests24h: requests24h[0]?.count ?? 0, requests7d: requests7d[0]?.count ?? 0, toolCalls24h: toolCalls24h[0]?.count ?? 0, toolCalls7d: toolCalls7d[0]?.count ?? 0, failedTools24h: failedTools24h[0]?.count ?? 0, publishedBusinesses: activeBusinesses[0]?.count ?? 0, sessionStarts7d: sessionStarts7d[0]?.count ?? 0 },
+    requestsByEndpoint, topClients, topTools, recentErrors,
     measurementNote: "Requests and tool executions are not unique people, conversations, or verified AI agents. Client labels are observed or inferred unless separately verified.",
   });
 });
 
-router.get("/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
+
+router.get("/feedback", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
+  const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
+  const rows = await db
+    .select({
+      id: agentEventsTable.id,
+      businessId: agentEventsTable.businessId,
+      businessName: businessesTable.businessName,
+      eventType: agentEventsTable.eventType,
+      submittedAt: agentEventsTable.createdAt,
+      answers: agentEventsTable.metadata,
+    })
+    .from(agentEventsTable)
+    .leftJoin(businessesTable, eq(agentEventsTable.businessId, businessesTable.id))
+    .where(and(
+      eq(agentEventsTable.eventType, "onboarding_feedback"),
+      eq(agentEventsTable.toolName, "feedback_form"),
+    ))
+    .orderBy(desc(agentEventsTable.createdAt))
+    .limit(limit);
+  res.json(rows);
+});
+\nrouter.get("/telemetry/requests", requireAdminPermission("telemetry.read"), async (req, res): Promise<void> => {
   const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 100);
   const rows = await db.select({
     requestId: mcpRequestEventsTable.requestId, endpoint: mcpRequestEventsTable.endpoint, rpcMethod: mcpRequestEventsTable.rpcMethod,
