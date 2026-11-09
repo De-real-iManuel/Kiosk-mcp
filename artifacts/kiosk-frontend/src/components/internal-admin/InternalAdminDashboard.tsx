@@ -331,5 +331,5 @@ export function InternalAdminDashboard() {
     }).catch((cause: unknown) => {
       setAuthMessage(cause instanceof Error ? cause.message : "Sign-in failed.");
       window.history.replaceState({}, "", window.location.pathname);
-    }).finally(() => setAuthBusy(false));
+    }).finally(() => { setAuthBusy(false); oauthExchangeRef.current = null; });
   }, []);
