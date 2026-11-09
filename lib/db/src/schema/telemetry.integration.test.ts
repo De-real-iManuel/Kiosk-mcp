@@ -38,9 +38,7 @@ afterAll(async () => {
   if (feedbackIds.length) {
     await db
       .delete(agentEventsTable)
-      .where(
-        and(...feedbackIds.map((id) => eq(agentEventsTable.id, id))),
-      );
+      .where(and(...feedbackIds.map((id) => eq(agentEventsTable.id, id))));
   }
 
   if (adminIds.length) {
