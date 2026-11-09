@@ -19,6 +19,11 @@ import {
 } from "../middlewares/require-admin";
 
 const router: IRouter = Router();
+router.use((_req, res, next) => {
+  res.setHeader("Cache-Control", "no-store, private");
+  res.setHeader("Pragma", "no-cache");
+  next();
+});
 router.use(adminLimiter, requireAdmin);
 
 router.get("/me", (_req, res) => {
