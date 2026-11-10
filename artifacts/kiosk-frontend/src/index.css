@@ -433,3 +433,16 @@ select.surface-input option {
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
   .kiosk-glass-stage, .kiosk-glass-panel { background-color: #1c1a16; }
 }
+.kiosk-business-card::before {
+  content: "";
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse at 100% 0%, rgba(217, 104, 69, .09), transparent 48%),
+    linear-gradient(135deg, rgba(255,255,255,.36), transparent 42%);
+  opacity: .7;
+  transition: opacity 300ms ease;
+}
+.kiosk-business-card:hover::before { opacity: 1; }
