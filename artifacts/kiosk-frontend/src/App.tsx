@@ -521,16 +521,7 @@ export function LandingPage() {
                   animate: { opacity: 1, scale: 1 },
                   transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
                 })}
-            className="kiosk-glass-stage kiosk-origin-reveal relative mx-auto aspect-square w-[min(62vw,310px)] md:mx-0 md:w-[min(29vw,350px)]"
-            onPointerMove={(event) => {
-              const bounds = event.currentTarget.getBoundingClientRect();
-              event.currentTarget.style.setProperty("--pointer-x", `${((event.clientX - bounds.left) / bounds.width) * 100}%`);
-              event.currentTarget.style.setProperty("--pointer-y", `${((event.clientY - bounds.top) / bounds.height) * 100}%`);
-            }}
-            onPointerLeave={(event) => {
-              event.currentTarget.style.setProperty("--pointer-x", "50%");
-              event.currentTarget.style.setProperty("--pointer-y", "50%");
-            }}
+            className="kiosk-origin-reveal relative mx-auto aspect-square w-[min(62vw,310px)] md:mx-0 md:w-[min(29vw,350px)]"
           >
             <ThreeDimensionalMark reduceMotion={!!reduceMotion} />
           </motion.div>
