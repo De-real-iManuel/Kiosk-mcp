@@ -295,6 +295,8 @@ type MarketplaceCardData = Business & {
   country?: string | null;
   timezone?: string | null;
   openingHours?: Record<string, { open: string; close: string; closed: boolean } | null> | null;
+  latitude?: number | null;
+  longitude?: number | null;
 };
 
 function getLiveBusinessStatus(
@@ -363,6 +365,18 @@ function BusinessCard({ business }: { business: Business }) {
         ? listing.country
         : "";
 
+  const mapQuery = [
+    listing.latitude != null && listing.longitude != null
+      ? `${listing.latitude},${listing.longitude}`
+      : null,
+    listing.location,
+    listing.city,
+    listing.country,
+  ].filter(Boolean).join(", ");
+  const mapUrl = mapQuery
+    ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`
+    : null;
+
   return (
     <Link
       href={`/marketplace/business?slug=${encodeURIComponent(business.slug)}`}
@@ -401,7 +415,29 @@ function BusinessCard({ business }: { business: Business }) {
         </div>
       </div>
 
-      <p className="mt-6 line-clamp-3 min-h-[4.5rem] text-[13px] leading-6 text-[#625D53]">
+      {mapUrl ? (
+        <div className="relative mt-5 h-[126px] overflow-hidden border border-black/10 bg-[#E6DFD3]" aria-label={`Map preview for ${business.businessName}`}>
+          <iframe
+            title={`Map preview for ${business.businessName}`}
+            src={mapUrl}
+            loading="lazy"
+            referrerPolicy="no-referrer-when-downgrade"
+            className="h-full w-full border-0"
+            style={{ pointerEvents: "none" }}
+            aria-hidden="true"
+            tabIndex={-1}
+          />
+          <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 border border-white/50 bg-[#F7F3EC]/95 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.1em] text-[#39352F] shadow-sm">
+            <MapPin size={11} className="text-[#C45A3A]" /> Map preview
+          </span>
+        </div>
+      ) : (
+        <div className="mt-5 flex h-[126px] items-center justify-center border border-black/10 bg-[#E6DFD3] text-xs text-[#777064]">
+          Location not added yet
+        </div>
+      )}
+
+      <p className="mt-5 line-clamp-3 min-h-[4.5rem] text-[13px] leading-6 text-[#625D53]">
         {listing.description || business.services || "Explore the business, its services and ways to get in touch."}
       </p>
 
@@ -682,15 +718,15 @@ type MarketplaceWindowData = {
   timezone: string | null;
   products: WindowCatalogueEntry[];
   services: WindowCatalogueEntry[];
-  agentFacts: {
-    serves: string | null;
-    doesNotOffer: string[] | null;
-    booking: "accepted" | "not_accepted" | "unknown";
-    verification: {
-      status: "unverified" | "partially_verified" | "verified";
-      verifiedFields: string[];
-    };
-  };
+  agentFacts?: {
+    serves?: string | null;
+    doesNotOffer?: string[] | null;
+    booking?: "accepted" | "not_accepted" | "unknown";
+    verification?: {
+      status?: "unverified" | "partially_verified" | "verified";
+      verifiedFields?: string[];
+    } | null;
+  } | null;
 };
 
 function formatBusinessHours(
@@ -782,16 +818,18 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
     : business.phone
       ? "Call the business"
       : "Visit business website";
-  const bookingText = business.agentFacts.booking === "accepted"
+  const agentFacts = business.agentFacts ?? {};
+  const verification = agentFacts.verification ?? {};
+  const bookingText = agentFacts.booking === "accepted"
     ? "This business accepts booking requests."
-    : business.agentFacts.booking === "not_accepted"
+    : agentFacts.booking === "not_accepted"
       ? "This business has stated that it does not accept booking requests."
       : "Booking availability has not been confirmed by this business.";
-  const verificationText = business.agentFacts.verification.status === "verified"
+  const verificationText = verification.status === "verified"
     ? "Verified"
-    : business.agentFacts.verification.status === "partially_verified"
+    : verification.status === "partially_verified"
       ? "Partially verified"
-      : "Not yet verified";
+      : "Business details are being provided by the business owner.";
 
   return (
     <SiteFrame>
@@ -837,7 +875,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
 
         <div className="grid gap-10 py-9 md:grid-cols-[1fr_300px] md:gap-16 md:py-12">
           <div className="space-y-10">
-            {(business.description || business.servicesSummary || business.audience || business.agentFacts.serves) && (
+            {(business.description || business.servicesSummary || business.audience || agentFacts.serves) && (
               <section aria-labelledby="business-about">
                 <p className="eyebrow text-[#C45A3A]">The business</p>
                 <h2 id="business-about" className="mt-2 text-2xl font-semibold tracking-[-.05em]">About this business</h2>
@@ -857,7 +895,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                 {(business.agentFacts.serves || business.audience) && (
                   <div className="mt-7 border-l-2 border-[#C45A3A]/60 pl-4">
                     <p className="eyebrow text-[#777064]">A good fit for</p>
-                    <p className="mt-2 text-sm leading-6 text-[#49453D]">{business.agentFacts.serves || business.audience}</p>
+                    <p className="mt-2 text-sm leading-6 text-[#49453D]">{agentFacts.serves || business.audience}</p>
                   </div>
                 )}
               </section>
@@ -907,12 +945,12 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
               </section>
             )}
 
-            {business.agentFacts.doesNotOffer && business.agentFacts.doesNotOffer.length > 0 && (
+            {agentFacts.doesNotOffer && business.agentFacts.doesNotOffer.length > 0 && (
               <section className="border-t border-black/10 pt-7" aria-labelledby="business-exclusions">
                 <p className="eyebrow text-[#777064]">Service boundaries</p>
                 <h2 id="business-exclusions" className="mt-2 text-xl font-semibold tracking-[-.04em]">What they don’t offer</h2>
                 <ul className="mt-3 list-disc space-y-1 pl-5 text-sm leading-6 text-[#625D53]">
-                  {business.agentFacts.doesNotOffer.map((item) => <li key={item}>{item}</li>)}
+                  {agentFacts.doesNotOffer.map((item) => <li key={item}>{item}</li>)}
                 </ul>
               </section>
             )}
@@ -947,8 +985,8 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                   <div>
                     <p className="text-xs font-semibold">Business verification</p>
                     <p className="mt-1 text-sm leading-6 text-[#625D53]">{verificationText}</p>
-                    {business.agentFacts.verification.verifiedFields.length > 0 && (
-                      <p className="mt-1 text-xs text-[#777064]">Verified: {business.agentFacts.verification.verifiedFields.join(", ")}</p>
+                    {(verification.verifiedFields ?? []).length > 0 && (
+                      <p className="mt-1 text-xs text-[#777064]">Verified: {(verification.verifiedFields ?? []).join(", ")}</p>
                     )}
                   </div>
                 </div>
