@@ -355,7 +355,6 @@ function getLiveBusinessStatus(
 function BusinessCard({ business }: { business: Business }) {
   const listing = business as MarketplaceCardData;
   const liveStatus = getLiveBusinessStatus(listing.openingHours, listing.timezone);
-  const agentReady = Boolean(listing.mcpEndpoint);
   const primaryLocation = listing.city || listing.location || "Local business";
   const secondaryLocation =
     listing.location && listing.city && listing.location.toLowerCase() !== listing.city.toLowerCase()
@@ -368,18 +367,9 @@ function BusinessCard({ business }: { business: Business }) {
     <Link
       href={`/marketplace/business?slug=${encodeURIComponent(business.slug)}`}
       data-testid={`business-card-${business.id}`}
-      className="group flex h-full min-h-[300px] flex-col border border-black/10 bg-[#F2EDE4] p-6 transition-all duration-300 hover:-translate-y-1 hover:border-[#D96845]/50 hover:shadow-[0_16px_40px_rgba(18,17,15,.08)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C45A3A] sm:p-7"
+      className="kiosk-business-card kiosk-interactive group relative isolate flex h-full min-h-[300px] flex-col overflow-hidden border border-black/10 bg-[#F2EDE4] p-6 transition-all duration-300 hover:border-[#D96845]/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[#C45A3A] sm:p-7"
     >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="flex flex-wrap items-center gap-2">
-          {agentReady && (
-            <span className="inline-flex items-center gap-1.5 border border-[#47745F]/25 bg-[#47745F]/[.08] px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.12em] text-[#47745F]">
-              <span className="h-1.5 w-1.5 rounded-full bg-[#47745F]" />
-              MCP available
-            </span>
-          )}
-          <span className="eyebrow text-[9px] text-[#777064]">Kiosk window</span>
-        </div>
+      <div className="flex min-h-7 items-center justify-end">
         {liveStatus && (
           <span
             className={liveStatus === "open"
@@ -412,7 +402,7 @@ function BusinessCard({ business }: { business: Business }) {
       </div>
 
       <p className="mt-6 line-clamp-3 min-h-[4.5rem] text-[13px] leading-6 text-[#625D53]">
-        {listing.description || business.services || "Open this Kiosk window to explore the business and its offerings."}
+        {listing.description || business.services || "Explore the business, its services and ways to get in touch."}
       </p>
 
       <div className="mt-5 flex flex-wrap gap-x-4 gap-y-2 border-t border-black/10 pt-4 text-[11px] text-[#625D53]">
@@ -437,7 +427,7 @@ function BusinessCard({ business }: { business: Business }) {
       )}
 
       <span className="mt-auto flex items-center justify-between gap-3 border-t border-black/10 pt-5 text-xs font-semibold">
-        <span>Open in Kiosk</span>
+        <span>View business</span>
         <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-[#C45A3A] text-[#F7F3EC] transition-transform duration-300 group-hover:translate-x-1">
           <ArrowUpRight size={16} />
         </span>
