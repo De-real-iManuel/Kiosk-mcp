@@ -344,73 +344,6 @@ select.surface-input option {
   }
 }
 
-/* Kiosk material language: fluted glass, warm light and spatial depth. */
-.kiosk-glass-stage {
-  --pointer-x: 50%;
-  --pointer-y: 50%;
-  isolation: isolate;
-  overflow: hidden;
-  border: 1px solid rgba(237, 231, 220, 0.2);
-  background:
-    radial-gradient(ellipse at var(--pointer-x) var(--pointer-y), rgba(217, 104, 69, 0.2), transparent 42%),
-    linear-gradient(145deg, rgba(237, 231, 220, 0.105), rgba(237, 231, 220, 0.018) 58%, rgba(217, 104, 69, 0.075));
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.2),
-    inset 0 -24px 48px rgba(0, 0, 0, 0.16),
-    0 28px 90px rgba(0, 0, 0, 0.24);
-  backdrop-filter: blur(18px) saturate(1.15);
-  -webkit-backdrop-filter: blur(18px) saturate(1.15);
-  transition: border-color 450ms ease, box-shadow 450ms ease;
-}
-.kiosk-glass-stage::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 5%;
-  pointer-events: none;
-  border: 1px solid rgba(237, 231, 220, 0.12);
-  border-radius: 48% 48% 38% 38%;
-  background:
-    repeating-linear-gradient(
-      90deg,
-      rgba(237, 231, 220, 0.075) 0,
-      rgba(237, 231, 220, 0.018) 2px,
-      transparent 5px,
-      transparent 11px
-    ),
-    linear-gradient(115deg, rgba(255,255,255,.12), transparent 34%, rgba(217,104,69,.08) 72%, transparent);
-  box-shadow: inset 0 0 42px rgba(237, 231, 220, 0.055);
-  opacity: .72;
-  mask-image: linear-gradient(to bottom, black 0%, black 72%, transparent 100%);
-}
-.kiosk-glass-stage::after {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  background: radial-gradient(260px circle at var(--pointer-x) var(--pointer-y), rgba(255,255,255,.15), transparent 72%);
-  mix-blend-mode: screen;
-  opacity: .75;
-  transition: opacity 350ms ease;
-}
-.kiosk-glass-stage:hover {
-  border-color: rgba(237, 231, 220, 0.34);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.26),
-    inset 0 -24px 48px rgba(0, 0, 0, 0.12),
-    0 34px 100px rgba(0, 0, 0, 0.3);
-}
-.kiosk-glass-stage > * {
-  z-index: 1;
-}
-.kiosk-glass-panel {
-  border: 1px solid rgba(237, 231, 220, 0.2);
-  background: linear-gradient(135deg, rgba(28, 26, 22, 0.82), rgba(18, 17, 15, 0.72));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.12), 0 18px 50px rgba(0,0,0,.2);
-  backdrop-filter: blur(22px) saturate(1.18);
-  -webkit-backdrop-filter: blur(22px) saturate(1.18);
-}
 .kiosk-origin-reveal {
   transform-origin: var(--origin-x, 50%) var(--origin-y, 50%);
   animation: kiosk-origin-in 650ms cubic-bezier(.2,.8,.2,1) both;
@@ -431,20 +364,4 @@ select.surface-input option {
   .kiosk-interactive:hover { transform: none; }
 }
 @supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .kiosk-glass-stage, .kiosk-glass-panel { background-color: #1c1a16; }
-}
-.kiosk-business-card::before {
-  content: "";
-  position: absolute;
-  z-index: 0;
-  inset: 0;
-  pointer-events: none;
-  background:
-    radial-gradient(ellipse at 100% 0%, rgba(217, 104, 69, .09), transparent 48%),
-    linear-gradient(135deg, rgba(255,255,255,.36), transparent 42%);
-  opacity: .7;
-  transition: opacity 300ms ease;
-}
-.kiosk-business-card:hover::before { opacity: 1; }
-
-.kiosk-business-card > * { position: relative; z-index: 1; }
+  .kiosk-glass-stage, 
