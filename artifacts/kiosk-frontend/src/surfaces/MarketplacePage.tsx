@@ -892,7 +892,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                     </p>
                   </div>
                 )}
-                {(business.agentFacts.serves || business.audience) && (
+                {(agentFacts.serves || business.audience) && (
                   <div className="mt-7 border-l-2 border-[#C45A3A]/60 pl-4">
                     <p className="eyebrow text-[#777064]">A good fit for</p>
                     <p className="mt-2 text-sm leading-6 text-[#49453D]">{agentFacts.serves || business.audience}</p>
@@ -945,7 +945,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
               </section>
             )}
 
-            {agentFacts.doesNotOffer && business.agentFacts.doesNotOffer.length > 0 && (
+            {agentFacts.doesNotOffer && agentFacts.doesNotOffer.length > 0 && (
               <section className="border-t border-black/10 pt-7" aria-labelledby="business-exclusions">
                 <p className="eyebrow text-[#777064]">Service boundaries</p>
                 <h2 id="business-exclusions" className="mt-2 text-xl font-semibold tracking-[-.04em]">What they don’t offer</h2>
