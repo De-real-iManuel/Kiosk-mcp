@@ -436,7 +436,7 @@ select.surface-input option {
 .kiosk-business-card::before {
   content: "";
   position: absolute;
-  z-index: -1;
+  z-index: 0;
   inset: 0;
   pointer-events: none;
   background:
@@ -446,3 +446,5 @@ select.surface-input option {
   transition: opacity 300ms ease;
 }
 .kiosk-business-card:hover::before { opacity: 1; }
+
+.kiosk-business-card > * { position: relative; z-index: 1; }
