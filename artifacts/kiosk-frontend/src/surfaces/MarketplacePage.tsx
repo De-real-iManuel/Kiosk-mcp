@@ -365,14 +365,14 @@ function BusinessCard({ business }: { business: Business }) {
         ? listing.country
         : "";
 
-  const mapQuery = [
-    listing.latitude != null && listing.longitude != null
-      ? `${listing.latitude},${listing.longitude}`
-      : null,
-    listing.location,
-    listing.city,
-    listing.country,
-  ].filter(Boolean).join(", ");
+  const hasPreciseCoordinates =
+    typeof listing.latitude === "number" &&
+    typeof listing.longitude === "number" &&
+    Number.isFinite(listing.latitude) &&
+    Number.isFinite(listing.longitude);
+  const mapQuery = hasPreciseCoordinates
+    ? `${listing.latitude},${listing.longitude}`
+    : [listing.location, listing.city, listing.country].filter(Boolean).join(", ");
   const mapUrl = mapQuery
     ? `https://maps.google.com/maps?q=${encodeURIComponent(mapQuery)}&z=15&output=embed`
     : null;
@@ -428,7 +428,7 @@ function BusinessCard({ business }: { business: Business }) {
             tabIndex={-1}
           />
           <span className="absolute bottom-2 left-2 inline-flex items-center gap-1.5 border border-white/50 bg-[#F7F3EC]/95 px-2.5 py-1.5 text-[9px] font-semibold uppercase tracking-[.1em] text-[#39352F] shadow-sm">
-            <MapPin size={11} className="text-[#C45A3A]" /> Map preview
+            <MapPin size={11} className="text-[#C45A3A]" /> {hasPreciseCoordinates ? "Business location" : "Area preview"}
           </span>
         </div>
       ) : (
@@ -983,7 +983,7 @@ export function BusinessDetailPage({ slug }: { slug: string }) {
                 <div className="flex items-start gap-3">
                   <Check size={17} className="mt-0.5 shrink-0 text-[#C45A3A]" />
                   <div>
-                    <p className="text-xs font-semibold">Business verification</p>
+                    <p className="text-xs font-semibold">Business information</p>
                     <p className="mt-1 text-sm leading-6 text-[#625D53]">{verificationText}</p>
                     {(verification.verifiedFields ?? []).length > 0 && (
                       <p className="mt-1 text-xs text-[#777064]">Verified: {(verification.verifiedFields ?? []).join(", ")}</p>
