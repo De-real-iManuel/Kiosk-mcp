@@ -521,16 +521,18 @@ export function LandingPage() {
                   animate: { opacity: 1, scale: 1 },
                   transition: { duration: 0.85, ease: [0.22, 1, 0.36, 1] },
                 })}
-            className="relative mx-auto w-[min(62vw,310px)] md:mx-0 md:w-[min(29vw,350px)]"
+            className="kiosk-glass-stage kiosk-origin-reveal relative mx-auto aspect-square w-[min(62vw,310px)] md:mx-0 md:w-[min(29vw,350px)]"
+            onPointerMove={(event) => {
+              const bounds = event.currentTarget.getBoundingClientRect();
+              event.currentTarget.style.setProperty("--pointer-x", `${((event.clientX - bounds.left) / bounds.width) * 100}%`);
+              event.currentTarget.style.setProperty("--pointer-y", `${((event.clientY - bounds.top) / bounds.height) * 100}%`);
+            }}
+            onPointerLeave={(event) => {
+              event.currentTarget.style.setProperty("--pointer-x", "50%");
+              event.currentTarget.style.setProperty("--pointer-y", "50%");
+            }}
           >
             <ThreeDimensionalMark reduceMotion={!!reduceMotion} />
-            <span className="eyebrow absolute -bottom-9 left-0 text-[#8A8478]">
-              The window
-            </span>
-            <span className="absolute -right-16 top-[17%] hidden h-px w-12 bg-[#8A8478]/50 md:block" />
-            <span className="absolute -right-16 top-[17%] hidden translate-x-12 -translate-y-1/2 text-[10px] tracking-[.18em] text-[#8A8478] md:block">
-              01 / OPEN
-            </span>
           </motion.div>
           <motion.div
             initial={reduceMotion ? false : "hidden"}
@@ -538,34 +540,34 @@ export function LandingPage() {
             variants={appear}
             className="max-w-[680px] md:pl-3"
           >
-            <p className="eyebrow mb-5 text-[#8A8478]">
-              Small business, found by everyone
+            <p className="eyebrow mb-5 text-[#D96845]">
+              Independent businesses. Right around you.
             </p>
-            <h1 className="kiosk-wordmark text-[clamp(5.2rem,12.5vw,11.8rem)] leading-[.78] text-[#EDE7DC]">
-              Kiosk
+            <h1 className="text-[clamp(3.8rem,8.2vw,7.6rem)] font-semibold leading-[.88] tracking-[-.085em] text-[#EDE7DC]">
+              Find local.
+              <br />
+              <span className="serif font-normal italic tracking-[-.065em] text-[#D8CFC0]">Connect directly.</span>
             </h1>
-            <p className="serif mt-9 max-w-[650px] text-[clamp(2.1rem,4.1vw,4rem)] leading-[1.03] tracking-[-.035em] text-[#EDE7DC]">
-              Where local business
-              <br className="hidden md:block" /> meets AI.
+            <p className="mt-7 max-w-[520px] text-[15px] leading-7 text-[#B7AFA1] md:text-[17px]">
+              Discover independent businesses, see what they offer, and reach the people behind them. Kiosk gives local businesses a clear presence across the places people search—including compatible AI assistants.
             </p>
-            <p className="mt-6 max-w-[470px] text-[15px] leading-7 text-[#A49D90] md:text-[17px]">
-              Make your business visible to AI assistants in 2 minutes. No code
-              required.
-            </p>
-            <div className="mt-9 flex flex-wrap items-center gap-5">
+            <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link
-                href="/create"
-                className="group inline-flex min-h-[54px] items-center gap-8 bg-[#EDE7DC] px-6 text-[13px] font-semibold text-[#12110F] transition-colors hover:bg-white"
+                href="/marketplace"
+                className="group inline-flex min-h-[54px] items-center gap-7 bg-[#D96845] px-6 text-[13px] font-semibold text-[#12110F] transition-colors hover:bg-[#E47B59]"
               >
-                Get Started{" "}
+                Explore local businesses{" "}
                 <ArrowRight
                   size={17}
                   className="transition-transform group-hover:translate-x-1"
                 />
               </Link>
-              <span className="eyebrow text-[#8A8478]">
-                About two minutes Â· No code
-              </span>
+              <Link
+                href="/create"
+                className="inline-flex min-h-[54px] items-center gap-3 border border-white/20 px-5 text-[13px] font-semibold text-[#EDE7DC] transition-colors hover:border-[#D96845] hover:bg-white/5"
+              >
+                List your business <ArrowUpRight size={16} />
+              </Link>
             </div>
           </motion.div>
         </div>
