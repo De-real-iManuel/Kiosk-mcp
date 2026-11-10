@@ -296,6 +296,8 @@ export const MarketplaceBusinessProfileResponse = z.object({
   city: z.string().nullable(),
   country: z.string().nullable(),
   location: z.string().nullable(),
+  latitude: z.number().nullable(),
+  longitude: z.number().nullable(),
   phone: z.string().nullable(),
   whatsapp: z.string().nullable(),
   website: z.string().nullable(),
