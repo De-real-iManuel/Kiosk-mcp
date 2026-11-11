@@ -355,139 +355,23 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
             </div>
           </div>
 
-          {/* One-click connection buttons */}
-          <div className="mb-6">
-            <p className="mono text-[10px] text-[#8A8478] mb-3">
-              ONE-CLICK CONNECT
-            </p>
-            <div className="flex flex-wrap gap-2">
-              {/* ChatGPT */}
-              <a
-                href={`https://chatgpt.com/?q=${encodeURIComponent(`Add this MCP connector: ${MASTER_MCP_ENDPOINT}`)}`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 41 41"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M37.532 16.87a9.963 9.963 0 0 0-.856-8.184 10.078 10.078 0 0 0-10.855-4.835A9.964 9.964 0 0 0 18.306.5a10.079 10.079 0 0 0-9.614 6.977 9.967 9.967 0 0 0-6.664 4.834 10.08 10.08 0 0 0 1.24 11.817 9.965 9.965 0 0 0 .856 8.185 10.079 10.079 0 0 0 10.855 4.835 9.965 9.965 0 0 0 7.516 3.35 10.078 10.078 0 0 0 9.617-6.981 9.967 9.967 0 0 0 6.663-4.834 10.079 10.079 0 0 0-1.243-11.813zM22.498 37.886a7.474 7.474 0 0 1-4.799-1.735c.061-.033.168-.091.237-.134l7.964-4.6a1.294 1.294 0 0 0 .655-1.134V19.054l3.366 1.944a.12.12 0 0 1 .066.092v9.299a7.505 7.505 0 0 1-7.49 7.496zM6.392 31.006a7.471 7.471 0 0 1-.894-5.023c.06.036.162.099.237.141l7.964 4.6a1.297 1.297 0 0 0 1.308 0l9.724-5.614v3.888a.12.12 0 0 1-.048.103l-8.051 4.649a7.504 7.504 0 0 1-10.24-2.744zM4.297 13.62A7.469 7.469 0 0 1 8.2 10.333c0 .068-.004.19-.004.274v9.201a1.294 1.294 0 0 0 .654 1.132l9.723 5.614-3.366 1.944a.12.12 0 0 1-.114.012L7.044 23.86a7.504 7.504 0 0 1-2.747-10.24zm27.658 6.437l-9.724-5.615 3.367-1.943a.121.121 0 0 1 .114-.012l8.048 4.648a7.498 7.498 0 0 1-1.158 13.528v-9.476a1.293 1.293 0 0 0-.647-1.13zm3.35-5.043c-.059-.037-.162-.099-.236-.141l-7.965-4.6a1.298 1.298 0 0 0-1.308 0l-9.723 5.614v-3.888a.12.12 0 0 1 .048-.103l8.05-4.645a7.497 7.497 0 0 1 11.135 7.763zm-21.063 6.929l-3.367-1.944a.12.12 0 0 1-.065-.092v-9.299a7.497 7.497 0 0 1 12.293-5.756 6.94 6.94 0 0 0-.236.134l-7.965 4.6a1.294 1.294 0 0 0-.654 1.132l-.006 11.225zm1.829-3.943l4.33-2.501 4.332 2.5v4.999l-4.331 2.5-4.331-2.5V18z" />
-                </svg>
-                Add to ChatGPT
-              </a>
-
-              {/* Claude */}
-              <a
-                href={`https://claude.ai/settings/integrations`}
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M17.3 2.001H6.7C4.12 2.001 2 4.121 2 6.701v10.6C2 19.881 4.12 22 6.7 22h10.6c2.58 0 4.7-2.12 4.7-4.7V6.7c0-2.58-2.12-4.7-4.7-4.699zM8.647 16.25l-1.093-.618 2.45-4.246-2.37-4.127 1.093-.617 2.37 4.127.003.006 2.37-4.133 1.093.617-2.37 4.127 2.45 4.246-1.094.618L12 12.124l-3.353 4.126z" />
-                </svg>
-                Add to Claude
-              </a>
-
-              {/* Cursor */}
-              <a
-                href="https://docs.cursor.com/context/model-context-protocol"
-                target="_blank"
-                rel="noreferrer"
-                className="inline-flex items-center gap-2 border border-white/15 bg-[#12110F] px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:border-white/30 hover:bg-white/5"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="currentColor"
-                  aria-hidden="true"
-                >
-                  <path d="M11.926 0L23.85 6.98v4.893l-3.458-1.998v-1.46L11.926 3.46 3.458 8.414v1.46L0 11.873V6.98L11.926 0zM0 17.021l3.458 1.998v1.46l8.468 4.954 8.467-4.954v-1.46L23.85 17.02V21.913L11.926 28.893 0 21.913V17.02z" />
-                </svg>
-                Add to Cursor
-              </a>
-
-              {/* Copy URL fallback */}
+          <div className="border-t border-white/10 pt-5">
+            <p className="mono mb-2 text-[10px] text-[#8A8478]">MCP SERVER URL</p>
+            <div className="flex flex-col gap-3 border border-white/15 bg-[#12110F] px-4 py-4 sm:flex-row sm:items-center">
+              <code className="mono min-w-0 flex-1 break-all text-[12px] leading-6 text-[#EDE7DC]">{MASTER_MCP_ENDPOINT}</code>
               <button
+                type="button"
                 onClick={copyEndpoint}
-                className="inline-flex items-center gap-2 border border-white/10 bg-transparent px-4 py-2.5 text-[12px] font-semibold text-[#8A8478] transition-colors hover:text-[#EDE7DC]"
+                className="inline-flex shrink-0 items-center justify-center gap-2 self-start border border-[#D96845]/50 px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:bg-[#D96845]/10 sm:self-auto"
+                aria-label="Copy Kiosk MCP server URL"
               >
-                {copied ? (
-                  <>
-                    <Check size={12} className="text-[#47745F]" />
-                    <span className="text-[#47745F]">Copied!</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} />
-                    Copy URL
-                  </>
-                )}
+                {copied ? <><Check size={13} className="text-[#47745F} /> Copied</> : <><Copy size={13} /> Copy URL</>}
               </button>
             </div>
-            <p className="mt-3 text-[11px] text-[#625D53]">
-              Clicking "Add to ChatGPT" or "Add to Claude" opens the app” paste{" "}
-              <span className="mono text-[#8A8478]">{MASTER_MCP_ENDPOINT}</span>{" "}
-              when prompted for the server URL.
+            <p className="mt-3 text-[11px] leading-5 text-[#8A8478]">
+              Use this URL in an MCP-compatible client that supports custom server connections.
             </p>
           </div>
-
-          {/* Connection steps */}
-          <div className="grid gap-4 sm:grid-cols-3 mb-6">
-            {[
-              {
-                step: "1",
-                title: "Tap a button above",
-                body: "Click your AI client above. It opens the app with the connection flow ready.",
-              },
-              {
-                step: "2",
-                title: "Discover businesses",
-                body: "Call search_businesses or discover_categories to find published businesses. Each result includes an mcp_endpoint URL for the specific business.",
-              },
-              {
-                step: "3",
-                title: "Connect to a business",
-                body: "Use the returned mcp_endpoint to connect directly to that business's MCP server for services, hours, contact, and supported interactions.",
-              },
-            ].map(({ step, title, body }) => (
-              <div key={step} className="border border-white/8 p-4">
-                <span className="mono text-[10px] text-[#8A8478]">0{step}</span>
-                <p className="mt-2 text-[13px] font-semibold text-[#EDE7DC]">
-                  {title}
-                </p>
-                <p className="mt-1.5 text-[12px] leading-5 text-[#625D53]">
-                  {body}
-                </p>
-              </div>
-            ))}
-          </div>
-
-          <p className="text-[11px] leading-5 text-[#625D53]">
-            Connection steps vary between AI clients. See{" "}
-            <a
-              href="https://github.com/De-real-iManuel/Kiosk-mcp/blob/main/docs/connect-ai-assistants.md"
-              className="text-[#8A8478] underline underline-offset-4 hover:text-[#EDE7DC] transition-colors"
-              target="_blank"
-              rel="noreferrer"
-            >
-              docs/connect-ai-assistants.md
-            </a>{" "}
-            for client-specific guides. The endpoint above is the master
-            discovery server â€” individual business endpoints are returned
-            dynamically.
-          </p>
         </motion.div>
       </div>
     </section>
@@ -565,6 +449,17 @@ export function LandingPage() {
         <div className="absolute bottom-0 left-1/2 hidden h-12 w-px bg-gradient-to-b from-[#8A8478]/50 to-transparent md:block" />
       </section>
 
+      <section aria-label="Early ecosystem trust" className="border-b border-white/10 bg-[#171613]">
+        <div className="mx-auto flex max-w-[1440px] flex-col gap-5 px-6 py-8 md:flex-row md:items-center md:justify-between md:px-12">
+          <p className="eyebrow text-[#8A8478]">Early trust</p>
+          <div className="flex flex-wrap items-center gap-x-8 gap-y-3">
+            <span className="text-[11px] uppercase tracking-[.16em] text-[#8A8478]">Trusted by</span>
+            <span className="kiosk-wordmark text-2xl font-semibold tracking-[-.04em] text-[#EDE7DC]">Steepychain</span>
+          </div>
+          <p className="max-w-md text-xs leading-5 text-[#8A8478]">We’ll add more organisations here as real relationships grow.</p>
+        </div>
+      </section>
+
       <section className="border-b border-white/10 bg-[#1C1A16]">
         <div className="mx-auto grid max-w-[1440px] gap-10 px-6 py-20 md:grid-cols-[.8fr_1.2fr] md:gap-20 md:px-12 md:py-28">
           <motion.div {...reveal}>
@@ -613,7 +508,7 @@ export function LandingPage() {
               Be visible
               <br />
               <span className="serif font-normal italic tracking-[-.055em]">
-                to every assistant.
+                to local demand.
               </span>
             </h2>
           </motion.div>
@@ -623,15 +518,15 @@ export function LandingPage() {
           >
             <span className="absolute -left-[4px] top-0 h-2 w-2 bg-[#EDE7DC]" />
             <p className="serif max-w-[480px] text-[clamp(1.7rem,3vw,2.8rem)] leading-[1.18] text-[#D0C9BC]">
-              No new software to learn. No code to write. Just fill in your
-              details and your business becomes visible to AI assistants
-              everywhere.
+              Give your business one clear place in the local commerce
+              network. Kiosk makes your information easier to discover and
+              gives customers a direct path to reach you.
             </p>
             <Link
               href="/create"
               className="group mt-9 inline-flex items-center gap-3 text-[13px] font-semibold text-[#EDE7DC]"
             >
-              Get found by AI assistants{" "}
+              Connect with more customers{" "}
               <span className="grid h-9 w-9 place-items-center rounded-full border border-white/25 transition-colors group-hover:bg-[#EDE7DC] group-hover:text-[#12110F]">
                 <ArrowUpRight size={16} />
               </span>
@@ -659,6 +554,41 @@ export function LandingPage() {
               <p className="serif mt-2 text-2xl leading-tight text-[#EDE7DC]">A useful answer should lead to a real local business.</p>
             </div>
           </motion.div>
+        </div>
+      </section>
+
+      <section id="local-commerce-network" className="relative overflow-hidden border-b border-white/10 bg-[#12110F]">
+        <div className="mx-auto max-w-[1440px] px-6 py-24 md:px-12 md:py-32">
+          <div className="grid gap-10 md:grid-cols-[.9fr_1.1fr] md:items-end">
+            <div>
+              <p className="eyebrow mb-5 text-[#D96845]">The Kiosk network</p>
+              <h2 className="max-w-xl text-[clamp(2.8rem,6vw,5.4rem)] font-semibold leading-[.92] tracking-[-.075em] text-[#EDE7DC]">
+                From being found
+                <br /><span className="serif font-normal italic text-[#D8CFC0]">to being reached.</span>
+              </h2>
+            </div>
+            <p className="serif max-w-2xl text-[clamp(1.35rem,2.3vw,2rem)] leading-[1.3] text-[#C5BFB2]">
+              Kiosk connects three parts of local commerce: independent businesses with useful information, people looking for something nearby, and the AI tools that can help bring them together.
+            </p>
+          </div>
+          <div className="relative mt-16 grid gap-3 md:grid-cols-3">
+            {[
+              {n:"01",title:"Local businesses",body:"Businesses publish the services, products, location and contact details they want customers to find.",meta:"BUSINESS PROFILE"},
+              {n:"02",title:"Kiosk discovery layer",body:"Kiosk organises that information and makes it available through the marketplace and compatible discovery interfaces.",meta:"STRUCTURED NETWORK"},
+              {n:"03",title:"Customers & assistants",body:"People can explore participating businesses, compare useful details and continue directly to the business to confirm next steps.",meta:"DISCOVER → CONNECT"},
+            ].map((item,i)=>(
+              <article key={item.n} className="relative border border-white/10 bg-[#1C1A16] p-6 md:p-7">
+                <div className="flex items-center justify-between"><span className="mono text-[10px] text-[#D96845]">{item.n}</span><span className="h-2 w-2 rounded-full bg-[#D96845] shadow-[0_0_14px_#D9684580]"/></div>
+                <p className="eyebrow mt-10 text-[#8A8478]">{item.meta}</p>
+                <h3 className="mt-3 text-2xl font-semibold tracking-[-.05em] text-[#EDE7DC]">{item.title}</h3>
+                <p className="mt-4 text-sm leading-7 text-[#A49D90]">{item.body}</p>
+              </article>
+            ))}
+          </div>
+          <div className="mt-8 flex flex-col gap-5 border-t border-white/10 pt-7 sm:flex-row sm:items-center sm:justify-between">
+            <p className="max-w-2xl text-sm leading-6 text-[#8A8478]">The network grows business by business. Explore the participating businesses already published on Kiosk.</p>
+            <Link href="/marketplace" className="inline-flex items-center gap-3 text-sm font-semibold text-[#EDE7DC] transition-colors hover:text-[#D96845]">Explore the marketplace <ArrowUpRight size={16}/></Link>
+          </div>
         </div>
       </section>
 
