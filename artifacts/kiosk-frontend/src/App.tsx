@@ -592,6 +592,51 @@ export function LandingPage() {
         </div>
       </section>
 
+      <section id="product-preview" className="border-b border-white/10 bg-[#171613]">
+        <div className="mx-auto max-w-[1440px] px-6 py-24 md:px-12 md:py-28">
+          <div className="mb-14 grid gap-8 md:grid-cols-[.85fr_1.15fr] md:items-end">
+            <div><p className="eyebrow mb-5 text-[#D96845]">Inside the network</p><h2 className="max-w-xl text-[clamp(2.8rem,5.5vw,5rem)] font-semibold leading-[.93] tracking-[-.075em] text-[#EDE7DC]">One business profile. More ways to be discovered.</h2></div>
+            <p className="serif max-w-2xl text-[clamp(1.3rem,2.2vw,1.8rem)] leading-[1.35] text-[#C5BFB2]">A business manages its information in Kiosk. Customers can explore that information on the marketplace or through compatible AI discovery experiences.</p>
+          </div>
+          <div className="relative grid items-center gap-8 lg:grid-cols-[1.35fr_.65fr]">
+            <div className="relative rounded-[18px] border border-white/15 bg-[#0B0A09] p-2 shadow-[0_35px_100px_rgba(0,0,0,.45)]">
+              <div className="overflow-hidden rounded-[11px] border border-white/10 bg-[#EDE7DC] text-[#171613]">
+                <div className="flex h-10 items-center justify-between border-b border-black/10 bg-[#F5F0E7] px-4"><span className="kiosk-wordmark text-sm">Kiosk</span><span className="text-[9px] uppercase tracking-[.14em] text-[#81796D]">Business window · Example view</span><span className="h-2 w-2 rounded-full bg-[#D96845]"/></div>
+                <div className="grid min-h-[290px] sm:grid-cols-[150px_1fr]">
+                  <aside className="hidden border-r border-black/10 bg-[#E6DFD3] p-4 sm:block"><p className="text-[9px] font-semibold uppercase tracking-[.14em] text-[#81796D]">Workspace</p>{["Overview","Business profile","Services","Contact channels"].map((x,i)=><div key={x} className={`mt-3 px-2 py-2 text-[10px] ${i===1?"bg-[#D96845]/15 font-semibold text-[#A9472B]":"text-[#696257]"}`}>{x}</div>)}</aside>
+                  <div className="p-4 sm:p-6">
+                    <div className="flex flex-wrap items-start justify-between gap-3"><div><p className="text-[9px] uppercase tracking-[.14em] text-[#81796D]">Your business profile</p><h3 className="mt-1 text-xl font-semibold tracking-[-.05em]">A clearer local presence.</h3><p className="mt-1 text-[10px] text-[#81796D]">Manage the information customers use to find you.</p></div><span className="border border-[#47745F]/30 bg-[#47745F]/10 px-2 py-1 text-[9px] font-semibold text-[#47745F]">PROFILE PREVIEW</span></div>
+                    <div className="mt-5 grid gap-3 sm:grid-cols-2">
+                      <div className="border border-black/10 bg-[#F7F3EC] p-4"><p className="text-[9px] uppercase tracking-[.12em] text-[#81796D]">Business details</p><div className="mt-3 h-2 w-3/4 bg-[#B8B0A3]"/><div className="mt-2 h-2 w-full bg-[#D7D0C5]"/><div className="mt-2 h-2 w-2/3 bg-[#D7D0C5]"/><p className="mt-4 text-[10px] font-semibold">Name · Location · Opening hours</p></div>
+                      <div className="border border-black/10 bg-[#F7F3EC] p-4"><p className="text-[9px] uppercase tracking-[.12em] text-[#81796D]">Services & offers</p>{["Service descriptions","Price guidance","What customers should know"].map(x=><div key={x} className="mt-3 flex items-center gap-2 text-[10px]"><span className="h-1.5 w-1.5 rounded-full bg-[#D96845]"/>{x}</div>)}</div>
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-3 border border-black/10 bg-[#F7F3EC] p-3"><span className="text-[10px] text-[#696257]">Contact details stay connected to the business profile.</span><span className="bg-[#D96845] px-3 py-2 text-[9px] font-semibold text-[#12110F]">Preview profile ↗</span></div>
+                  </div>
+                </div>
+              </div>
+              <div className="mx-auto h-3 w-[24%] rounded-b-xl bg-[#282521]"/>
+              <div className="mx-auto h-1 w-[34%] rounded-b-full bg-[#48433B]"/>
+            </div>
+            <div className="mx-auto w-[min(72%,260px)] rounded-[34px] border-[5px] border-[#39352F] bg-[#090908] p-2 shadow-[0_30px_80px_rgba(0,0,0,.55)] lg:-ml-14">
+              <div className="overflow-hidden rounded-[25px] bg-[#EDE7DC] text-[#171613]">
+                <div className="flex h-8 items-center justify-center bg-[#E4DDD1]"><span className="h-1 w-12 rounded-full bg-[#81796D]"/></div>
+                <div className="p-4">
+                  <div className="flex items-center justify-between"><span className="kiosk-wordmark text-lg">Kiosk</span><span className="text-[9px] text-[#81796D]">Discovery preview</span></div>
+                  <p className="mt-5 text-[9px] uppercase tracking-[.14em] text-[#81796D]">A customer asks</p>
+                  <div className="mt-2 rounded-xl rounded-tr-sm bg-[#D96845] p-3 text-[11px] leading-5 text-[#12110F]">Find a nearby salon that offers braids.</div>
+                  <div className="mt-4 rounded-xl border border-black/10 bg-[#F7F3EC] p-3">
+                    <p className="text-[9px] uppercase tracking-[.12em] text-[#81796D]">Participating business</p><h4 className="mt-2 text-sm font-semibold">Independent salon</h4><p className="mt-1 text-[10px] leading-4 text-[#696257]">Services · Location · Contact details</p><div className="mt-3 flex items-center justify-between border-t border-black/10 pt-3"><span className="text-[9px] text-[#81796D]">Review business details</span><span className="text-[10px] font-semibold text-[#B64F32]">View ↗</span></div>
+                  </div>
+                  <p className="mt-4 text-center text-[9px] leading-4 text-[#81796D]">Illustrative customer journey. Results depend on participating businesses and compatible AI clients.</p>
+                </div>
+                <div className="h-5 bg-[#E4DDD1]"/>
+              </div>
+            </div>
+          </div>
+          <p className="mt-7 text-[10px] leading-5 text-[#81796D]">Illustrative interface preview—not a live merchant record or a claim of customer activity.</p>
+        </div>
+      </section>
+
       <section id="customer-questions" className="border-b border-white/10 bg-[#12110F]">
         <div className="mx-auto grid max-w-[1440px] gap-12 px-6 py-20 md:grid-cols-[.8fr_1.2fr] md:px-12 md:py-24">
           <div><p className="eyebrow mb-5 text-[#D96845]">Questions, answered</p><h2 className="text-4xl font-semibold tracking-[-.06em]">What to know before using Kiosk.</h2></div>
