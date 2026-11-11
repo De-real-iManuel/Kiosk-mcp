@@ -145,9 +145,9 @@ const FLOW_STEPS = [
   },
   {
     number: "04",
-    label: "AI can engage",
+    label: "Connect",
     detail:
-      "Compatible AI agents can find your business, browse services, and help customers reach you.",
+      "Customers can review your details and reach you through the contact channels you provide.",
   },
 ] as const;
 
@@ -286,23 +286,23 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
         >
           {[
             "Business profile",
-            "",
-            "Kiosk platform",
-            "",
+            "→",
+            "Kiosk discovery",
+            "→",
             "Master MCP",
-            "",
+            "→",
             "Business MCP",
-            "",
+            "→",
             "AI assistant",
-            "",
+            "→",
             "Customer",
           ].map((part, i) => (
             <span
               key={i}
               className={
-                part === "â†’"
-                  ? "text-[#8A8478]"
-                  : "border border-white/10 px-2 py-0.5 text-[#A49D90]"
+                part === "→"
+                  ? "px-1 text-[#D96845]"
+                  : "border border-white/10 px-2 py-1 text-[#A49D90]"
               }
             >
               {part}
@@ -505,10 +505,10 @@ export function LandingPage() {
           <motion.div {...reveal}>
             <p className="eyebrow mb-6 text-[#D96845]">What Kiosk does</p>
             <h2 className="max-w-[600px] text-[clamp(2.8rem,6vw,5.7rem)] font-semibold leading-[.9] tracking-[-.08em]">
-              Be visible
+              Be found.
               <br />
               <span className="serif font-normal italic tracking-[-.055em]">
-                to local demand.
+                Be reached.
               </span>
             </h2>
           </motion.div>
