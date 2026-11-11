@@ -55,6 +55,35 @@ const articles = [
     ],
   },
   {
+    tag: "LOCAL COMMERCE",
+    title: "Discovery is only the first step: why the connection matters",
+    intro: "A useful local search should do more than return a name. It should help a customer understand the business and take a practical next step.",
+    read: "5 min read",
+    image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "Finding a business is not the same as becoming its customer. A search result may show a name and an address, but a person may still need to know whether the business offers the service they need, what it costs, when it is available and how to make contact.",
+      "That gap matters especially for independent businesses. Details can be spread across a map listing, a social profile, a printed menu and conversations on WhatsApp or over the phone. Customers do the work of joining those pieces together.",
+      "A stronger local commerce experience connects discovery to a useful next step. A customer should be able to understand the offer, review the details the business has provided and reach the business through a channel it actually uses.",
+      "Kiosk is being built around that connection. It organises business information for discovery and helps people move from finding a business to contacting it. The business remains in control of confirming prices, availability, bookings and fulfilment.",
+      "The measure of a useful network is not simply how many profiles it contains. It is whether people can find relevant businesses, whether the information is accurate and whether discovery leads to real conversations and outcomes."
+    ]
+  },
+  {
+    tag: "FOR BUSINESS OWNERS",
+    title: "Your business is listed online. Can a new customer actually take the next step?",
+    intro: "A checklist for turning a basic online presence into clear information and a practical path to contact.",
+    read: "4 min read",
+    image: "https://images.unsplash.com/photo-1556761175-b413da4baf72?auto=format&fit=crop&w=1000&q=85",
+    body: [
+      "A listing on a map or social platform is a useful starting point, but it may not answer the questions a new customer has. What exactly do you offer? Which options are available? What should the customer do next?",
+      "Check your service descriptions. Use names customers recognise and explain what is included. If two services are easy to confuse, describe the difference.",
+      "Make location and hours dependable. State whether customers need an appointment, whether you serve a wider area or whether they should call before visiting.",
+      "Choose contact channels you can respond to. A phone number is not useful if nobody answers it; a WhatsApp link is not useful if messages are rarely checked. Tell customers what response time they should reasonably expect.",
+      "Keep control of confirmation. If a customer sends an enquiry, reply with the current price, availability and any details needed before confirming an appointment or order. A request should not be presented as a confirmed booking until you accept it.",
+      "Review your information regularly. Clear, current details reduce unnecessary back-and-forth and make it easier for both people and digital assistants to understand your business."
+    ]
+  },
+  {
     tag: "PRACTICAL GUIDE",
     title: "The business details an AI assistant needs to answer well",
     intro:
@@ -95,7 +124,7 @@ export default function JournalPage() {
         <p className="eyebrow mb-5 text-[#D96845]">The Kiosk Journal</p>
         <div className="grid gap-8 md:grid-cols-[1fr_.7fr] md:items-end">
           <h1 className="max-w-4xl text-[clamp(3rem,7vw,6.8rem)] font-semibold leading-[.9] tracking-[-.08em]">
-            Make the new internet easier to understand.
+            Make local discovery lead to real connections.
           </h1>
           <p className="serif max-w-xl text-xl leading-8 text-[#C5BFB2]">
             Notes, explainers and practical guides for independent businesses
