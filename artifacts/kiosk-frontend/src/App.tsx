@@ -326,50 +326,23 @@ function KioskMcpSection({ reduceMotion }: { reduceMotion: boolean }) {
             endpoints.
           </p>
 
-          {/* Endpoint copy block */}
-          <div className="mb-6">
-            <p className="mono text-[10px] text-[#8A8478] mb-2">
-              MASTER MCP ENDPOINT
-            </p>
-            <div className="flex items-center gap-3 border border-white/15 bg-[#12110F] px-4 py-3">
-              <code className="mono text-[12px] text-[#EDE7DC] flex-1 truncate">
-                POST {MASTER_MCP_ENDPOINT}
-              </code>
-              <button
-                onClick={copyEndpoint}
-                className="shrink-0 inline-flex items-center gap-1.5 text-[11px] font-semibold text-[#8A8478] hover:text-[#EDE7DC] transition-colors"
-                aria-label="Copy endpoint URL"
-              >
-                {copied ? (
-                  <>
-                    <Check size={12} className="text-[#47745F]" />
-                    <span className="text-[#47745F]">Copied</span>
-                  </>
-                ) : (
-                  <>
-                    <Copy size={12} />
-                    Copy
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-
           <div className="border-t border-white/10 pt-5">
             <p className="mono mb-2 text-[10px] text-[#8A8478]">MCP SERVER URL</p>
             <div className="flex flex-col gap-3 border border-white/15 bg-[#12110F] px-4 py-4 sm:flex-row sm:items-center">
-              <code className="mono min-w-0 flex-1 break-all text-[12px] leading-6 text-[#EDE7DC]">{MASTER_MCP_ENDPOINT}</code>
+              <code className="mono min-w-0 flex-1 break-all text-[12px] leading-6 text-[#EDE7DC]">
+                {MASTER_MCP_ENDPOINT}
+              </code>
               <button
                 type="button"
                 onClick={copyEndpoint}
                 className="inline-flex shrink-0 items-center justify-center gap-2 self-start border border-[#D96845]/50 px-4 py-2.5 text-[12px] font-semibold text-[#EDE7DC] transition-colors hover:bg-[#D96845]/10 sm:self-auto"
                 aria-label="Copy Kiosk MCP server URL"
               >
-                {copied ? <><Check size={13} className="text-[#47745F} /> Copied</> : <><Copy size={13} /> Copy URL</>}
+                {copied ? "Copied" : "Copy URL"}
               </button>
             </div>
             <p className="mt-3 text-[11px] leading-5 text-[#8A8478]">
-              Use this URL in an MCP-compatible client that supports custom server connections.
+              Copy this URL into an MCP-compatible client that supports custom server connections.
             </p>
           </div>
         </motion.div>
