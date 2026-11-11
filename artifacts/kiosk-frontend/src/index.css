@@ -363,5 +363,3 @@ select.surface-input option {
   .kiosk-interactive { transition: none; }
   .kiosk-interactive:hover { transform: none; }
 }
-@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
-  .kiosk-glass-stage, 
