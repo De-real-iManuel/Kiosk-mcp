@@ -18,7 +18,7 @@ export default function AboutPage() {
     <main className="grain min-h-screen bg-[#12110F] text-[#EDE7DC]">
       <header className="border-b border-white/10">
         <div className="mx-auto flex h-[74px] max-w-[1440px] items-center justify-between px-6 md:px-12">
-          <Link href="/" className="inline-flex items-center gap-3"><span className="text-[#D96845]">▰</span><span className="kiosk-wordmark text-2xl">Kiosk</span></Link>
+          <Link href="/" className="kiosk-wordmark text-2xl">Kiosk</Link>
           <nav className="flex items-center gap-5 text-xs text-[#A49D90]"><Link href="/journal" className="hover:text-[#D96845]">Journal</Link><Link href="/marketplace" className="hover:text-[#D96845]">Marketplace ↗</Link></nav>
         </div>
       </header>
