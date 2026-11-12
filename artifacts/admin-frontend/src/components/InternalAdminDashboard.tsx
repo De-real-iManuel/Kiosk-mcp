@@ -96,6 +96,10 @@ type RegistrationRow = {
   contact: string;
   status: string;
   createdAt: string;
+  updatedAt: string;
+  publishedAt: string | null;
+  accountBusinessCount: number;
+  registrationsFromIp: number;
   registrationIp: string | null;
   registrationUserAgent: string | null;
   registrationGeoCountry: string | null;
@@ -1175,7 +1179,7 @@ export function InternalAdminDashboard() {
                         <table className="w-full min-w-[900px] border-collapse text-left text-xs">
                           <thead>
                             <tr className="border-b border-white/10 text-[10px] uppercase tracking-[.14em] text-[#817D74]">
-                              {["Business", "Category", "Location", "Contact", "Website", "Account ID", "Status", "Registered", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
+                              {["Business", "Category", "Location", "Contact", "Website", "Account ID", "Businesses on account", "Registrations from IP", "Status", "Registered", "Last updated", "Published", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
                                 <th key={h} className="px-4 py-4 font-medium">{h}</th>
                               ))}
                             </tr>
@@ -1191,6 +1195,8 @@ export function InternalAdminDashboard() {
                                 <td className="px-4 py-3 text-[#9B968C]">{row.whatsapp ?? row.phone ?? row.contact ?? "—"}</td>
                                 <td className="max-w-[180px] truncate px-4 py-3 text-[#9B968C]">{row.website ?? "—"}</td>
                                 <td className="max-w-[180px] truncate px-4 py-3 font-mono text-[10px] text-[#716D65]" title={row.ownerClerkId}>{row.ownerClerkId}</td>
+                                <td className="px-4 py-3 text-[#9B968C]">{row.accountBusinessCount}</td>
+                                <td className="px-4 py-3 text-[#9B968C]">{row.registrationsFromIp}</td>
                                 <td className="px-4 py-3">
                                   <span className={`inline-block px-2 py-0.5 text-[9px] uppercase tracking-[.1em] ${
                                     row.status === "published"
@@ -1202,6 +1208,12 @@ export function InternalAdminDashboard() {
                                 </td>
                                 <td className="px-4 py-3 text-[#9B968C]">
                                   {new Date(row.createdAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-4 py-3 text-[#9B968C]">
+                                  {new Date(row.updatedAt).toLocaleDateString()}
+                                </td>
+                                <td className="px-4 py-3 text-[#9B968C]">
+                                  {row.publishedAt ? new Date(row.publishedAt).toLocaleDateString() : "—"}
                                 </td>
                                 <td className="px-4 py-3 font-mono text-[11px] text-[#9B968C]">
                                   {row.registrationIp ?? "—"}
