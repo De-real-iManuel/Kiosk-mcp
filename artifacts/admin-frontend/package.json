@@ -12,7 +12,8 @@
     "lucide-react": "catalog:",
     "next": "^15.5.27",
     "react": "19.1.4",
-    "react-dom": "19.1.4"
+    "react-dom": "19.1.4",
+    "recharts": "2.15.3"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.3",

@@ -73,11 +73,13 @@ export const requireAdmin: RequestHandler = async (req, res, next) => {
   } catch (error) {
     const message =
       error instanceof Error ? error.message : "Invalid admin credentials";
+    // Temporarily surface the real error message to aid debugging
+    console.error("[require-admin] token verification failed:", message);
     if (message === "Admin identity provider is not configured") {
       res.status(503).json({ error: "Admin sign-in is not configured" });
       return;
     }
-    res.status(401).json({ error: "Invalid or expired admin credentials" });
+    res.status(401).json({ error: message });
   }
 };
 

@@ -29,6 +29,7 @@ import { assertOwnership } from "../lib/ownership";
 import { getMcpEndpoint } from "../lib/mcp-url.js";
 import { checkPublishReadiness } from "../lib/publishReadiness.js";
 import { writeLimiter } from "../middlewares/rateLimiter.js";
+import { geolocateRequest } from "../lib/geoip.js";
 
 const router: IRouter = Router();
 router.use(requireAuth);
@@ -117,6 +118,11 @@ router.post("/businesses", async (req, res): Promise<void> => {
   const id = randomUUID();
   const slug = generateSlug(parsed.data.businessName, id);
 
+  // ── Capture registration intelligence ───────────────────────────────────────
+  const geo = geolocateRequest(req);
+  const registrationIp        = req.ip ?? null;
+  const registrationUserAgent = req.headers["user-agent"] ?? null;
+
   await db.insert(businessesTable).values({
     id,
     ownerClerkId: getOwnerId(res),
@@ -139,6 +145,14 @@ router.post("/businesses", async (req, res): Promise<void> => {
     audience: parsed.data.audience || "",
     hours: parsed.data.hours || "",
     contact: parsed.data.contact || "",
+    // Registration intelligence
+    registrationIp,
+    registrationUserAgent,
+    registrationGeoCountry:   geo.country,
+    registrationGeoCity:      geo.city,
+    registrationGeoLatitude:  geo.lat,
+    registrationGeoLongitude: geo.lon,
+    registrationGeoIsp:       geo.isp,
   });
 
   const capabilities = parsed.data.capabilities ?? [];

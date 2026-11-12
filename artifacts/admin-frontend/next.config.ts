@@ -28,19 +28,14 @@ function pick(key: string): string {
   return rootEnv[key] ?? process.env[key] ?? "";
 }
 
-const isDev = process.env.NODE_ENV === "development";
-
 const nextConfig: NextConfig = {
-  // basePath and static export are only needed for the CloudFront deployment.
-  // In local dev Next.js serves from / on port 3001 and handles the OAuth
-  // callback at /?code=... without needing a basePath.
-  ...(isDev
-    ? {}
-    : {
-        output: "export",
-        basePath: "/internal-admin",
-        trailingSlash: true,
-      }),
+  // basePath is always /internal-admin — both dev and production.
+  // This matches the Cognito callback URI and the CloudFront path.
+  // output: "export" is only applied in production builds; the dev server
+  // cannot run as a static export.
+  basePath: "/internal-admin",
+  trailingSlash: true,
+  ...(process.env.NODE_ENV !== "development" ? { output: "export" } : {}),
   images: { unoptimized: true },
   poweredByHeader: false,
   env: {
