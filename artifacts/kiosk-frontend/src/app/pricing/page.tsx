@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { ArrowUpRight, Check } from "lucide-react";
 
-export const metadata = { title: "Pricing — Kiosk", description: "Business subscription options for publishing structured business information and becoming discoverable through Kiosk." };
+export const metadata = { title: "Pricing - Kiosk", description: "Business subscription options for publishing structured business information and becoming discoverable through Kiosk." };
 
 const plans = [
 {name:"Presence",price:"₦1,000",period:"per month",desc:"A simple starting point for a business that wants a clear, AI-readable presence.",items:["Business profile and core details","Public Kiosk marketplace listing","Business discovery endpoint","Edit your business information"],note:"For a single-location business getting started."},

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -362,7 +362,7 @@ function CompletenessBar({ business }: { business: Business }) {
   ];
   const filled = fields.filter((f) => f.filled).length;
   const pct = Math.round((filled / fields.length) * 100);
-  if (pct === 100) return null; // fully complete — don't show
+  if (pct === 100) return null; // fully complete - don't show
 
   return (
     <div
@@ -540,7 +540,7 @@ function FeedbackModal({
           </h2>
           <p className="mt-2 text-[12px] leading-5 text-[#777064]">
             Your answers help us build a better product for you. This stays
-            between us — your customers never see this.
+            between us - your customers never see this.
           </p>
         </div>
 
@@ -615,7 +615,7 @@ function FeedbackModal({
               How much do you spend on advertising per month?
             </p>
             <p className="form-hint mb-2">
-              &#8358;0 if nothing — that&apos;s completely fine
+              &#8358;0 if nothing - that&apos;s completely fine
             </p>
             <input
               className="surface-input"
@@ -1034,7 +1034,7 @@ function OwnerCard({ business }: { business: Business }) {
     price: business.price,
     booking: business.booking,
   });
-  // Structured fields not in the legacy BusinessInput type — tracked separately
+  // Structured fields not in the legacy BusinessInput type - tracked separately
   const biz = business as unknown as Record<string, string | null>;
   const [structured, setStructured] = useState({
     description: biz.description ?? "",
@@ -1056,7 +1056,7 @@ function OwnerCard({ business }: { business: Business }) {
       // Show preview before publishing
       setShowPreview(true);
     } else {
-      // Unpublishing — no preview needed
+      // Unpublishing - no preview needed
       publish.mutate(
         { id: business.id, data: { published: false } },
         {
@@ -1196,7 +1196,7 @@ function OwnerCard({ business }: { business: Business }) {
             {business.status === "published" ? "Unpublish" : "Publish Kiosk"}
           </button>
 
-          {/* Delete — two-step confirmation so it can't be fired by accident */}
+          {/* Delete - two-step confirmation so it can't be fired by accident */}
           {deleteStep === "idle" ? (
             <button
               className="surface-button surface-button-light !min-h-10 !px-3 !text-[#9C493F] border-[#9C493F]/30 hover:border-[#9C493F]"
@@ -1361,7 +1361,7 @@ function OwnerCard({ business }: { business: Business }) {
                 setStructured({ ...structured, categoryId: e.target.value })
               }
             >
-              <option value="">— Select category —</option>
+              <option value="">- Select category -</option>
               {((categories.data as { id: string; name: string }[]) ?? []).map(
                 (cat) => (
                   <option key={cat.id} value={cat.id}>
@@ -1464,7 +1464,7 @@ function OwnerCard({ business }: { business: Business }) {
           data-testid={`mcp-panel-${business.id}`}
         >
           <p className="eyebrow text-[10px] text-[#777064]">
-            AI-readable business presence — ACTIVE
+            AI-readable business presence - ACTIVE
           </p>
           <div className="mt-2 flex items-center justify-between gap-2 overflow-hidden border border-black/10 bg-white px-3 py-2">
             <span
@@ -1579,7 +1579,7 @@ function StatCards({ businesses }: { businesses: Business[] }) {
         month: "short",
         year: "numeric",
       })
-    : "—";
+    : "-";
 
   return (
     <div className="mb-8 grid grid-cols-1 gap-3 sm:grid-cols-3">

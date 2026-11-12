@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — Kiosk",
+  title: "Privacy Policy - Kiosk",
   description: "How Kiosk collects, uses, shares and protects personal information.",
 };
 

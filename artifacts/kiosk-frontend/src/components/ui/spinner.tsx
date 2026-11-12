@@ -36,7 +36,7 @@ function LoadingSpinner({
   );
 }
 
-// Legacy alias — keep for any existing callers
+// Legacy alias - keep for any existing callers
 const Spinner = LoadingSpinner;
 
 export { LoadingSpinner, Spinner };

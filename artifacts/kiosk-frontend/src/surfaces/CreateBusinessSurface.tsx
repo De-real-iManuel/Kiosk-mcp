@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from "react";
 import Link from "next/link";
@@ -325,7 +325,7 @@ const blankInput: BusinessInput = {
   booking: null,
 };
 
-// Separate structured contact fields — the API accepts these via CreateBusinessBodyV2
+// Separate structured contact fields - the API accepts these via CreateBusinessBodyV2
 // but the orval-generated BusinessInput type doesn't include them, so we track them
 // separately and merge on submit.
 const blankContact = {
@@ -393,13 +393,13 @@ export function CreateBusinessSurface() {
       {
         data: {
           ...form,
-          // Legacy contact field — set to phone for backward compat
+          // Legacy contact field - set to phone for backward compat
           contact:
             contact.phone ||
             contact.whatsapp ||
             contact.website ||
             form.contact,
-          // Structured contact fields — accepted by CreateBusinessBodyV2
+          // Structured contact fields - accepted by CreateBusinessBodyV2
           phone: contact.phone || null,
           whatsapp: contact.whatsapp || null,
           website: contact.website || null,
@@ -419,7 +419,7 @@ export function CreateBusinessSurface() {
         onError: (err: unknown) => {
           const apiErr = err as { status?: number; data?: { error?: string } };
           if (apiErr?.status === 409) {
-            // Duplicate draft — treat as success, navigate to dashboard
+            // Duplicate draft - treat as success, navigate to dashboard
             setCreatedName(form.businessName);
             client.invalidateQueries({ queryKey: ["/api/businesses"] });
           }
@@ -504,7 +504,7 @@ export function CreateBusinessSurface() {
           </section>
         ) : (
           <div className="mt-8 grid gap-8 md:mt-10 md:grid-cols-[.65fr_1.35fr] md:gap-14">
-            {/* Desktop sidebar — hidden on mobile so the form is immediately visible */}
+            {/* Desktop sidebar - hidden on mobile so the form is immediately visible */}
             <aside className="hidden md:block md:sticky md:top-8 md:self-start">
               <p className="eyebrow text-[#777064]">Your business / 01</p>
               <h1 className="mt-5 text-[clamp(2.8rem,5.5vw,4.5rem)] font-semibold leading-[.9] tracking-[-.08em]">
@@ -559,7 +559,7 @@ export function CreateBusinessSurface() {
                         ? "You need to be signed in to save a Kiosk. Please refresh and sign in."
                         : status === 429
                           ? "Too many requests. Please wait a moment and try again."
-                          : "We could not save this Kiosk. Your details are still here — please try again.";
+                          : "We could not save this Kiosk. Your details are still here - please try again.";
                   return (
                     <p
                       className="mt-5 border-l-2 border-[#D1786B] bg-[#D1786B]/10 p-3 text-sm text-[#E8B2A8]"
@@ -634,7 +634,7 @@ export function CreateBusinessSurface() {
                   </label>
                 ))}
 
-                {/* City + Country — structured for AI discovery */}
+                {/* City + Country - structured for AI discovery */}
                 <div className="grid grid-cols-2 gap-3">
                   <label className="block">
                     <span className="form-label">
@@ -680,7 +680,7 @@ export function CreateBusinessSurface() {
                   </label>
                 </div>
 
-                {/* Separate contact fields — phone, WhatsApp, website */}
+                {/* Separate contact fields - phone, WhatsApp, website */}
                 <div className="border-t border-white/15 pt-5">
                   <p className="form-label mb-1">
                     How can customers reach you?
@@ -749,11 +749,11 @@ export function CreateBusinessSurface() {
                   </div>
                 </div>
 
-                {/* Price — optional */}
+                {/* Price - optional */}
                 <label className="block border-t border-white/15 pt-5">
                   <span className="form-label">Starting price or range</span>
                   <span className="form-hint block mb-2">
-                    Optional — e.g. From ₦2,500
+                    Optional - e.g. From ₦2,500
                   </span>
                   <input
                     className="field-control"

@@ -3,7 +3,7 @@ import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Terms of Service — Kiosk",
+  title: "Terms of Service - Kiosk",
   description: "Terms governing use of the Kiosk platform by businesses and customers.",
 };
 
