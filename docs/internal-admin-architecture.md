@@ -71,7 +71,7 @@ Required API environment:
 Required frontend environment:
 - `NEXT_PUBLIC_ADMIN_OIDC_DOMAIN`: Cognito hosted UI domain, e.g. `https://<prefix>.auth.<region>.amazoncognito.com`.
 - `NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID`: same public app client ID.
-- `NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI`: exact registered callback, e.g. `https://<kiosk-host>/internal-admin`.
+- `NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI`: exact registered callback, e.g. `https://<kiosk-host>/internal-admin/`.
 - `NEXT_PUBLIC_API_URL`: existing API origin.
 
 Configure the Cognito app client as a public client with no client secret, authorization-code grant, PKCE S256, and only the `openid email profile` scopes. Register the exact redirect URI. Disable public self-signup and require MFA in the user pool. Provision each operator out-of-band and add their `sub`, exact issuer, email, role, and active status to `admin_users`. Do not activate a user by email alone.
@@ -113,3 +113,42 @@ The CI test job now starts an ephemeral PostgreSQL 16 service, sets a test-only 
 Formatting checks compare TypeScript files changed against the PR base branch rather than failing on unrelated pre-existing formatting in untouched legacy files.
 
 The merchant publish flow intentionally continues if the feedback request fails, so publication is not blocked by an optional survey. The dashboard now displays an explicit error toast in that case. Only successful `POST /businesses/:id/feedback` requests create a row; failed submissions will not appear in the internal Feedback view.
+
+
+## Frontend isolation and deployment boundary
+
+The internal console is now a separate workspace application at
+`artifacts/admin-frontend`. The merchant application at
+`artifacts/kiosk-frontend` remains Clerk-only and no longer contains the
+admin route, dashboard component, or Cognito browser flow. The admin app does
+not import merchant providers, Clerk hooks, or merchant UI code.
+
+The admin application is built as a Next.js static export with
+`basePath: /internal-admin`. It produces `artifacts/admin-frontend/out` and
+does not need a Node runtime, Docker image, or ECS service. The existing
+merchant frontend Dockerfile and ECS service remain unchanged. CI typechecks
+and builds the admin application separately and uploads its static output as
+an artifact; the Docker build continues to build only the merchant frontend.
+
+For deployment, use a private S3 origin with CloudFront Origin Access Control
+and a dedicated `/internal-admin*` behavior on the existing CloudFront
+distribution. Publish the static export under the `internal-admin/` key
+prefix. The behavior must serve `internal-admin/index.html` for the console
+entry route and pass `/internal-admin/_next/*` assets to that same S3 origin.
+Do not route admin paths to the merchant ECS target. The Cognito callback must
+exactly match the deployed URL, including the trailing slash, e.g.
+`https://<existing-cloudfront-host>/internal-admin/`.
+
+This is a repository/build change only. It does not create an S3 bucket,
+modify CloudFront, create a Cognito pool, change ECS, or deploy anything.
+The admin static files are not secret; all sensitive data remains behind the
+Cognito-protected `/api/admin` API. The API must continue to enforce issuer,
+signature, access-token type, app-client ID, active provisioned subject, and
+role permissions on every request. Browser navigation and hidden menu items
+are not authorization controls.
+
+The CloudFront distribution must apply security response headers to the
+admin behavior, including HSTS, nosniff, a restrictive Content Security
+Policy, and an appropriate referrer policy. Keep the admin behavior's cache
+policy compatible with static hashed assets, while API responses remain
+`Cache-Control: no-store`.
