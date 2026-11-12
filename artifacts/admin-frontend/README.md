@@ -26,11 +26,14 @@ Configure these public build-time variables when testing sign-in:
 static export; it does not require a Node process or ECS service.
 
 For the existing CloudFront hostname, configure a dedicated private S3 origin
-for this export and a CloudFront behavior for `/internal-admin*`. Publish the
-contents of `out/` under the `internal-admin/` object prefix. Configure the
-origin/behavior to serve `internal-admin/index.html` for the console entry
-route, and allow the generated `/internal-admin/_next/*` assets through that
-same behavior. Do not route these paths to the merchant ECS target.
+with Origin Access Control and a CloudFront behavior for
+`/internal-admin*`. Publish the contents of `out/` under the
+`internal-admin/` object prefix. Associate a CloudFront Function with the
+viewer-request event for this behavior that rewrites only
+`/internal-admin` and `/internal-admin/` to
+`/internal-admin/index.html`; leave `/internal-admin/_next/*` paths
+unchanged. This is needed because a private S3 REST origin does not provide
+directory-index fallback. Do not route these paths to the merchant ECS target.
 
 Register the exact callback with Cognito, for example
 `https://<existing-cloudfront-host>/internal-admin/`. Set the API's
