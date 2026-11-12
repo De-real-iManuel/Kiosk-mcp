@@ -295,7 +295,7 @@ router.get(
 
 router.get(
   "/registrations",
-  requireAdminPermission("business.read"),
+  requireAdminPermission("telemetry.read"),
   async (req, res): Promise<void> => {
     const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
     const rows = await db
@@ -335,7 +335,7 @@ router.get(
 
 router.get(
   "/charts/registrations-by-country",
-  requireAdminPermission("business.read"),
+  requireAdminPermission("telemetry.read"),
   async (_req, res): Promise<void> => {
     const rows = await db
       .select({
@@ -354,7 +354,7 @@ router.get(
 
 router.get(
   "/charts/registrations-timeseries",
-  requireAdminPermission("business.read"),
+  requireAdminPermission("telemetry.read"),
   async (_req, res): Promise<void> => {
     const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
     const rows = await db
