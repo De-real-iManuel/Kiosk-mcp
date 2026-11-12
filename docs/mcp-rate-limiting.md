@@ -19,7 +19,7 @@ It does not make the in-memory counters global across ECS tasks. It also cannot 
 
 Use a Regional AWS WAF Web ACL associated with the Kiosk Application Load Balancer:
 
-1. Create one rate-based rule scoped to the MCP paths (\`/mcp\` and \`/mcp/business/*\`).
+1. Create one rate-based rule scoped to the MCP paths (`/mcp` and `/mcp/business/*`).
 2. Aggregate by the source IP observed by AWS WAF, not a caller-supplied identity header.
 3. Start in **Count** mode to observe real traffic and tune the threshold using normal client behavior and the prior load test.
 4. After validating the threshold, switch to **Block**. Consider separate thresholds for master discovery and business-specific MCP paths if their traffic patterns differ.
