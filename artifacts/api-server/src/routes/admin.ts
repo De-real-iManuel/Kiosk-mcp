@@ -6,6 +6,7 @@ import {
   adminAuditLogsTable,
   agentEventsTable,
   businessesTable,
+  categoriesTable,
   incidentsTable,
   mcpRequestEventsTable,
   mcpToolEventsTable,
@@ -107,6 +108,10 @@ router.get(
         .groupBy(mcpRequestEventsTable.endpoint)
         .orderBy(desc(sql`count(*)`)),
     ]);
+    const [rateLimited24h] = await db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(mcpRequestEventsTable)
+      .where(and(gte(mcpRequestEventsTable.createdAt, dayAgo), eq(mcpRequestEventsTable.httpStatus, 429)));
     const [topClients, topTools, recentErrors] = await Promise.all([
       db
         .select({
@@ -158,6 +163,7 @@ router.get(
       generatedAt: now.toISOString(),
       metrics: {
         requests24h: requests24h[0]?.count ?? 0,
+        rateLimited24h: rateLimited24h[0]?.count ?? 0,
         requests7d: requests7d[0]?.count ?? 0,
         toolCalls24h: toolCalls24h[0]?.count ?? 0,
         toolCalls7d: toolCalls7d[0]?.count ?? 0,
@@ -191,6 +197,7 @@ router.get(
         bucket: sql<string>`to_char(date_trunc('hour', ${mcpRequestEventsTable.createdAt}), 'HH24:MI')`,
         requests: sql<number>`count(*)::int`,
         errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
+        rateLimited: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} = 429)::int`,
       })
       .from(mcpRequestEventsTable)
       .where(gte(mcpRequestEventsTable.createdAt, dayAgo))
@@ -294,9 +301,21 @@ router.get(
       .select({
         id:                       businessesTable.id,
         businessName:             businessesTable.businessName,
+        description:              businessesTable.description,
+        categoryId:               businessesTable.categoryId,
+        categoryName:             categoriesTable.name,
         ownerClerkId:             businessesTable.ownerClerkId,
         status:                   businessesTable.status,
+        location:                 businessesTable.location,
+        city:                     businessesTable.city,
+        country:                  businessesTable.country,
+        phone:                    businessesTable.phone,
+        whatsapp:                 businessesTable.whatsapp,
+        website:                  businessesTable.website,
+        contact:                  businessesTable.contact,
+        services:                 businessesTable.services,
         createdAt:                businessesTable.createdAt,
+        updatedAt:                businessesTable.updatedAt,
         registrationIp:           businessesTable.registrationIp,
         registrationUserAgent:    businessesTable.registrationUserAgent,
         registrationGeoCountry:   businessesTable.registrationGeoCountry,
@@ -306,6 +325,7 @@ router.get(
         registrationGeoIsp:       businessesTable.registrationGeoIsp,
       })
       .from(businessesTable)
+      .leftJoin(categoriesTable, eq(businessesTable.categoryId, categoriesTable.id))
       .orderBy(desc(businessesTable.createdAt))
       .limit(limit);
     res.json(rows);
@@ -460,6 +480,48 @@ router.get(
   },
 );
 
+// Remove a business from public MCP discovery without deleting its profile.
+router.patch(
+  "/businesses/:id/unpublish",
+  requireAdminPermission("business.suspend"),
+  async (req, res): Promise<void> => {
+    const businessId = typeof req.params.id === "string" ? req.params.id : "";
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(businessId)) {
+      res.status(400).json({ error: "Invalid business ID" });
+      return;
+    }
+    const reason = typeof req.body?.reason === "string" ? req.body.reason.trim().slice(0, 500) : "";
+    const actor = getAdminActor(res);
+    const result = await db.transaction(async (tx) => {
+      const [current] = await tx.select({
+        id: businessesTable.id,
+        businessName: businessesTable.businessName,
+        status: businessesTable.status,
+        publishedAt: businessesTable.publishedAt,
+      }).from(businessesTable).where(eq(businessesTable.id, businessId)).limit(1);
+      if (!current) return { kind: "not_found" as const };
+      if (current.status !== "published") return { kind: "not_published" as const, status: current.status };
+      const [updated] = await tx.update(businessesTable)
+        .set({ status: "draft", publishedAt: null, updatedAt: new Date() })
+        .where(eq(businessesTable.id, businessId))
+        .returning({ id: businessesTable.id, businessName: businessesTable.businessName, status: businessesTable.status, publishedAt: businessesTable.publishedAt });
+      await tx.insert(adminAuditLogsTable).values({
+        adminUserId: actor.id,
+        actorIdentity: `${actor.identityProvider}|${actor.identitySubject}`,
+        action: "business.unpublished",
+        resourceType: "business",
+        resourceId: businessId,
+        reason: reason || "Removed from public discovery by an administrator",
+        beforeState: { status: current.status, publishedAt: current.publishedAt },
+        afterState: { status: "draft", publishedAt: null },
+      });
+      return { kind: "ok" as const, business: updated };
+    });
+    if (result.kind === "not_found") { res.status(404).json({ error: "Business not found" }); return; }
+    if (result.kind === "not_published") { res.status(409).json({ error: `Business is not currently published (status: ${result.status})` }); return; }
+    res.json(result.business);
+  },
+);
 router.get(
   "/tickets",
   requireAdminPermission("support.manage"),
