@@ -133,9 +133,12 @@ an artifact; the Docker build continues to build only the merchant frontend.
 For deployment, use a private S3 origin with CloudFront Origin Access Control
 and a dedicated `/internal-admin*` behavior on the existing CloudFront
 distribution. Publish the static export under the `internal-admin/` key
-prefix. The behavior must serve `internal-admin/index.html` for the console
-entry route and pass `/internal-admin/_next/*` assets to that same S3 origin.
-Do not route admin paths to the merchant ECS target. The Cognito callback must
+prefix. Associate a CloudFront Function with the behavior's viewer-request
+event to rewrite only `/internal-admin` and `/internal-admin/` to
+`/internal-admin/index.html`; pass `/internal-admin/_next/*` assets through
+unchanged to that same S3 origin. A private S3 REST origin does not provide
+directory-index fallback by itself. Do not route admin paths to the merchant
+ECS target. The Cognito callback must
 exactly match the deployed URL, including the trailing slash, e.g.
 `https://<existing-cloudfront-host>/internal-admin/`.
 
