@@ -66,6 +66,7 @@ type Overview = {
   generatedAt: string;
   metrics: {
     requests24h: number;
+    rateLimited24h: number;
     requests7d: number;
     toolCalls24h: number;
     toolCalls7d: number;
@@ -83,7 +84,16 @@ type Overview = {
 type RegistrationRow = {
   id: string;
   businessName: string;
+  description: string | null;
+  categoryName: string | null;
   ownerClerkId: string;
+  location: string;
+  city: string | null;
+  country: string | null;
+  phone: string | null;
+  whatsapp: string | null;
+  website: string | null;
+  contact: string;
   status: string;
   createdAt: string;
   registrationIp: string | null;
@@ -98,7 +108,7 @@ type RegistrationRow = {
 type RegCountryRow  = { country: string; registrations: number; published: number };
 type RegTimeseriesRow = { bucket: string; registrations: number; published: number };
 
-type TimeseriesPoint = { bucket: string; requests: number; errors: number };
+type TimeseriesPoint = { bucket: string; requests: number; errors: number; rateLimited: number };
 type RequestTimeseries = { hourly: TimeseriesPoint[]; daily: TimeseriesPoint[] };
 type ToolsTimeseries = { toolNames: string[]; daily: Row[] };
 type EndpointBreakdown = { endpoint: string; requests: number; errors: number }[];
@@ -172,7 +182,7 @@ function formatValue(value: unknown): string {
   return String(value);
 }
 
-function DataTable({ rows }: { rows: Row[] }) {
+function DataTable({ rows, onUnpublish }: { rows: Row[]; onUnpublish?: (businessId: string) => void }) {
   const columns = useMemo(
     () => (rows.length ? Object.keys(rows[0]!).slice(0, 8) : []),
     [rows],
@@ -189,6 +199,7 @@ function DataTable({ rows }: { rows: Row[] }) {
                 {col.replace(/([A-Z])/g, " $1")}
               </th>
             ))}
+            {onUnpublish && <th className="px-5 py-4 font-medium">Discovery</th>}
           </tr>
         </thead>
         <tbody>
@@ -206,6 +217,13 @@ function DataTable({ rows }: { rows: Row[] }) {
                   {formatValue(row[col])}
                 </td>
               ))}
+              {onUnpublish && (
+                <td className="px-5 py-4">
+                  {String(row.status) === "published" ? (
+                    <button type="button" onClick={() => onUnpublish(String(row.id))} className="border border-[#C47B87]/40 px-3 py-1.5 text-[10px] text-[#D99AA3] hover:bg-[#C47B87]/10">Unpublish</button>
+                  ) : <span className="text-[10px] text-[#77736B]">Not published</span>}
+                </td>
+              )}
             </tr>
           ))}
         </tbody>
@@ -547,6 +565,26 @@ export function InternalAdminDashboard() {
     [api],
   );
 
+  const unpublishBusiness = useCallback(async (businessId: string) => {
+    if (!token || !window.confirm("Remove this business from public AI discovery? Its profile and data will be preserved.")) return;
+    setBusy(true);
+    setError("");
+    try {
+      const response = await fetch(`${API_BASE}/api/admin/businesses/${encodeURIComponent(businessId)}/unpublish`, {
+        method: "PATCH",
+        headers: { authorization: `Bearer ${token}`, accept: "application/json" },
+      });
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({})) as { error?: string };
+        throw new Error(payload.error ?? `Unpublish failed (${response.status})`);
+      }
+      await loadSection(token, "businesses");
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "Could not unpublish this business.");
+    } finally {
+      setBusy(false);
+    }
+  }, [token, loadSection]);
   // ── Fetch admin profile after token set ─────────────────────────────────────
 
   useEffect(() => {
@@ -765,6 +803,12 @@ export function InternalAdminDashboard() {
                     note="Last 24 hours"
                   />
                   <MetricCard
+                    label="Rate limited · 24h"
+                    value={overview.metrics.rateLimited24h}
+                    note="HTTP 429 responses"
+                    trend={overview.metrics.rateLimited24h > 0 ? "down" : "neutral"}
+                  />
+                  <MetricCard
                     label="Tool executions · 24h"
                     value={overview.metrics.toolCalls24h}
                     note="Last 24 hours"
@@ -843,6 +887,7 @@ export function InternalAdminDashboard() {
                           <Legend wrapperStyle={{ fontSize: 10, color: "#8E897F", paddingTop: 12 }} />
                           <Area type="monotone" dataKey="requests" name="Requests" stroke="#D96845" strokeWidth={2} fill="url(#reqGrad)" dot={false} />
                           <Area type="monotone" dataKey="errors"   name="Errors"   stroke="#C47B87" strokeWidth={1.5} fill="url(#errGrad)" dot={false} />
+                          <Line type="monotone" dataKey="rateLimited" name="Rate limited (429)" stroke="#C4A87B" strokeWidth={2} dot={false} />
                         </AreaChart>
                       </ResponsiveContainer>
                     ) : (
@@ -1130,7 +1175,7 @@ export function InternalAdminDashboard() {
                         <table className="w-full min-w-[900px] border-collapse text-left text-xs">
                           <thead>
                             <tr className="border-b border-white/10 text-[10px] uppercase tracking-[.14em] text-[#817D74]">
-                              {["Business", "Status", "Registered", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
+                              {["Business", "Category", "Location", "Contact", "Website", "Status", "Registered", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
                                 <th key={h} className="px-4 py-4 font-medium">{h}</th>
                               ))}
                             </tr>
@@ -1141,6 +1186,10 @@ export function InternalAdminDashboard() {
                                 <td className="max-w-[160px] truncate px-4 py-3 font-medium text-[#D8D3C9]" title={row.businessName}>
                                   {row.businessName}
                                 </td>
+                                <td className="px-4 py-3 text-[#9B968C]">{row.categoryName ?? "—"}</td>
+                                <td className="px-4 py-3 text-[#9B968C]">{[row.city, row.country, row.location].filter(Boolean).join(", ") || "—"}</td>
+                                <td className="px-4 py-3 text-[#9B968C]">{row.whatsapp ?? row.phone ?? row.contact ?? "—"}</td>
+                                <td className="max-w-[180px] truncate px-4 py-3 text-[#9B968C]">{row.website ?? "—"}</td>
                                 <td className="px-4 py-3">
                                   <span className={`inline-block px-2 py-0.5 text-[9px] uppercase tracking-[.1em] ${
                                     row.status === "published"
@@ -1210,7 +1259,10 @@ export function InternalAdminDashboard() {
                     <FeedbackList rows={rows} />
                   </>
                 ) : (
-                  <DataTable rows={rows} />
+                  <DataTable
+                    rows={rows}
+                    onUnpublish={section === "businesses" && admin?.permissions.includes("business.suspend") ? unpublishBusiness : undefined}
+                  />
                 )}
               </section>
             )}
