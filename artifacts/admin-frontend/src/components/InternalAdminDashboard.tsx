@@ -142,7 +142,7 @@ const NAV: Array<{
   permission: string;
 }> = [
   { id: "overview",       label: "Overview",       icon: ChartNoAxesCombined, permission: "telemetry.read" },
-  { id: "registrations",  label: "Registrations",  icon: MapPin,              permission: "business.read"  },
+  { id: "registrations",  label: "Registrations",  icon: MapPin,              permission: "telemetry.read"  },
   { id: "ai-usage",       label: "AI usage",       icon: Activity,            permission: "telemetry.read" },
   { id: "requests",       label: "Request logs",   icon: Activity,            permission: "telemetry.read" },
   { id: "businesses",     label: "Businesses",     icon: Building2,           permission: "business.read"  },
@@ -1175,7 +1175,7 @@ export function InternalAdminDashboard() {
                         <table className="w-full min-w-[900px] border-collapse text-left text-xs">
                           <thead>
                             <tr className="border-b border-white/10 text-[10px] uppercase tracking-[.14em] text-[#817D74]">
-                              {["Business", "Category", "Location", "Contact", "Website", "Status", "Registered", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
+                              {["Business", "Category", "Location", "Contact", "Website", "Account ID", "Status", "Registered", "IP Address", "Country", "City", "Lat / Lon", "User Agent"].map((h) => (
                                 <th key={h} className="px-4 py-4 font-medium">{h}</th>
                               ))}
                             </tr>
@@ -1190,6 +1190,7 @@ export function InternalAdminDashboard() {
                                 <td className="px-4 py-3 text-[#9B968C]">{[row.city, row.country, row.location].filter(Boolean).join(", ") || "—"}</td>
                                 <td className="px-4 py-3 text-[#9B968C]">{row.whatsapp ?? row.phone ?? row.contact ?? "—"}</td>
                                 <td className="max-w-[180px] truncate px-4 py-3 text-[#9B968C]">{row.website ?? "—"}</td>
+                                <td className="max-w-[180px] truncate px-4 py-3 font-mono text-[10px] text-[#716D65]" title={row.ownerClerkId}>{row.ownerClerkId}</td>
                                 <td className="px-4 py-3">
                                   <span className={`inline-block px-2 py-0.5 text-[9px] uppercase tracking-[.1em] ${
                                     row.status === "published"
