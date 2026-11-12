@@ -84,7 +84,7 @@ Initial read APIs:
 - `GET /api/admin/telemetry/requests` and `/api/admin/telemetry/tools`: request and tool-event views.
 - `GET /api/admin/businesses`, `/api/admin/tickets`, `/api/admin/incidents`, and `/api/admin/audit`: role-gated operational views.
 
-These are read-only foundations. Business suspension, publish overrides, verification decisions, ticket mutations, incident updates, and admin provisioning are intentionally not exposed until their service-layer validation and mandatory audit writes are implemented. The dashboard hides sections the current role cannot access, while the API independently enforces every permission. The current browser token exchange and API authorization have not yet been integration-tested against a real Cognito pool.
+These are primarily read-only foundations. The admin API now exposes one audited business action: an administrator with `business.suspend` can unpublish a currently published business. The API transaction moves its status back to `draft`, clears `published_at`, and inserts an audit row with actor, reason, and before/after state; the business record and catalog data are preserved. This removes the business from discovery without deleting it. Other business suspension variants, publish overrides, verification decisions, ticket mutations, incident updates, and admin provisioning remain unavailable until their service-layer validation and mandatory audit writes are implemented. The dashboard hides sections the current role cannot access, while the API independently enforces every permission. The current browser token exchange and API authorization have not yet been integration-tested against a real Cognito pool.
 
 ## Remaining implementation gates
 
@@ -163,3 +163,16 @@ only validated Cognito access tokens and provisioned admin subjects. If
 stronger browser-origin isolation is required, serve the same static admin
 build from a dedicated admin subdomain and add that exact origin to
 `CORS_ALLOWED_ORIGINS`; this does not require an admin ECS service.
+
+
+## Registration intelligence and discovery control
+
+Business registration records include the merchant's stable Clerk account ID, business identity and submitted contact/location fields, creation/update/publish timestamps, IP address, user agent, and IP-derived country/city/coordinates. The admin registration view also reports how many business records share the same owner account and how many share the same registration IP. These are investigation signals, not proof of common ownership or fraud; shared networks and carrier NAT can produce many businesses behind one IP.
+
+Raw IP and user-agent data, including registration chart endpoints, requires `telemetry.read`. The registration UI is hidden from roles without that permission. Owner email is not stored on the business row; the stable owner Clerk ID is displayed rather than performing an implicit identity-provider lookup.
+
+## Rate-limit observability
+
+Master MCP now creates its request telemetry record before the in-process rate limiter. The response finalizer can therefore persist HTTP 429 requests as error outcomes. Business MCP already used this middleware ordering. The admin overview and request timeseries separately report HTTP 429 counts.
+
+The in-memory limits remain per Node.js process/ECS task, not global across tasks. See [mcp-rate-limiting.md](./mcp-rate-limiting.md) for the recommended Regional AWS WAF shared edge limit for a future redeployment. WAF-blocked traffic does not reach the application and must be observed through WAF metrics/logs.
