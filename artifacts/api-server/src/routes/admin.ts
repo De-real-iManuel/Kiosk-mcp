@@ -198,6 +198,7 @@ router.get(
         requests: sql<number>`count(*)::int`,
         errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
         rateLimited: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} = 429)::int`,
+        rateLimited: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} = 429)::int`,
       })
       .from(mcpRequestEventsTable)
       .where(gte(mcpRequestEventsTable.createdAt, dayAgo))
