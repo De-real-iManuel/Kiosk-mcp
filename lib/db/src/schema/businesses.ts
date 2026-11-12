@@ -83,6 +83,20 @@ export const businessesTable = pgTable(
     openingHours: jsonb("opening_hours").$type<OpeningHours>(),
     timezone: text("timezone").default("UTC"),
     isActive: boolean("is_active").notNull().default(true),
+
+    // ── Registration intelligence ─────────────────────────────────────────────
+    // Captured once at business creation for audit, fraud detection, and
+    // geographic insights. IP is stored as-is (not hashed) so admins can
+    // investigate abuse; access is restricted to telemetry.read permission.
+    registrationIp:           text("registration_ip"),
+    registrationUserAgent:    text("registration_user_agent"),
+    // IP-derived geolocation (city-level, no consent required under legitimate
+    // interest — disclose in privacy policy). Null when IP is private/unknown.
+    registrationGeoCountry:   text("registration_geo_country"),
+    registrationGeoCity:      text("registration_geo_city"),
+    registrationGeoLatitude:  doublePrecision("registration_geo_latitude"),
+    registrationGeoLongitude: doublePrecision("registration_geo_longitude"),
+    registrationGeoIsp:       text("registration_geo_isp"),
   },
   (table) => [
     uniqueIndex("businesses_slug_unique").on(table.slug),
@@ -90,6 +104,8 @@ export const businessesTable = pgTable(
     index("businesses_status_location_idx").on(table.status, table.location),
     index("businesses_status_city_idx").on(table.status, table.city),
     index("businesses_category_idx").on(table.categoryId),
+    index("businesses_reg_country_idx").on(table.registrationGeoCountry),
+    index("businesses_reg_ip_idx").on(table.registrationIp),
   ],
 );
 

@@ -175,6 +175,181 @@ router.get(
   },
 );
 
+// ── Chart data endpoints ───────────────────────────────────────────────────────
+
+router.get(
+  "/charts/requests-timeseries",
+  requireAdminPermission("telemetry.read"),
+  async (_req, res): Promise<void> => {
+    const now = new Date();
+    const dayAgo  = new Date(now.getTime() - 86_400_000);
+    const weekAgo = new Date(now.getTime() - 7 * 86_400_000);
+
+    // Hourly buckets for the last 24 h
+    const hourly = await db
+      .select({
+        bucket: sql<string>`to_char(date_trunc('hour', ${mcpRequestEventsTable.createdAt}), 'HH24:MI')`,
+        requests: sql<number>`count(*)::int`,
+        errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
+      })
+      .from(mcpRequestEventsTable)
+      .where(gte(mcpRequestEventsTable.createdAt, dayAgo))
+      .groupBy(sql`date_trunc('hour', ${mcpRequestEventsTable.createdAt})`)
+      .orderBy(sql`date_trunc('hour', ${mcpRequestEventsTable.createdAt})`);
+
+    // Daily buckets for the last 7 days
+    const daily = await db
+      .select({
+        bucket: sql<string>`to_char(date_trunc('day', ${mcpRequestEventsTable.createdAt}), 'Mon DD')`,
+        requests: sql<number>`count(*)::int`,
+        errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
+      })
+      .from(mcpRequestEventsTable)
+      .where(gte(mcpRequestEventsTable.createdAt, weekAgo))
+      .groupBy(sql`date_trunc('day', ${mcpRequestEventsTable.createdAt})`)
+      .orderBy(sql`date_trunc('day', ${mcpRequestEventsTable.createdAt})`);
+
+    res.json({ hourly, daily });
+  },
+);
+
+router.get(
+  "/charts/tools-timeseries",
+  requireAdminPermission("telemetry.read"),
+  async (_req, res): Promise<void> => {
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+
+    // Top 5 tools by call volume in last 7 days
+    const topTools = await db
+      .select({ toolName: mcpToolEventsTable.toolName })
+      .from(mcpToolEventsTable)
+      .where(gte(mcpToolEventsTable.createdAt, weekAgo))
+      .groupBy(mcpToolEventsTable.toolName)
+      .orderBy(desc(sql`count(*)`))
+      .limit(5);
+
+    const toolNames = topTools.map((t) => t.toolName);
+
+    // Daily call counts per tool
+    const rows = await db
+      .select({
+        bucket: sql<string>`to_char(date_trunc('day', ${mcpToolEventsTable.createdAt}), 'Mon DD')`,
+        toolName: mcpToolEventsTable.toolName,
+        calls: sql<number>`count(*)::int`,
+        failures: sql<number>`count(*) filter (where ${mcpToolEventsTable.succeeded} = false)::int`,
+      })
+      .from(mcpToolEventsTable)
+      .where(
+        and(
+          gte(mcpToolEventsTable.createdAt, weekAgo),
+          sql`${mcpToolEventsTable.toolName} = any(${sql.raw(`ARRAY[${toolNames.map((n) => `'${n.replace(/'/g, "''")}'`).join(",")}]`)})`,
+        ),
+      )
+      .groupBy(
+        sql`date_trunc('day', ${mcpToolEventsTable.createdAt})`,
+        mcpToolEventsTable.toolName,
+      )
+      .orderBy(sql`date_trunc('day', ${mcpToolEventsTable.createdAt})`);
+
+    // Pivot: [{bucket, tool1, tool2, ...}]
+    const bucketMap = new Map<string, Record<string, number>>();
+    for (const row of rows) {
+      if (!bucketMap.has(row.bucket)) bucketMap.set(row.bucket, { bucket: row.bucket as unknown as number });
+      bucketMap.get(row.bucket)![row.toolName] = row.calls;
+    }
+    const pivoted = Array.from(bucketMap.values());
+
+    res.json({ toolNames, daily: pivoted });
+  },
+);
+
+router.get(
+  "/charts/endpoint-breakdown",
+  requireAdminPermission("telemetry.read"),
+  async (_req, res): Promise<void> => {
+    const weekAgo = new Date(Date.now() - 7 * 86_400_000);
+    const rows = await db
+      .select({
+        endpoint: mcpRequestEventsTable.endpoint,
+        requests: sql<number>`count(*)::int`,
+        errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
+      })
+      .from(mcpRequestEventsTable)
+      .where(gte(mcpRequestEventsTable.createdAt, weekAgo))
+      .groupBy(mcpRequestEventsTable.endpoint)
+      .orderBy(desc(sql`count(*)`))
+      .limit(10);
+    res.json(rows);
+  },
+);
+
+// ── Business registration intelligence ────────────────────────────────────────
+
+router.get(
+  "/registrations",
+  requireAdminPermission("business.read"),
+  async (req, res): Promise<void> => {
+    const limit = Math.min(Math.max(Number(req.query.limit) || 50, 1), 200);
+    const rows = await db
+      .select({
+        id:                       businessesTable.id,
+        businessName:             businessesTable.businessName,
+        ownerClerkId:             businessesTable.ownerClerkId,
+        status:                   businessesTable.status,
+        createdAt:                businessesTable.createdAt,
+        registrationIp:           businessesTable.registrationIp,
+        registrationUserAgent:    businessesTable.registrationUserAgent,
+        registrationGeoCountry:   businessesTable.registrationGeoCountry,
+        registrationGeoCity:      businessesTable.registrationGeoCity,
+        registrationGeoLatitude:  businessesTable.registrationGeoLatitude,
+        registrationGeoLongitude: businessesTable.registrationGeoLongitude,
+        registrationGeoIsp:       businessesTable.registrationGeoIsp,
+      })
+      .from(businessesTable)
+      .orderBy(desc(businessesTable.createdAt))
+      .limit(limit);
+    res.json(rows);
+  },
+);
+
+router.get(
+  "/charts/registrations-by-country",
+  requireAdminPermission("business.read"),
+  async (_req, res): Promise<void> => {
+    const rows = await db
+      .select({
+        country:       businessesTable.registrationGeoCountry,
+        registrations: sql<number>`count(*)::int`,
+        published:     sql<number>`count(*) filter (where ${businessesTable.status} = 'published')::int`,
+      })
+      .from(businessesTable)
+      .where(sql`${businessesTable.registrationGeoCountry} is not null`)
+      .groupBy(businessesTable.registrationGeoCountry)
+      .orderBy(desc(sql`count(*)`))
+      .limit(20);
+    res.json(rows);
+  },
+);
+
+router.get(
+  "/charts/registrations-timeseries",
+  requireAdminPermission("business.read"),
+  async (_req, res): Promise<void> => {
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 86_400_000);
+    const rows = await db
+      .select({
+        bucket:        sql<string>`to_char(date_trunc('day', ${businessesTable.createdAt}), 'Mon DD')`,
+        registrations: sql<number>`count(*)::int`,
+        published:     sql<number>`count(*) filter (where ${businessesTable.status} = 'published')::int`,
+      })
+      .from(businessesTable)
+      .where(gte(businessesTable.createdAt, thirtyDaysAgo))
+      .groupBy(sql`date_trunc('day', ${businessesTable.createdAt})`)
+      .orderBy(sql`date_trunc('day', ${businessesTable.createdAt})`);
+    res.json(rows);
+  },
+);
+
 router.get(
   "/feedback",
   requireAdminPermission("telemetry.read"),

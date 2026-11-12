@@ -9,13 +9,16 @@ import adminRouter from "./admin";
 
 const router: IRouter = Router();
 
+// Admin router must be registered first with an explicit path prefix so its
+// routes are matched before the catch-all Clerk-auth routers below run their
+// router-level requireAuth middleware on every request.
+router.use("/admin", adminRouter);
+
 router.use(healthRouter);
 router.use(categoriesRouter);
 router.use(marketplaceRouter);
 router.use(businessesRouter);
 router.use(capabilitiesRouter);
 router.use(servicesRouter);
-// Separate workforce identity and role checks; never reuse merchant Clerk authorization.
-router.use("/admin", adminRouter);
 
 export default router;
