@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
-export const metadata = { title: "Acceptable Use Policy — Kiosk", description: "Rules for safe and responsible use of the Kiosk platform." };
+export const metadata = { title: "Acceptable Use Policy - Kiosk", description: "Rules for safe and responsible use of the Kiosk platform." };
 
 const rules = [
 ["Honest business representation","Do not impersonate a business or person, claim ownership or authorisation you do not have, create duplicate listings to mislead users, or publish false claims about products, services, prices, location, qualifications or availability."],

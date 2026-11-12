@@ -42,7 +42,7 @@ const articles = [
     tag: "TECHNOLOGY, EXPLAINED",
     title: "MCP explained: how AI assistants connect to useful information",
     intro:
-      "Understand the Model Context Protocol without needing to be a developer—and why it matters for business discovery.",
+      "Understand the Model Context Protocol without needing to be a developer - and why it matters for business discovery.",
     read: "6 min read",
     image:
       "https://images.unsplash.com/photo-1753351052277-a7ff634f0bd5?auto=format&fit=crop&w=1000&q=85",

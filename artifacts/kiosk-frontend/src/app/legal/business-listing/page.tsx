@@ -2,7 +2,7 @@ import Link from "next/link";
 import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
-export const metadata = { title: "Business Listing & Verification Policy — Kiosk", description: "Requirements for creating, publishing and maintaining business listings on Kiosk." };
+export const metadata = { title: "Business Listing & Verification Policy - Kiosk", description: "Requirements for creating, publishing and maintaining business listings on Kiosk." };
 
 const sections = [
 ["1. Who can submit a listing","A person submitting a listing must be authorised to represent the business or have permission to publish its information. Kiosk may ask for additional information where a listing raises authenticity, safety or ownership concerns."],

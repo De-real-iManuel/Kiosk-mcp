@@ -66,7 +66,7 @@ const OIDC_DOMAIN = process.env.NEXT_PUBLIC_ADMIN_OIDC_DOMAIN?.replace(
 );
 const OIDC_CLIENT_ID = process.env.NEXT_PUBLIC_ADMIN_OIDC_CLIENT_ID;
 const OIDC_REDIRECT_URI = process.env.NEXT_PUBLIC_ADMIN_OIDC_REDIRECT_URI;
-const OIDC_SCOPES = "openid email profile";
+const OIDC_SCOPES = "openid";
 
 const NAV: Array<{
   id: Section;

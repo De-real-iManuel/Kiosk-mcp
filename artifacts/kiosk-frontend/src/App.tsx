@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import {
   type ChangeEvent,
@@ -397,7 +397,7 @@ export function LandingPage() {
               <span className="serif font-normal italic tracking-[-.065em] text-[#D8CFC0]">Connect directly.</span>
             </h1>
             <p className="mt-7 max-w-[520px] text-[15px] leading-7 text-[#B7AFA1] md:text-[17px]">
-              Discover independent businesses, see what they offer, and reach the people behind them. Kiosk gives local businesses a clear presence across the places people search—including compatible AI assistants.
+              Discover independent businesses, see what they offer, and reach the people behind them. Kiosk gives local businesses a clear presence across the places people search - including compatible AI assistants.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-3">
               <Link
@@ -606,7 +606,7 @@ export function LandingPage() {
               </div>
             </div>
           </div>
-          <p className="mt-7 text-[10px] leading-5 text-[#81796D]">Illustrative interface preview—not a live merchant record or a claim of customer activity.</p>
+          <p className="mt-7 text-[10px] leading-5 text-[#81796D]">Illustrative interface preview - not a live merchant record or a claim of customer activity.</p>
         </div>
       </section>
 
