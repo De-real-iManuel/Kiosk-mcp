@@ -9,7 +9,7 @@ From the repository root:
 
 ```sh
 pnpm install
-pnpm --filter @workspace/admin-frontend dev
+pnpm --filter @workspace/admin-frontend dev # http://localhost:3001/internal-admin/
 ```
 
 Configure these public build-time variables when testing sign-in:
@@ -44,3 +44,12 @@ CloudFront, including a restrictive CSP, HSTS, nosniff, and no-referrer policy.
 The admin frontend is not added to Docker Compose, the merchant Docker image,
 or ECS. Deploying the static export is a separate release step. No AWS
 resources are created or changed by this repository change.
+
+### Browser-origin note
+
+The path-based CloudFront setup keeps the existing hostname, so the merchant
+and admin pages share a browser origin even though they are separate apps and
+CloudFront origins. The admin API remains protected by Cognito bearer-token
+verification and server-side role checks. If Kiosk later requires browser
+same-origin isolation as an additional boundary, move this same static app to
+a dedicated admin subdomain and add that exact origin to the API CORS allowlist.
