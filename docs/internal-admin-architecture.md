@@ -155,3 +155,11 @@ admin behavior, including HSTS, nosniff, a restrictive Content Security
 Policy, and an appropriate referrer policy. Keep the admin behavior's cache
 policy compatible with static hashed assets, while API responses remain
 `Cache-Control: no-store`.
+
+The initial path-based CloudFront deployment is application/deployment
+separation, not a separate browser origin: both apps use the existing
+CloudFront hostname. The API remains the security boundary because it accepts
+only validated Cognito access tokens and provisioned admin subjects. If
+stronger browser-origin isolation is required, serve the same static admin
+build from a dedicated admin subdomain and add that exact origin to
+`CORS_ALLOWED_ORIGINS`; this does not require an admin ECS service.
