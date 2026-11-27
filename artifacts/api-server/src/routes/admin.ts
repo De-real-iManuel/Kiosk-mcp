@@ -163,7 +163,7 @@ router.get(
       generatedAt: now.toISOString(),
       metrics: {
         requests24h: requests24h[0]?.count ?? 0,
-        rateLimited24h: rateLimited24h[0]?.count ?? 0,
+        rateLimited24h: rateLimited24h?.count ?? 0,
         requests7d: requests7d[0]?.count ?? 0,
         toolCalls24h: toolCalls24h[0]?.count ?? 0,
         toolCalls7d: toolCalls7d[0]?.count ?? 0,
@@ -197,7 +197,6 @@ router.get(
         bucket: sql<string>`to_char(date_trunc('hour', ${mcpRequestEventsTable.createdAt}), 'HH24:MI')`,
         requests: sql<number>`count(*)::int`,
         errors: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} >= 400)::int`,
-        rateLimited: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} = 429)::int`,
         rateLimited: sql<number>`count(*) filter (where ${mcpRequestEventsTable.httpStatus} = 429)::int`,
       })
       .from(mcpRequestEventsTable)
