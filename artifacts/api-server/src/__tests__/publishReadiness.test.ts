@@ -31,6 +31,13 @@ function makeBusiness(overrides: Partial<Business> = {}): Business {
     createdAt: new Date("2024-01-01"),
     updatedAt: new Date("2024-01-01"),
     publishedAt: null,
+    registrationIp: null,
+    registrationUserAgent: null,
+    registrationGeoCountry: null,
+    registrationGeoCity: null,
+    registrationGeoLatitude: null,
+    registrationGeoLongitude: null,
+    registrationGeoIsp: null,
     ...overrides,
   };
 }
