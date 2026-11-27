@@ -1,0 +1,18 @@
+import Link from "next/link";
+import { Footer } from "@/components/Footer";
+import { ArrowLeft } from "lucide-react";
+
+export const metadata = { title: "Acceptable Use Policy - Kiosk", description: "Rules for safe and responsible use of the Kiosk platform." };
+
+const rules = [
+["Honest business representation","Do not impersonate a business or person, claim ownership or authorisation you do not have, create duplicate listings to mislead users, or publish false claims about products, services, prices, location, qualifications or availability."],
+["Lawful goods and services","Do not use Kiosk to advertise or facilitate unlawful goods, services, financial scams, fraud, trafficking, exploitation or other illegal activity. You are responsible for ensuring your business and listing comply with laws that apply to you."],
+["Respectful and lawful content","Do not publish threats, harassment, hate, defamatory material, non-consensual personal information, deceptive reviews or content that infringes another person's intellectual property or privacy."],
+["Privacy and sensitive information","Do not publish passwords, payment credentials, government identity numbers, private contact details of others, health information or other sensitive personal data in public listing fields without a lawful basis and appropriate authority."],
+["Platform and endpoint security","Do not probe, scan, overload, disrupt or attempt unauthorised access to Kiosk systems, accounts, databases or MCP endpoints. Do not upload malware, exploit vulnerabilities or interfere with other users' access."],
+["Data access and automation","Do not scrape, harvest, bulk-copy, resell or repurpose Kiosk data in a way that violates applicable law, these terms, access controls or the rights of businesses and individuals. Respect rate limits and technical restrictions."],
+["AI and agent interactions","Do not use Kiosk integrations to deceive users, generate harmful requests, bypass safeguards, extract information that is not made public, or misrepresent AI-generated content as confirmed business information."],
+["Reporting and enforcement","Report suspected abuse, impersonation, security issues or harmful listings through the Kiosk contact channel. Kiosk may investigate, request clarification, restrict visibility, remove content or suspend access where reasonably necessary."]
+];
+
+export default function AcceptableUsePolicy(){return <main className="grain min-h-screen bg-[#12110F] text-[#EDE7DC]"><header className="border-b border-white/10"><div className="mx-auto flex h-[74px] max-w-[1440px] items-center px-6 md:px-12"><Link href="/" className="inline-flex items-center gap-2 text-xs text-[#8A8478] hover:text-[#D96845]"><ArrowLeft size={14}/> Back to Kiosk</Link></div></header><article className="mx-auto max-w-[760px] px-6 py-16 md:px-12 md:py-24"><p className="eyebrow mb-5 text-[#D96845]">Legal / Platform standards</p><h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-semibold leading-[.92] tracking-[-.07em]">Acceptable Use Policy</h1><p className="mono mt-4 mb-10 text-[11px] text-[#8A8478]">Effective date: 7 November 2026 · Working draft</p><p className="mb-10 text-sm leading-7 text-[#A49D90]">This policy applies to everyone using Kiosk, including business owners, customers and people connecting compatible AI clients. It supplements the Terms of Service.</p>{rules.map(([title,body])=><section key={title} className="mt-8 border-t border-white/10 pt-8"><h2 className="mb-4 text-lg font-semibold">{title}</h2><p className="text-sm leading-7 text-[#A49D90]">{body}</p></section>)}</article><Footer/></main>}

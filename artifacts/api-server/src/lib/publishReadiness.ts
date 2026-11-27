@@ -14,13 +14,14 @@ export interface ReadinessResult {
  * Blocking (hard requirements):
  *   - businessName
  *   - location OR (city AND country)
- *   - at least one contact method: phone, whatsapp, or website
- *   - categoryId
+ *   - city (structured — required for AI discovery country filtering)
+ *   - country (structured — required for AI discovery country filtering)
+ *   - at least one contact method: phone, whatsapp, website, or legacy contact
  *
  * Recommended (soft — shown as hints in the dashboard):
+ *   - categoryId
  *   - description
  *   - openingHours
- *   - city / country (if not already blocking)
  */
 export function checkPublishReadiness(business: Business): ReadinessResult {
   const blocking: string[] = [];
@@ -30,6 +31,7 @@ export function checkPublishReadiness(business: Business): ReadinessResult {
     blocking.push("businessName");
   }
 
+  // Require either the legacy freetext location OR the structured city/country pair.
   const hasLocation =
     business.location?.trim() ||
     (business.city?.trim() && business.country?.trim());
@@ -37,32 +39,34 @@ export function checkPublishReadiness(business: Business): ReadinessResult {
     blocking.push("location");
   }
 
+  // city and country are individually required for correct AI discovery.
+  // An agent calling search_businesses with country="NG" will miss this business
+  // if its country column is null.
+  if (!business.city?.trim()) {
+    blocking.push("city");
+  }
+  if (!business.country?.trim()) {
+    blocking.push("country");
+  }
+
   const hasContact =
     business.phone?.trim() ||
     business.whatsapp?.trim() ||
     business.website?.trim() ||
-    // Legacy contact text field — used by the create form
     business.contact?.trim();
   if (!hasContact) {
     blocking.push("contact");
   }
 
+  // Recommended (improves discoverability but not required to publish)
   if (!business.categoryId) {
-    // Category improves discoverability but is not required to publish.
-    // The legacy create form doesn't capture it, so blocking on it
-    // would prevent all existing businesses from publishing.
     recommended.push("categoryId");
   }
-
-  // Recommended fields
   if (!business.description?.trim()) {
     recommended.push("description");
   }
   if (!business.openingHours) {
     recommended.push("openingHours");
-  }
-  if (!business.city?.trim()) {
-    recommended.push("city");
   }
 
   return {

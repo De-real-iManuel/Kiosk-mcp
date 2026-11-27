@@ -1,24 +1,53 @@
-import express, { type Request, type Response } from "express";
+import express, { type Request, type Response, type RequestHandler } from "express";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import pinoHttp from "pino-http";
 import pino from "pino";
 import { createMcpServer } from "./server.js";
+import { mcpRateLimiter } from "./lib/rateLimiter.js";
+import { beginMcpRequest, runWithMcpRequestContext, type McpRequestContext } from "@workspace/db";
 
 const logger = pino({ name: "kiosk-master-mcp" });
 
 export function createApp(): express.Express {
   const app = express();
 
-  // Parse JSON bodies before MCP transport handles requests
-  app.use(express.json());
+  // Master MCP is exposed through one AWS Application Load Balancer.
+  // The ECS task security group must not permit direct public ingress.
+  app.set("trust proxy", 1);
 
-  // HTTP request logging
-  app.use(pinoHttp({ logger }));
+  // Parse JSON bodies before MCP transport handles requests
+  app.use(express.json({ limit: "64kb" }));
+
+  // Keep auth headers, cookies, query strings and request bodies out of logs.
+  app.use(
+    pinoHttp({
+      logger,
+      serializers: {
+        req(req) {
+          return {
+            id: req.id,
+            method: req.method,
+            url: req.url?.split("?")[0],
+          };
+        },
+        res(res) {
+          return { statusCode: res.statusCode };
+        },
+      },
+    }),
+  );
 
   // Health check endpoint
   app.get("/health", (_req: Request, res: Response) => {
     res.json({ status: "ok", service: "kiosk-master-mcp" });
   });
+
+  // Start telemetry before rate limiting so rejected HTTP 429 responses are persisted too.
+  const beginMasterTelemetry: RequestHandler = (req, res, next) => {
+    (req as Request & { mcpTelemetryContext?: McpRequestContext }).mcpTelemetryContext =
+      beginMcpRequest(req, res, "master_mcp");
+    next();
+  };
 
   // MCP endpoint — Streamable HTTP transport handles GET, POST, and DELETE.
   //
@@ -33,7 +62,8 @@ export function createApp(): express.Express {
   //
   // DELETE /mcp — session termination
 
-  app.get("/mcp", async (req: Request, res: Response): Promise<void> => {
+  app.get("/mcp", beginMasterTelemetry, mcpRateLimiter, async (req: Request, res: Response): Promise<void> => {
+    const context = (req as Request & { mcpTelemetryContext?: McpRequestContext }).mcpTelemetryContext!;
     const accept = req.headers["accept"] ?? "";
     if (accept.includes("text/event-stream")) {
       // Proper SSE probe — let the transport handle it
@@ -43,7 +73,9 @@ export function createApp(): express.Express {
       });
       try {
         await server.connect(transport);
-        await transport.handleRequest(req, res, req.body);
+        await runWithMcpRequestContext(context, () =>
+          transport.handleRequest(req, res, req.body),
+        );
       } catch (err) {
         logger.error({ err }, "Error handling GET /mcp");
         if (!res.headersSent)
@@ -62,14 +94,17 @@ export function createApp(): express.Express {
     }
   });
 
-  app.post("/mcp", async (req: Request, res: Response): Promise<void> => {
+  app.post("/mcp", beginMasterTelemetry, mcpRateLimiter, async (req: Request, res: Response): Promise<void> => {
+    const context = (req as Request & { mcpTelemetryContext?: McpRequestContext }).mcpTelemetryContext!;
     const server = createMcpServer();
     const transport = new StreamableHTTPServerTransport({
       sessionIdGenerator: undefined,
     });
     try {
       await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await runWithMcpRequestContext(context, () =>
+        transport.handleRequest(req, res, req.body),
+      );
     } catch (err) {
       logger.error({ err }, "Error handling POST /mcp");
       if (!res.headersSent)
@@ -77,7 +112,7 @@ export function createApp(): express.Express {
     }
   });
 
-  app.delete("/mcp", async (_req: Request, res: Response): Promise<void> => {
+  app.delete("/mcp", beginMasterTelemetry, mcpRateLimiter, async (_req: Request, res: Response): Promise<void> => {
     res.status(200).json({ ok: true });
   });
 

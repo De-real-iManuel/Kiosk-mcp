@@ -1,4 +1,8 @@
-import express, { type Request, type Response } from "express";
+import express, {
+  type Request,
+  type Response,
+  type RequestHandler,
+} from "express";
 import { randomUUID } from "node:crypto";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
 import pinoHttp from "pino-http";
@@ -8,14 +12,25 @@ import { createBusinessMcpServer } from "./server.js";
 import { resolveBusinessSession } from "./businessSession.js";
 import { registerBusinessTools } from "./tools/register.js";
 import { mcpRateLimiter } from "./lib/rateLimiter.js";
+import {
+  beginMcpRequest,
+  instrumentMcpServer,
+  runWithMcpRequestContext,
+  setMcpRequestBusinessId,
+  type McpRequestContext,
+} from "@workspace/db";
 
 const logger = pino({ name: "kiosk-business-mcp" });
 
 export function createApp(): express.Express {
   const app = express();
 
+  // Business MCP is reachable through one AWS Application Load Balancer.
+  // The ECS task security group must not permit direct public ingress.
+  app.set("trust proxy", 1);
+
   // Parse JSON bodies before MCP transport handles requests
-  app.use(express.json());
+  app.use(express.json({ limit: "64kb" }));
 
   // Attach a unique request ID to every request for structured log correlation
   app.use((req: Request, _res: Response, next) => {
@@ -54,12 +69,22 @@ export function createApp(): express.Express {
   // POST /mcp/business/:slug  — actual JSON-RPC tool calls
   // DELETE /mcp/business/:slug — session termination
 
+  const beginBusinessTelemetry: RequestHandler = (req, res, next) => {
+    (
+      req as Request & { mcpTelemetryContext?: McpRequestContext }
+    ).mcpTelemetryContext = beginMcpRequest(req, res, "business_mcp");
+    next();
+  };
+
   const businessMcpHandler = async (
     req: Request,
     res: Response,
   ): Promise<void> => {
     const slug = req.params["slug"] as string;
     const reqId = (req as Request & { id?: string }).id ?? "unknown";
+    const telemetryContext =
+      (req as Request & { mcpTelemetryContext?: McpRequestContext })
+        .mcpTelemetryContext ?? beginMcpRequest(req, res, "business_mcp");
 
     // For GET requests (client capability probe), resolve session to verify
     // the slug is valid before handing off to the transport.
@@ -74,8 +99,13 @@ export function createApp(): express.Express {
       return;
     }
 
-    // Fire-and-forget session_start event on POST only (not on GET probe)
-    if (req.method === "POST") {
+    setMcpRequestBusinessId(telemetryContext, session.business.id);
+
+    // A session_start is recorded only for MCP initialization, not every stateless POST.
+    if (
+      req.method === "POST" &&
+      (req.body as { method?: string } | undefined)?.method === "initialize"
+    ) {
       db.insert(agentEventsTable)
         .values({
           businessId: session.business.id,
@@ -87,6 +117,7 @@ export function createApp(): express.Express {
     }
 
     const server = createBusinessMcpServer(slug);
+    instrumentMcpServer(server, "business_mcp", session.business.id);
     registerBusinessTools(server, session);
 
     const transport = new StreamableHTTPServerTransport({
@@ -95,7 +126,9 @@ export function createApp(): express.Express {
 
     try {
       await server.connect(transport);
-      await transport.handleRequest(req, res, req.body);
+      await runWithMcpRequestContext(telemetryContext, () =>
+        transport.handleRequest(req, res, req.body),
+      );
     } catch (err) {
       logger.error({ err, slug, reqId }, "Error handling MCP request");
       if (!res.headersSent) {
@@ -104,9 +137,24 @@ export function createApp(): express.Express {
     }
   };
 
-  app.get("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
-  app.post("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
-  app.delete("/mcp/business/:slug", mcpRateLimiter, businessMcpHandler);
+  app.get(
+    "/mcp/business/:slug",
+    beginBusinessTelemetry,
+    mcpRateLimiter,
+    businessMcpHandler,
+  );
+  app.post(
+    "/mcp/business/:slug",
+    beginBusinessTelemetry,
+    mcpRateLimiter,
+    businessMcpHandler,
+  );
+  app.delete(
+    "/mcp/business/:slug",
+    beginBusinessTelemetry,
+    mcpRateLimiter,
+    businessMcpHandler,
+  );
 
   return app;
 }

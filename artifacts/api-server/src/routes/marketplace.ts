@@ -124,6 +124,8 @@ router.get("/marketplace", async (req, res): Promise<void> => {
     city: b.city ?? null,
     country: b.country ?? null,
     location: b.location ?? null,
+    latitude: b.latitude ?? null,
+    longitude: b.longitude ?? null,
     phone: b.phone ?? null,
     whatsapp: b.whatsapp ?? null,
     website: b.website ?? null,
@@ -175,7 +177,7 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     return;
   }
 
-  // Fetch related data in parallel
+  // Fetch the business's public capabilities and catalogue from the same source record.
   const [capabilities, products, services] = await Promise.all([
     db
       .select()
@@ -191,6 +193,14 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
       .where(eq(businessServicesTable.businessId, business.id)),
   ]);
 
+  const [category] = business.categoryId
+    ? await db
+        .select({ name: categoriesTable.name })
+        .from(categoriesTable)
+        .where(eq(categoriesTable.id, business.categoryId))
+        .limit(1)
+    : [];
+
   const mcpEndpoint = getMcpEndpoint(business.slug);
 
   const profile = {
@@ -198,10 +208,39 @@ router.get("/marketplace/:slug", async (req, res): Promise<void> => {
     slug: business.slug,
     businessName: business.businessName,
     description: business.description ?? null,
+    servicesSummary: business.services || null,
+    audience: business.audience || null,
+    booking: business.booking === "yes" || business.booking === "no" ? business.booking : null,
+    agentFacts: {
+      offers: {
+        summary: business.services || null,
+        services: services.map((item) => ({ name: item.name, available: item.available })),
+        products: products.map((item) => ({ name: item.name, available: item.available })),
+      },
+      serves: business.audience || null,
+      operatesIn: {
+        location: business.location || null,
+        city: business.city ?? null,
+        country: business.country ?? null,
+      },
+      // Null means the business has not supplied exclusions; it does not mean "offers everything".
+      doesNotOffer: null,
+      booking:
+        business.booking === "yes"
+          ? "accepted"
+          : business.booking === "no"
+            ? "not_accepted"
+            : "unknown",
+      // No verification workflow exists yet. Never present owner-submitted data as verified.
+      verification: { status: "unverified", verifiedFields: [] },
+    },
     categoryId: business.categoryId ?? null,
+    categoryName: category?.name ?? null,
     city: business.city ?? null,
     country: business.country ?? null,
     location: business.location ?? null,
+    latitude: business.latitude ?? null,
+    longitude: business.longitude ?? null,
     phone: business.phone ?? null,
     whatsapp: business.whatsapp ?? null,
     website: business.website ?? null,

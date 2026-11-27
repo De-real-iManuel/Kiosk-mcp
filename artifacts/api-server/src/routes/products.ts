@@ -8,9 +8,15 @@ import {
 } from "@workspace/api-zod";
 import { requireAuth } from "../middlewares/require-auth";
 import { assertOwnership } from "../lib/ownership";
+import { writeLimiter } from "../middlewares/rateLimiter.js";
 
 const router: IRouter = Router();
 router.use(requireAuth);
+
+// Apply write limiter to mutating routes
+router.post("/businesses/:id/products", writeLimiter);
+router.patch("/businesses/:id/products/:productId", writeLimiter);
+router.delete("/businesses/:id/products/:productId", writeLimiter);
 
 // GET /businesses/:id/products
 router.get("/businesses/:id/products", async (req, res): Promise<void> => {
@@ -41,6 +47,23 @@ router.post("/businesses/:id/products", async (req, res): Promise<void> => {
     return;
   }
   await assertOwnership(params.data.id, res.locals.clerkUserId);
+
+  // ── Free tier quota: max 5 products per business ──────────────────────────
+  const existingCount = await db
+    .select({ id: businessProductsTable.id })
+    .from(businessProductsTable)
+    .where(eq(businessProductsTable.businessId, params.data.id));
+  if (existingCount.length >= 5) {
+    res.status(403).json({
+      error:
+        "Free plan limit reached. You can add up to 5 products. Upgrade to add more.",
+      code: "QUOTA_EXCEEDED",
+      current: existingCount.length,
+      limit: 5,
+    });
+    return;
+  }
+
   const [product] = await db
     .insert(businessProductsTable)
     .values({

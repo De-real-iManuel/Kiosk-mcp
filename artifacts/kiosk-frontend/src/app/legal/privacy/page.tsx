@@ -3,222 +3,35 @@ import { Footer } from "@/components/Footer";
 import { ArrowLeft } from "lucide-react";
 
 export const metadata = {
-  title: "Privacy Policy — Kiosk",
+  title: "Privacy Policy - Kiosk",
+  description: "How Kiosk collects, uses, shares and protects personal information.",
 };
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="border-t border-white/10 pt-8 mt-8 first:mt-0 first:border-0 first:pt-0">
-      <h2 className="text-[18px] font-semibold tracking-[-.04em] text-[#EDE7DC] mb-4">
-        {title}
-      </h2>
-      <div className="space-y-3 text-[14px] leading-7 text-[#A49D90]">
-        {children}
-      </div>
-    </section>
-  );
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return <section className="mt-8 border-t border-white/10 pt-8 first:mt-0 first:border-0 first:pt-0"><h2 className="mb-4 text-[18px] font-semibold tracking-[-.04em] text-[#EDE7DC]">{title}</h2><div className="space-y-3 text-[14px] leading-7 text-[#A49D90]">{children}</div></section>;
 }
 
 export default function PrivacyPage() {
   return (
     <main className="grain min-h-[100dvh] bg-[#12110F] text-[#EDE7DC]">
-      <header className="border-b border-white/10 bg-[#12110F]">
-        <div className="mx-auto flex h-[74px] max-w-[1440px] items-center px-6 md:px-12">
-          <Link
-            href="/"
-            className="inline-flex items-center gap-2 text-xs text-[#8A8478] transition-colors hover:text-[#EDE7DC]"
-          >
-            <ArrowLeft size={14} /> Back to Kiosk
-          </Link>
-        </div>
-      </header>
-
-      <div className="mx-auto max-w-[760px] px-6 py-16 md:px-12 md:py-24">
-        <p className="eyebrow text-[#8A8478] mb-5">Legal</p>
-        <h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-semibold leading-[.92] tracking-[-.07em] text-[#EDE7DC]">
-          Privacy Policy
-        </h1>
-        <p className="mono text-[11px] text-[#8A8478] mt-4 mb-12">
-          Effective date: October 2026 · Version 1.0
-        </p>
-
-        <div className="p-4 border border-[#8A8478]/30 bg-[#1C1A16] mb-10">
-          <p className="text-[12px] leading-6 text-[#A49D90]">
-            <strong className="text-[#EDE7DC]">Notice:</strong> This is an
-            initial privacy policy prepared for the Kiosk platform. It has not
-            been reviewed by a qualified legal or privacy professional. Before
-            commercial use, this policy should be reviewed by appropriate
-            counsel.
-          </p>
-        </div>
-
-        <Section title="1. What information Kiosk collects">
-          <p>
-            <strong className="text-[#EDE7DC]">Account information.</strong>{" "}
-            When you sign up, Kiosk receives your email address and basic
-            account identifiers from Clerk, the authentication provider used by
-            the platform.
-          </p>
-          <p>
-            <strong className="text-[#EDE7DC]">Business profile data.</strong>{" "}
-            When you create a business profile, Kiosk stores the information you
-            provide: business name, description, category, services, location,
-            contact details, opening hours, and any other fields you complete.
-          </p>
-          <p>
-            <strong className="text-[#EDE7DC]">Usage and event data.</strong>{" "}
-            Kiosk records events such as when a business profile is viewed,
-            contacted, or accessed through an MCP endpoint. These events are
-            associated with the business profile, not directly with individual
-            visitors.
-          </p>
-          <p>
-            <strong className="text-[#EDE7DC]">Agent interaction data.</strong>{" "}
-            When an AI agent connects to a business MCP endpoint, Kiosk logs
-            session events and tool calls. These logs are used for the analytics
-            shown to business owners.
-          </p>
-        </Section>
-
-        <Section title="2. How Kiosk uses your information">
-          <p>Kiosk uses the information you provide to operate the platform:</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li>To create and display your business profile</li>
-            <li>
-              To provision and serve your business&apos;s MCP endpoint to
-              compatible AI agents
-            </li>
-            <li>
-              To display analytics about how your profile has been accessed
-            </li>
-            <li>To maintain platform security and prevent abuse</li>
-          </ul>
-          <p>
-            Kiosk does not sell your personal information to third parties.
-            Kiosk does not use your information for advertising targeting.
-          </p>
-        </Section>
-
-        <Section title="3. Published business information">
-          <p>
-            When you publish a business profile, the information in that profile
-            becomes publicly accessible. This includes your business name,
-            description, services, location, contact details, and opening hours.
-          </p>
-          <p>
-            Published profiles are accessible through the Kiosk marketplace, the
-            Kiosk Master MCP endpoint, and business-specific MCP endpoints.
-            Compatible AI agents may access, store, and use this information
-            according to their own policies.
-          </p>
-          <p>
-            Your account email address and Clerk user identifier are never
-            included in public-facing responses.
-          </p>
-        </Section>
-
-        <Section title="4. Third-party providers">
-          <p>Kiosk uses the following third-party services to operate:</p>
-          <ul className="list-disc pl-5 space-y-1.5">
-            <li>
-              <strong className="text-[#EDE7DC]">Clerk</strong> — handles user
-              authentication, sign-in, and sign-up. Your email and account
-              credentials are stored and managed by Clerk. See{" "}
-              <a
-                href="https://clerk.com/privacy"
-                className="text-[#EDE7DC] underline underline-offset-4"
-                target="_blank"
-                rel="noreferrer"
-              >
-                clerk.com/privacy
-              </a>
-              .
-            </li>
-            <li>
-              <strong className="text-[#EDE7DC]">Supabase / PostgreSQL</strong>{" "}
-              — stores business profiles, categories, capabilities, analytics
-              events, and agent interaction logs. Data is stored in a PostgreSQL
-              database hosted on Supabase.
-            </li>
-            <li>
-              <strong className="text-[#EDE7DC]">Amazon Web Services</strong> —
-              the platform infrastructure runs on AWS ECS Fargate. Application
-              logs are collected by Amazon CloudWatch. See{" "}
-              <a
-                href="https://aws.amazon.com/privacy/"
-                className="text-[#EDE7DC] underline underline-offset-4"
-                target="_blank"
-                rel="noreferrer"
-              >
-                aws.amazon.com/privacy
-              </a>
-              .
-            </li>
-          </ul>
-        </Section>
-
-        <Section title="5. Data retention">
-          <p>
-            Business profile data is retained while your account remains active.
-            If you delete a business profile, its data is removed from the
-            database. Agent event logs associated with a deleted business are
-            set to null but may remain in the database for operational purposes.
-          </p>
-          <p>
-            We do not currently have an automated process for account deletion.
-            To request deletion of your account and associated data, contact us
-            through the project repository.
-          </p>
-        </Section>
-
-        <Section title="6. Security">
-          <p>
-            Kiosk uses reasonable technical measures to protect stored
-            information, including encrypted connections and secure credential
-            management through AWS Secrets Manager.
-          </p>
-          <p>
-            No system is completely secure. We cannot guarantee that information
-            stored on the platform will never be accessed without authorisation.
-          </p>
-        </Section>
-
-        <Section title="7. Your rights">
-          <p>
-            You can edit or delete your business profile at any time through
-            your dashboard. You can request deletion of your account and
-            associated data by contacting us through the project repository.
-          </p>
-          <p>
-            This platform does not make specific claims about compliance with
-            any regional privacy regulations. If you have concerns about how
-            your data is handled, please contact us.
-          </p>
-        </Section>
-
-        <Section title="8. Contact">
-          <p>
-            For privacy-related questions, open an issue on the{" "}
-            <a
-              href="https://github.com/De-real-iManuel/Kiosk-mcp"
-              className="text-[#EDE7DC] underline underline-offset-4"
-              target="_blank"
-              rel="noreferrer"
-            >
-              project repository
-            </a>
-            .
-          </p>
-        </Section>
-      </div>
-
-      <Footer variant="dark" />
+      <header className="border-b border-white/10"><div className="mx-auto flex h-[74px] max-w-[1440px] items-center px-6 md:px-12"><Link href="/" className="inline-flex items-center gap-2 text-xs text-[#8A8478] hover:text-[#D96845]"><ArrowLeft size={14}/> Back to Kiosk</Link></div></header>
+      <article className="mx-auto max-w-[760px] px-6 py-16 md:px-12 md:py-24">
+        <p className="eyebrow mb-5 text-[#8A8478]">Legal / Your information</p><h1 className="text-[clamp(2.4rem,5vw,3.8rem)] font-semibold leading-[.92] tracking-[-.07em]">Privacy Policy</h1>
+        <p className="mono mt-4 mb-10 text-[11px] text-[#8A8478]">Effective date: 7 November 2026 · Draft for privacy review</p>
+        <div className="mb-10 border border-[#D96845]/35 bg-[#1C1A16] p-4"><p className="text-[12px] leading-6 text-[#C5BFB2]"><strong className="text-[#EDE7DC]">Implementation note:</strong> This draft is written for Kiosk's current product model. Before publication, the team must verify the live data flows, hosting regions, subprocessors, retention periods, account deletion process and lawful bases with its technical and legal advisers. Replace the temporary contact details when the Kiosk domain email is ready.</p></div>
+        <Section title="1. Who is responsible for your information"><p>Kiosk is currently operated by its founders as individuals and is not yet an incorporated company. The founders operating Kiosk are responsible for the personal information described in this policy, subject to applicable data protection law. “Kiosk”, “we”, “us” and “our” refer to those operators.</p><p>This policy applies to visitors, business owners and people who interact with Kiosk listings or services. It should be read with our Terms of Service and Cookie Policy.</p></Section>
+        <Section title="2. Information we may collect"><p><strong className="text-[#EDE7DC]">Account and authentication information.</strong> Information associated with account creation and sign-in, such as email address, account identifiers and authentication/session data. Kiosk currently uses Clerk for authentication.</p><p><strong className="text-[#EDE7DC]">Business listing information.</strong> Business name, description, category, products or services, prices, location, opening hours, contact channels, images and other details a business owner submits. Published listing fields are intended to be public.</p><p><strong className="text-[#EDE7DC]">Platform and interaction information.</strong> Technical logs, request metadata, timestamps, endpoint activity, tool calls, error reports and usage events generated when people or compatible AI clients use Kiosk. Depending on the feature and configuration, these records may contain identifiers or information included in a request.</p><p><strong className="text-[#EDE7DC]">Communications and support.</strong> Information you send when you contact us, report a listing, ask for help or make a privacy request.</p><p>Do not place passwords, payment card details, government identification numbers, health information or other sensitive personal information in public business listing fields.</p></Section>
+        <Section title="3. How we use information"><p>We use information to create and manage accounts, publish and maintain business listings, provide marketplace discovery, operate MCP endpoints and related integrations, display business-facing activity insights where available, respond to enquiries, troubleshoot problems, protect the service, prevent fraud and comply with legal obligations.</p><p>Where required by law, we will identify and rely on an appropriate lawful basis for each processing purpose, such as performance of a contract, legitimate interests, consent or compliance with a legal obligation. The applicable basis depends on the context and jurisdiction.</p></Section>
+        <Section title="4. Public business listings and AI assistants"><p>When a business chooses to publish a listing, the public fields may be visible on the Kiosk marketplace and accessible through Kiosk's discovery and business-specific MCP interfaces. These fields can be retrieved by compatible AI assistants and other third parties.</p><p>AI assistants may process, summarise, cache or retain public listing information under their own policies. Kiosk does not control those independent systems. Unpublishing or editing a listing on Kiosk cannot guarantee that previously retrieved copies are immediately changed or deleted elsewhere.</p><p>Private account credentials and authentication secrets are not intended to appear in public listing responses. Business owners should review each field before publishing.</p></Section>
+        <Section title="5. When we share information"><p>We may share information with service providers that help us operate Kiosk, such as authentication, database, hosting, security, logging, email, analytics or support providers. The current technical stack has included Clerk, Supabase/PostgreSQL and Amazon Web Services; the team must verify the active providers and their current roles before this list is treated as complete.</p><p>We may also disclose information where necessary to comply with law, respond to valid legal requests, protect users or the platform, investigate abuse, enforce our terms, or in connection with a business transfer or restructuring subject to applicable safeguards.</p><p>We do not sell personal information for money. We do not use private account information to build advertising profiles. Any future advertising or additional data-sharing practice will be described in an updated policy before it begins.</p></Section>
+        <Section title="6. International processing"><p>Kiosk and its service providers may process or store information in countries other than the country where you live. Where applicable, we will use legally recognised safeguards for international transfers and provide information about those safeguards on request.</p></Section>
+        <Section title="7. Retention and deletion"><p>We keep information for as long as reasonably necessary to provide the service, maintain business listings, support account administration, resolve disputes, protect security and meet legal obligations. Retention periods differ by data type and provider and must be confirmed against the production configuration.</p><p>You may request correction or deletion of account information or a business listing by using available account controls or contacting us. Deletion from Kiosk may not remove information already copied by AI assistants, external websites, search engines or other third parties. Some records may be retained where the law permits or requires.</p></Section>
+        <Section title="8. Security"><p>We use reasonable administrative, technical and organisational measures intended to protect information, including access controls and encrypted connections where supported. No online service can guarantee absolute security. Please protect your account credentials and contact us promptly if you suspect unauthorised access.</p></Section>
+        <Section title="9. Your privacy rights"><p>Depending on where you live, you may have rights to request access, correction, deletion, restriction, objection, portability or withdrawal of consent. You may also have the right to complain to your local data protection authority. We will respond to valid requests within the time required by applicable law and may need to verify your identity before acting.</p><p>For people in Nigeria, requests and complaints may be subject to the Nigeria Data Protection Act 2023 and guidance issued by the Nigeria Data Protection Commission. This policy is not a certification of compliance; Kiosk will assess its obligations as its operations and user base develop.</p><p>For official information, see the <a href="https://ndpc.gov.ng/" target="_blank" rel="noreferrer" className="text-[#D96845] underline underline-offset-4">Nigeria Data Protection Commission</a> and the <a href="https://ndpc.gov.ng/wp-content/uploads/2024/03/Nigeria_Data_Protection_Act_2023.pdf" target="_blank" rel="noreferrer" className="text-[#D96845] underline underline-offset-4">Nigeria Data Protection Act 2023</a>.</p></Section>
+        <Section title="10. Children"><p>Kiosk is designed for business owners and general audiences, not for children to create business accounts. Do not knowingly submit personal information about a child unless you have the authority and a lawful reason to do so.</p></Section>
+        <Section title="11. Changes and contact"><p>We may update this policy as the product, providers and applicable requirements change. We will revise the effective date and provide additional notice where required.</p><p>Privacy requests and questions: contact the Kiosk team using the temporary founder contact address to be published here. The official privacy email will replace this placeholder when the Kiosk domain email is configured.</p></Section>
+      </article>
+      <Footer variant="dark"/>
     </main>
   );
 }

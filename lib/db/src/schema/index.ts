@@ -26,3 +26,6 @@ export * from "./capabilities.js";
 export * from "./products.js";
 export * from "./services.js";
 export * from "./booking-requests.js";
+
+export * from "./mcp-telemetry.js";
+export * from "./admin.js";

@@ -19,12 +19,15 @@ function createLimiter(options: {
   }, options.windowMs).unref();
 
   return (req: Request, res: Response, next: NextFunction): void => {
-    const ip =
-      (req.headers["x-forwarded-for"] as string | undefined)
-        ?.split(",")[0]
-        ?.trim() ??
-      req.socket.remoteAddress ??
-      "unknown";
+    // Express resolves req.ip using the one trusted ALB hop configured in
+    // app.ts. Do not trust a client-provided X-Forwarded-For value directly.
+    const ip = req.ip || req.socket.remoteAddress || "unknown";
+
+    // Prevent unbounded growth if callers rotate source addresses.
+    if (!buckets.has(ip) && buckets.size >= 10_000) {
+      const oldestKey = buckets.keys().next().value;
+      if (oldestKey) buckets.delete(oldestKey);
+    }
 
     const now = Date.now();
     let entry = buckets.get(ip);

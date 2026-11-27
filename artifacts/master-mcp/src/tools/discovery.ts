@@ -42,15 +42,19 @@ Does NOT guarantee any businesses exist within a category — use search_busines
   server.tool(
     "search_businesses",
     `Searches for businesses in the Kiosk ecosystem that match the user's request.
-Use this after discover_categories when you have a category slug, or directly when
-you have a specific business name, service, product, or location in mind.
 
-Supports the following filters (all optional, combinable):
+IMPORTANT: You MUST always pass the country parameter. Never omit it.
+Use the user's stated or implied location — if they say "in Lagos" that's Nigeria (NG),
+if they say "in London" that's GB, etc. If the user's country is genuinely unknown,
+ask for it before calling this tool. Country determines which businesses the user can
+realistically visit or transact with.
+
+Supports the following filters (country is required, all others optional, combinable):
 - query: free-text match against business name and description. When Amazon Bedrock
   is enabled, results are ranked by semantic similarity so "something for my hair"
   finds hair salons even without exact keyword matches.
-- city: filter by city name
-- country: filter by ISO 3166-1 alpha-2 country code (e.g. "US", "GB")
+- country: ISO 3166-1 alpha-2 country code (REQUIRED — e.g. "NG" for Nigeria, "GB" for UK)
+- city: filter by city name within the country
 - category_slug: narrow to a specific business category (use discover_categories first)
 - open_now + local_time: only return businesses that are currently open; provide the
   caller's local time as an ISO-8601 string (e.g. "2024-06-01T14:30:00")
@@ -65,15 +69,21 @@ Does NOT execute any business action — use the mcpEndpoint for supported tools
     {
       query: z
         .string()
+        .trim()
+        .max(200)
         .optional()
         .describe("Free-text search (business name, service, product)"),
-      city: z.string().optional().describe("City name to filter by"),
+      city: z.string().trim().max(100).optional().describe("City name to filter by"),
       country: z
         .string()
-        .optional()
-        .describe("ISO 3166-1 alpha-2 country code"),
+        .regex(/^[A-Z]{2}$/, "Use an uppercase ISO 3166-1 alpha-2 country code")
+        .describe(
+          "ISO 3166-1 alpha-2 country code — REQUIRED. Always pass this. e.g. 'NG' for Nigeria, 'GB' for UK, 'US' for United States.",
+        ),
       category_slug: z
         .string()
+        .trim()
+        .max(100)
         .optional()
         .describe("Category slug from discover_categories"),
       open_now: z
@@ -82,11 +92,12 @@ Does NOT execute any business action — use the mcpEndpoint for supported tools
         .describe("If true, only return businesses currently open"),
       local_time: z
         .string()
+        .max(40)
         .optional()
         .describe(
           "Caller local time in ISO-8601 (required when open_now=true)",
         ),
-      limit: z.number().min(1).max(50).default(20).optional(),
+      limit: z.number().int().min(1).max(50).default(20).optional(),
     },
     async ({
       query,
@@ -97,6 +108,19 @@ Does NOT execute any business action — use the mcpEndpoint for supported tools
       local_time,
       limit = 20,
     }) => {
+      if (open_now && !local_time) {
+        return {
+          content: [{ type: "text", text: "local_time is required when open_now is true" }],
+          isError: true,
+        };
+      }
+      if (open_now && local_time && Number.isNaN(new Date(local_time).getTime())) {
+        return {
+          content: [{ type: "text", text: "local_time must be a valid date/time" }],
+          isError: true,
+        };
+      }
+
       // ── Build WHERE conditions ───────────────────────────────────────────────
       const conditions = [
         eq(businessesTable.status, "published"),

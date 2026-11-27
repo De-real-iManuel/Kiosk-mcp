@@ -8,35 +8,16 @@ export interface BusinessSession {
   enabledCapabilityKeys: string[];
 }
 
-interface CacheEntry {
-  session: BusinessSession;
-  expiresAt: number;
-}
-
-const cache = new Map<string, CacheEntry>();
-
-function getCached(slug: string): BusinessSession | null {
-  const entry = cache.get(slug);
-  if (!entry) return null;
-  if (Date.now() > entry.expiresAt) {
-    cache.delete(slug);
-    return null;
-  }
-  return entry.session;
-}
-
-function setCached(slug: string, session: BusinessSession): void {
-  cache.set(slug, { session, expiresAt: Date.now() + 30_000 });
-}
-
 export async function resolveBusinessSession(
   slug: string,
 ): Promise<BusinessSession> {
-  if (!slug)
+  if (
+    !slug ||
+    slug.length > 120 ||
+    !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug)
+  ) {
     throw Object.assign(new Error("Business not found"), { status: 404 });
-
-  const cached = getCached(slug);
-  if (cached) return cached;
+  }
 
   const [business] = await db
     .select()
@@ -68,6 +49,8 @@ export async function resolveBusinessSession(
     capabilities,
     enabledCapabilityKeys: capabilities.map((c) => c.capability),
   };
-  setCached(slug, session);
+  // Resolve current publication and capability state on every request. A
+  // cached snapshot could keep a suspended business or revoked capability
+  // reachable for the cache TTL after an admin/owner change.
   return session;
 }

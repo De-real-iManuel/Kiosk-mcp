@@ -29,12 +29,14 @@ import { assertOwnership } from "../lib/ownership";
 import { getMcpEndpoint } from "../lib/mcp-url.js";
 import { checkPublishReadiness } from "../lib/publishReadiness.js";
 import { writeLimiter } from "../middlewares/rateLimiter.js";
+import { geolocateRequest } from "../lib/geoip.js";
 
 const router: IRouter = Router();
 router.use(requireAuth);
 
 // Apply write limiter to mutating routes only
 router.post("/businesses", writeLimiter);
+router.post("/businesses/:id/feedback", writeLimiter);
 router.patch("/businesses/:id", writeLimiter);
 router.patch("/businesses/:id/publish", writeLimiter);
 
@@ -116,6 +118,11 @@ router.post("/businesses", async (req, res): Promise<void> => {
   const id = randomUUID();
   const slug = generateSlug(parsed.data.businessName, id);
 
+  // ── Capture registration intelligence ───────────────────────────────────────
+  const geo = geolocateRequest(req);
+  const registrationIp        = req.ip ?? null;
+  const registrationUserAgent = req.headers["user-agent"] ?? null;
+
   await db.insert(businessesTable).values({
     id,
     ownerClerkId: getOwnerId(res),
@@ -138,6 +145,14 @@ router.post("/businesses", async (req, res): Promise<void> => {
     audience: parsed.data.audience || "",
     hours: parsed.data.hours || "",
     contact: parsed.data.contact || "",
+    // Registration intelligence
+    registrationIp,
+    registrationUserAgent,
+    registrationGeoCountry:   geo.country,
+    registrationGeoCity:      geo.city,
+    registrationGeoLatitude:  geo.lat,
+    registrationGeoLongitude: geo.lon,
+    registrationGeoIsp:       geo.isp,
   });
 
   const capabilities = parsed.data.capabilities ?? [];
@@ -474,6 +489,74 @@ router.get("/businesses/:id/analytics", async (req, res): Promise<void> => {
   };
 
   res.json(GetBusinessAnalyticsResponse.parse(analytics));
+});
+
+/**
+ * POST /businesses/:id/feedback
+ *
+ * Stores onboarding feedback from the business owner. Called before
+ * the first publish to validate willingness to pay and market interest.
+ * Stored in agent_events with eventType "onboarding_feedback".
+ */
+router.post("/businesses/:id/feedback", async (req, res): Promise<void> => {
+  let params: { id: string };
+  try {
+    params = BusinessIdParams.parse(req.params);
+  } catch {
+    res.status(400).json({ error: "Invalid business ID" });
+    return;
+  }
+
+  await assertOwnership(params.id, getOwnerId(res));
+
+  if (
+    !req.body ||
+    typeof req.body !== "object" ||
+    Array.isArray(req.body)
+  ) {
+    res.status(400).json({ error: "Feedback must be a JSON object" });
+    return;
+  }
+
+  const limits = {
+    howCustomersFindYou: 200,
+    wouldPay: 200,
+    wouldPayPriority: 200,
+    monthlyAdSpend: 200,
+    wouldRefer: 200,
+    oneThing: 2_000,
+  } as const;
+  const body = req.body as Record<string, unknown>;
+  const allowedFields = Object.keys(limits);
+  if (Object.keys(body).some((key) => !allowedFields.includes(key))) {
+    res.status(400).json({ error: "Feedback contains an unsupported field" });
+    return;
+  }
+
+  const answers: Record<string, string> = {};
+  for (const [field, maxLength] of Object.entries(limits)) {
+    const value = body[field];
+    if (value !== undefined && typeof value !== "string") {
+      res.status(400).json({ error: `Feedback field ${field} must be text` });
+      return;
+    }
+    if (typeof value === "string" && value.length > maxLength) {
+      res.status(400).json({
+        error: `Feedback field ${field} exceeds ${maxLength} characters`,
+      });
+      return;
+    }
+    answers[field] = typeof value === "string" ? value.trim() : "";
+  }
+
+  await db.insert(agentEventsTable).values({
+    businessId: params.id,
+    eventType: "onboarding_feedback",
+    toolName: "feedback_form",
+    metadata: answers,
+  });
+
+  res.status(201).json({ ok: true });
 });
 
 /**

@@ -15,7 +15,7 @@ export function ThemeToggle({
   className = "",
 }: ThemeToggleProps) {
   const { theme, setTheme } = useTheme();
-  // Avoid hydration mismatch — don't render until mounted
+  // Avoid hydration mismatch - don't render until mounted
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   if (!mounted) return <span className={`inline-block h-9 w-9 ${className}`} />;

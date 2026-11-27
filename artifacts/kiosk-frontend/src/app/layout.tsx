@@ -4,9 +4,21 @@ import { Providers } from "./providers";
 import "@/index.css";
 
 export const metadata: Metadata = {
-  title: "Kiosk — Where agents come to buy",
+  title: "Kiosk - Local businesses, discoverable by AI",
   description:
-    "Turn your business into an Agent Skill in 2 minutes. No code required.",
+    "Make your business easier for AI assistants to find and understand. Create a structured business profile with Kiosk, no code required.",
+  applicationName: "Kiosk",
+  openGraph: {
+    title: "Kiosk - Local businesses, discoverable by AI",
+    description: "A simple way for independent businesses to share structured information with compatible AI assistants.",
+    siteName: "Kiosk",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Kiosk - Local businesses, discoverable by AI",
+    description: "Make your business easier for AI assistants to find and understand.",
+  },
   icons: {
     icon: "/favicon.svg",
   },
